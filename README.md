@@ -1,7 +1,11 @@
 # seak_seo_dsr
 # Southeast Alaska Outside Demersal Shelf Rockfish Assessment
 
-This repository will hold data, files and r script for the SEO DSR assessment.  This repository will contain the following sub directories that contain different analysis that are part of the assessment.  They are,
+This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  Resultant assessments associated with this code can be found here:
+
+2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
+
+This repository will contain the following sub directories that contain different analysis that are part of the assessment.  They are,
 
 1. **Data processing:** This folder contains script and raw data files for putting together data for use in the analysis contained in the folders below.  This includes catch data and biological data.
 2. **Density estimation:**  Script and data for estimating yelloweye rockfish density using distance sampling methods and transect data from ROV surveys.
