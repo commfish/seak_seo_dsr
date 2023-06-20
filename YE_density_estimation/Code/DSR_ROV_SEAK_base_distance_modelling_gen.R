@@ -16,13 +16,19 @@ library(truncnorm)
 library(boot)
 library(Distance)}
 
+
+YEAR<-2022
+Subd<-"NSEO"
+#surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
+surveyed_area<-442
+
 ##Set working directory
 #setwd("D:/Groundfish Biometrics/Yelloweye/YE Code")
 
 ######################################################################
 ##Load cleaned data from ROV created with "DSR_ROV_SEAK_ROVprocessing.R"
 DAT<-distance
-DAT<-read.csv("Data/CSEO_2022/CSEO_22_distance_data_GIStran_for_analysis.csv")
+DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 
 str(DAT)
 summary(DAT$distance)
@@ -491,7 +497,7 @@ for (i in 1:nrow(TR)) { #i<-1
 ##use this so you can cut and paste and then remove quotes at beginning and end...
 paste(NT.red$Model,collapse=", ")
 
-NTMods<-list(YE.unif.cos, YE.hr, YE.hn, YE.hn.Stage, YE.unif.poly, YE.hr.Stage, YE.hn.Depth, YE.unif.herm, YE.hn.Depth.Stage, YE.hr.Depth, YE.hr.Depth.Stage)
+NTMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage, YE.hr.Depth, YE.unif.herm)
 
 	NT.red$Det.Prob<-sapply(NTMods, function(x) summary(x)$dht$individuals$average.p)
 	NT.red$Nhat<-sapply(NTMods, function(x) summary(x)$dht$individuals$N$Estimate)
@@ -508,7 +514,7 @@ NTMods<-list(YE.unif.cos, YE.hr, YE.hn, YE.hn.Stage, YE.unif.poly, YE.hr.Stage, 
 
 paste(TR.red$Model,collapse=", ")
 
-TrMods<-list(YE.unif.cos, YE.hr, YE.hn, YE.hn.Stage, YE.unif.poly, YE.hr.Stage, YE.hn.Depth, YE.unif.herm, YE.hn.Depth.Stage)
+TrMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage)
 
 	TR.red$Det.Prob<-sapply(TrMods, function(x) summary(x)$dht$individuals$average.p)
 	TR.red$Nhat<-sapply(TrMods, function(x) summary(x)$dht$individuals$N$Estimate)
@@ -524,15 +530,15 @@ TrMods<-list(YE.unif.cos, YE.hr, YE.hn, YE.hn.Stage, YE.unif.poly, YE.hr.Stage, 
 	TR.red$Dhat.ucl<-sapply(TrMods, function(x) summary(x)$dht$individuals$D$ucl)
 
 ### EXPORT MODEL LIST FOR MODEL AVERAGING AND BOOTSTRAPPING...
-write.csv(NT.red, file = "Data/CSEO_2022/CSEO_22_Bootstrap_Model_List_all.csv")
+write.csv(NT.red, file = paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_all.csv"))
 
-write.csv(TR.red, file = "Data/CSEO_2022/CSEO_22_Bootstrap_Model_List_Trunc.csv")
+write.csv(TR.red, file = paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_Trunc.csv"))
 
 
 #################################################################################
 ## Compare models visually...
 ###################################################
-Mods<-TRMods
+Mods<-TrMods
 minAIC<-min(as.numeric(sapply(Mods,function(x)AIC(x)[2])))
 
 AIC(Mods[[1]])

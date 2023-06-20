@@ -9,6 +9,11 @@
 ## Phil Joy
 #################################################################################################
 
+YEAR<-2022
+Subd<-"NSEO"
+#surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
+surveyed_area<-442
+
 ##REFERENCE INSTALLED PACKAGES
 {library(tidyverse)
 library(lubridate)
@@ -27,9 +32,10 @@ library(chron)}
 #setwd("D:/Groundfish Biometrics/Yelloweye/NSEO_2018/")
 
 ##IMPORT NAVIGATION, QUALITY CONTROL, AND SPECIMEN DATA#########################
-nav <-read.csv("Data/NSEO_2022/2022_NSEO_NAV_Final.csv")		#("SSEO_2020_Nav.csv")
-qc <-read.csv("Data/NSEO_2022/QC_NSEO_2022_summary.csv")		#("SSEO_2020_QC.csv")
-species <-read.csv("Data/NSEO_2022/SPECIES_NSEO_2022_summary.csv")		#("SSEO_2020_Species.csv")
+nav <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",YEAR,"_",Subd,"_NAV_Final.csv"))		#("SSEO_2020_Nav.csv")
+qc <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/QC_",Subd,"_",YEAR,"_summary.csv"))
+species <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/SPECIES_",Subd,"_",YEAR,"_summary.csv"))
+	#("SSEO_2020_Species.csv")
 
 head(nav)
 	str(nav)
@@ -133,12 +139,12 @@ view(new_transect_qc)
 view(new_transect_qc %>% filter(Dive == 2))
 
 #Output cleaned data table (make sure to use updated transect_qc table)
-write.csv(new_transect_qc, file = "Output/nseo_new_transect_qc.csv")
+write.csv(new_transect_qc, file = paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
 #Use ggplot to look at data to identify good/bad areas:
-new_transect_qc <- read_csv("Output/nseo_new_transect_qc.csv")
+new_transect_qc <- read_csv(paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
-jpeg(filename = "Figures/NSEO_rov_transects2022.jpg",
+jpeg(filename = paste0("YE_density_estimation/Figures/",Subd,"_rov_transects_",YEAR,".jpg"),
      width = 12, height = 15, units = "in", res = 50)
 
 ggplot(new_transect_qc, aes(ROV_X, ROV_Y)) + geom_point(aes(colour = factor(Family))) +
@@ -173,7 +179,8 @@ view(new_transect_qc)
 glimpse(new_transect_qc)
 
 #Save output as a pdf so it can be reviewed easily:
-pdf("Figures/2020_SSEO_smoothed_transects.jpg")
+paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg")
+pdf(paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg"))
 
 #Set up graph window as a 2X2 frame
 par(mfrow = c(2,2))
@@ -237,9 +244,9 @@ for (i in 1:length (unique (new_transect_qc$DIVE_NO))) {  #i<-2
 dev.off()
 
 if (Cull == TRUE) {
-  write.csv(outPut, file = "Output/CSEO22_smooth_transect_output_culled.csv")
+  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_culled.csv"))
 } else {
-  write.csv(outPut, file = "Output/NSEO22_smooth_transect_output_raw2.csv") 
+  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_raw.csv")) 
 }
 
 ##Check transect lengths...
@@ -268,7 +275,9 @@ new_transect_qc <- new_transect_qc %>% filter(Dive != 35)
 transect_pred <- cbind(new_transect_qc, predX = outPut$X, predY = outPut$Y, Dist = outPut$dist)
 
 #Use this output for ArcGIS to determine length
-write.csv(transect_pred, file = "Output/2022_NSEO_smooth_predict_GISreview.csv") #This file will be used in ArcGIS
+#******This file will be used in ArcGIS*****#
+
+write.csv(transect_pred, file = paste0("YE_density_estimation/Output/",YEAR,"_",Subd,"_smooth_predict_GISreview.csv")) #This file will be used in ArcGIS
 
 #-------------------------------------------------------------------------------
 # Lets fix transect length here
@@ -380,7 +389,7 @@ for (d in D){
 
 #Tran.Length2<-Tran.Length
 
-write.csv(Tran.Length, file = "Output/CSEO_2022_smooth_predict_lengths_Rfix.csv") 
+write.csv(Tran.Length, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_predict_lengths_Rfix.csv")) 
 
 ### If using R measured transect lengths, turn Tran.Length into transects to proceed...
 transects<-Tran.Length
@@ -417,7 +426,7 @@ transects<-Tran.Length
 ######################################################################################
 ##GIS TRANSECT LENGTHS:
 r_transects<-Tran.Length
-transects <- read.csv("Data/CSEO_2022/CSEO_2022_Smooth_Predict_Lengths_gis.csv")		#This was created in ArcGIS
+transects <- read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Smooth_Predict_Lengths_gis.csv"))		#This was created in ArcGIS
 #R CALC TRANSECT LENGTHS
 #transects<-read.csv("Output/2022_CSEO_smooth_predict_lengths_Rfix.csv") 
 str(transects)
@@ -450,7 +459,7 @@ with(transect_summary, table(Dive,transect_length_m))
 
 #Import ROV specimen data and filter for YE only
 
-species <- read_csv("Data/CSEO_2022/SPECIES_CSEO_2022.csv")%>%filter(Species == 145)			#("Data/SSEO_2020_species.csv") %>% filter(Species == 145)
+species <- read_csv(paste0("YE_density_estimation/Data/", Subd, "_", YEAR, "/SPECIES_", Subd, "_", YEAR, "_summary.csv"))%>%filter(Species == 145)			#("Data/SSEO_2020_species.csv") %>% filter(Species == 145)
 view(species)
 str(species)
 
@@ -512,8 +521,10 @@ for (t in T){
 str(transect_summary)
 str(ye_adult_NoAttracted)
 
-survey <- full_join(transect_summary, ye_adult_NoAttracted, by = "Dive") %>% 	
-  mutate(mgt_area = "CSEO", Area = 1661, distance = abs(`Mid.X..mm.` * 0.001))
+survey <- full_join(transect_summary, 
+                    ye_adult_NoAttracted %>% filter(Dive != 35), 
+                    by = "Dive") %>% 	
+  mutate(mgt_area = Subd, Area = surveyed_area, distance = abs(`Mid.X..mm.` * 0.001))
 
 ## Find fish length column (varies year-to-year, and rename it ...
 colnames(survey)[9]<-"Fish.L.mm"
@@ -529,7 +540,7 @@ head(survey)
 
 distance <- survey %>% select(Year, mgt_area, Area, Dive, transect_length_m,
 						    Fish.L.mm,Depth,Stage, distance,avg.depth) %>%
-  mutate(YEAR = replace_na(Year, 2022)) %>% 
+  mutate(YEAR = replace_na(Year, YEAR)) %>% 
   group_by(Dive) %>% 
   mutate(Depth =replace_na(Depth,mean(avg.depth)))
   
@@ -544,7 +555,7 @@ unique(distance$Sample.Label)
 
 view(distance)
 
-write.csv(distance, file = "Data/CSEO_2022/CSEO_22_distance_data_GIStran_for_analysis.csv")
+write.csv(distance, file = paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 ################################################################################
 ##2020 SSEO DENSITY ANALYSIS####################################################
 ################################################################################

@@ -5,20 +5,23 @@
 ## the candidate models are fit to the data and the top ranked model from each iteration is used
 ## to produce density estimates and other outputs from the distance model
 #########################################################################
-library(tictoc)
+{library(tictoc)
 library(Distance)
 library(boot)
-library(tidyverse)
+library(tidyverse)}
 
-##Set working directory
-#setwd("D:/Groundfish Biometrics/Yelloweye/YE Code")
+YEAR<-2022
+Subd<-"NSEO"
+#surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
+surveyed_area<-442
 
 ## Load the processed ROV data produced in the "DSR_ROV_SEAK_ROV_Processing.R"
-DAT<-read.csv("Data/CSEO_2022/CSEO_22_distance_data_rtran_for_analysis.csv")
+#DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_rtran_for_analysis.csv"))
+DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 head(DAT)
 ### get model list created in "DSR_ROV_SEAK_base_distance_modelling.R"
-G<-read.csv("Data/CSEO_2022/CSEO_22_Bootstrap_Model_List_all.csv")
-G<-read.csv("Data/CSEO_2022/CSEO_22_Bootstrap_Model_List_Trunc.csv")
+G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_all.csv"))
+G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_Trunc.csv"))
 
 ## Pick the models with deltaAIC less than four.  These are the candidate models to average
 ## in the bootstrap
@@ -30,7 +33,7 @@ CU<-convert_units(distance_units="Meter", effort_units="Meter",
 	area_units="Square kilometer")
 
 ## Are models truncated?
-TRUNC<-"N"		##"Y"
+TRUNC<-"Y"		##"Y"
 
 #################################################################
 ## Run the bootstrap...
@@ -182,7 +185,7 @@ toc()	#divide by 3600 to get hours...
 ## rename output for saving and analysis...
 Model.Boot$Unique.Mods<-paste(Model.Boot$Key_function, Model.Boot$Formula)
 MB<-Model.Boot
-write.csv(MB, file = "Output/CSEO_22_noTrunc_Model_Avg_boot_1000.csv")
+write.csv(MB, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"Trunc_Model_Avg_boot_1000.csv"))
 
 ######################################################################################
 ## Examine bootstrap
