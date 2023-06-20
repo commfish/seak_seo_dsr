@@ -1,0 +1,2 @@
+"","Full.Model.Code","Key_function","Formula","CvM_pvalue","P_a.hat","se.P_a.hat","Delta.AIC","Model","CoveredArea","Adjustment","Det.Prob","Nhat","Nhat.se","Nhat.cv","Nhat.lcl","Nhat.ucl","Dhat","Dhat.se","Dhat.cv","Dhat.lcl","Dhat.ucl","Unique.Mods"
+"1","\texttt{out.list.2[[1]]}","Uniform with simple polynomial adjustment term of order 2",NA,0.48622784565667,0.812400104347373,0.0329340869866846,0,"out.list.2[[1]]",0.213716423854937,
