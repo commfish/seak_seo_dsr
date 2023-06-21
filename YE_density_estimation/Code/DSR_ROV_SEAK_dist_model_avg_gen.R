@@ -205,8 +205,10 @@ getmode <- function(v) {
 min(MB$CvM_pvalue)
 
 #could cull some of worse fits? 
-MB<-MB[MB$CvM_pvalue > 0.1,]
 nrow(MB)
+nrow(MB[MB$CvM_pvalue > 0.1,])
+MB<-MB[MB$CvM_pvalue > 0.1,]
+
 
 ## Model frequency (weight)
 TAB<-table(MB$Unique.Mods)
@@ -274,8 +276,11 @@ mean(MB$Nhat.ucl)
 ##Bootstrap D
 hist(MB$Dhat)
 mean(MB$Dhat)
+median(MB$Dhat)
 getmode(MB$Dhat)
 sd(MB$Dhat)
+sd(MB$Dhat)/median(MB$Dhat)
+
 quantile(MB$Dhat, c(0.05,0.95))
 
 
@@ -290,3 +295,59 @@ TABDF$Rel.Freq<-TABDF$Freq/sum(TABDF$Freq)
 ################################
 #UPDATE DENSITY DATA SHEET FOR ASSESSMENT
 # YE_Density_SEO_subdistricts.csv
+
+dens<-read_csv(paste0("Data_processing/Data/YE_Density_SEOsubdistricts.csv"))
+str(dens)
+max(dens$Year)
+dens %>% filter(Year == YEAR)
+
+dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
+dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
+dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
+
+#check... do we need to insert another year?
+ny<-data.frame(matrix(ncol=ncol(dens))); i<-1
+subs<-unique(dens$Subdistrict)
+colnames(ny)<-colnames(dens)
+for (s in subs) { #s <-subs[1]
+  ny[i,"Subdistrict"] <- s
+  ny[i,"Year"] <- YEAR+1
+  ny[i,"Density"] <- NA
+  ny[i,"CV"] <- 1
+  ny[i,"Area_km2"] <- unique(dens$Area_km2[dens$Subdistrict == s])
+  ny[i,"YE_abund"] <- NA
+  i<-i+1
+}
+
+dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
+dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
+dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
+
+dens<-rbind(dens,ny)
+
+write.csv(dens,file = paste0("Data_processing/Data/YE_Density_SEOsubdistricts.csv"))
+
+# Save density details for table 14.7 in the SAFE report
+
+dens_sums<-read_csv(paste0("Data_processing/Data/seo_dsr_density_summary_stats.csv"))
+str(dens_sums)
+
+newdat<-data.frame(matrix(ncol=ncol(dens_sums))); i<-1
+colnames(newdat)<-colnames(dens_sums)
+newdat$Area <- Subd
+newdat$Year <- YEAR
+newdat$`Number transects` <- length(unique(DAT$Sample.Label))
+newdat$`Number YE`<- nrow(DAT[!is.na(DAT$Stage),])
+newdat$`Meters surveyed`<-round(sum(unique(DAT$Effort)),0)
+newdat$`Encounter rate (YE/m)`<- round(nrow(DAT[!is.na(DAT$Stage),])/sum(unique(DAT$Effort)),3)
+newdat$Density_YE_km2 <- round(median(MB$Dhat),0)
+newdat$`Lower CI`<- round(quantile(MB$Dhat, c(0.05)),0)
+newdat$`Upper CI`<- round(quantile(MB$Dhat, c(0.95)),0)
+newdat$CV <- sd(MB$Dhat)/median(MB$Dhat)
+
+dens_sums <- rbind(dens_sums,newdat)
+
+dens_sums <- dens_sums[order(dens_sums$Area,dens_sums$Year),]
+view(dens_sums)
+
+write.csv(dens_sums,file = paste0("Data_processing/Data/seo_dsr_density_summary_stats.csv"))

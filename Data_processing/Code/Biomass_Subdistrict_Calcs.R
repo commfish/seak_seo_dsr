@@ -5,16 +5,16 @@
 ## Phil Joy
 #############################################################################################
 
-library(dplyr)
+{library(dplyr)
 library(boot)
 library(ggplot2)
 #library(plotly)
 library(scales)
 
 library(tidyverse)
-library(kableExtra)
+library(kableExtra)}
 
-source("Code/Port_bio_function.R")
+source("r_helper/Port_bio_function.R")
 
 meanfun <- function(x, d) {
   return(mean(x[d]))
@@ -24,10 +24,10 @@ meanfun <- function(x, d) {
 # 2) Get port sampling data for weights
 # 3) recalculate biomass
 
-YEAR<-2022
+YEAR<-2023
 #===========================================================================================
 # 1) Get subdistrict density data
-Dens<-read.csv("Data/YE_Density_SEOsubdistricts.csv")
+Dens<-read.csv("Data_processing/Data/YE_Density_SEOsubdistricts.csv")
 str(Dens)
 Dens$Density<-as.numeric(Dens$Density); Dens$YE_abund<-as.integer(Dens$YE_abund)
 
@@ -36,6 +36,8 @@ Dens$var.Dens<-(Dens$Density*Dens$CV)^2
 
 Dens$var.Abund<-Dens$var.Dens*Dens$Area_km2^2
 head(Dens)
+
+dev.off()
 
 ggplot(Dens, aes(x=Year)) +
   geom_point(aes(y=Density),size=2) +
