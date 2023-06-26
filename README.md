@@ -20,19 +20,21 @@ This repository will contain the following sub directories that contain differen
 2. **Update catch and portside sampleing data**: blah blah
 
 3. **Estimate yelloweye density for new ROV surveys** If new areas have been sampled since the last assessment, estimate density and then biomass.
+   
+   a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw **ROV** data, prepping it for GIS work, and then complete the processing.
+   
+   b. [`YE_density_estimation/Code/ROV_base_distance_modelling.R`]: Examine covariates in the data and run the basic distance models.
 
-  a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw ROV data, prepping it for GIS work, and then complete the processing
-  
-  b. [`YE_density_estimation/Code/ROV_base_distance_modelling.R`]: Examine covariates in the data and run the basic distance models
-  
-  c. [`YE_density_estimation/Code/ROV_dist_model_avg.R`]: Code for averaging multiple distance models for estimate of yelloweye density.
-  
-  d. [`Data_processing/Code/Biomass_Subdistrict_Calcs.R`]: Code for converting yelloweye density to biomass estimates using the latest available weight data from portside samples. 
+   c. [`YE_density_estimation/Code/ROV_dist_model_avg.R`]: Code for averaging multiple distance models for estimate of yelloweye density.
+
+   d. [`Data_processing/Code/Biomass_Subdistrict_Calcs.R`]: Code for converting yelloweye density to biomass estimates using the latest available weight data from portside samples.
 
 4. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
 
-  a. https://www.iphc.int/data/fiss-data-query : This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and Non-Pacific halibut data.  Make sure you label this file with the year when saved to the proper folder.
-  b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : This page will allow you to download the WPUE data for halibut and save it to the same folder. Follow the same instructions (except you don't have to select species) to download and save in the same location. 
-  c. [`IPHC_Survey_CPUE_index`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  
-  
+   a. https://www.iphc.int/data/fiss-data-query : This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and Non-Pacific halibut data.  Make sure you label this file with the year when saved to the proper folder.
+
+   b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : This page will allow you to download the WPUE data for halibut and save it to the same folder. Follow the same instructions (except you don't have to select species) to download and save in the same location.
+
+   c. [`IPHC_Survey_CPUE_index`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.
+   
 5.   
