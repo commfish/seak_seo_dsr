@@ -21,9 +21,12 @@ This repository will contain the following sub directories that contain differen
 
 3. **Estimate yelloweye density for new ROV surveys** If new areas have been sampled since the last assessment, estimate density and then biomass.
 
-  a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw ROV data, prepping it for GIS work, and then complete the processig
+  a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw ROV data, prepping it for GIS work, and then complete the processing
+  
   b. [`YE_density_estimation/Code/ROV_base_distance_modelling.R`]: Examine covariates in the data and run the basic distance models
+  
   c. [`YE_density_estimation/Code/ROV_dist_model_avg.R`]: Code for averaging multiple distance models for estimate of yelloweye density.
+  
   d. [`Data_processing/Code/Biomass_Subdistrict_Calcs.R`]: Code for converting yelloweye density to biomass estimates using the latest available weight data from portside samples. 
 
 4. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
