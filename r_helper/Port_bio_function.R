@@ -15,7 +15,7 @@ Port$Year<-as.integer(Port[,1])
 #EYAK = EYKT
 Port$Groundfish.Management.Area.Code[Port$Groundfish.Management.Area.Code == "EYAK"]<-"EYKT"
 
-statareas<-read.csv("Data/g_stat_area.csv")
+statareas<-read.csv("Data_processing/Data/g_stat_area.csv")
 #str(statareas)
 #unique(statareas$G_MANAGEMENT_AREA_CODE)
 

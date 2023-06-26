@@ -11,23 +11,23 @@ library("ggplot2")
 library("ggpubr")
 library("kableExtra")
 
-getwd()
-setwd("../YE_Production_SEO")
+#getwd()
+#setwd("../YE_Production_SEO")
 
 YEAR<-2022
 
-bio<-read.csv("Data/SEO_YE_Biomass_subdistrict_080122_for_Jane.csv")
-bio_new<-read.csv("Data/SEO_YE_Biomass_subdistrict_100722.csv")
+#bio<-read.csv("Data/SEO_YE_Biomass_subdistrict_080122_for_Jane.csv")
+bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2023-06-21.csv")
 str(bio_new)
 str(bio)
 
 bio<-bio_new %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
                     cv = Biomass.cv)
-ind<-read.csv("Data/IPHC.cpue.SEO_min40percentYE_11.22.22.csv")
+ind<-read.csv("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_11.22.22.csv")
 ind<-ind %>% select(strata = mngmt.area, year = Year, cpue = CPUE.mean, cv = CPUE.cv)
 
-allmods<-read.csv("Data/SEO_YE_Biomass_all_models.csv")# %>% 
-sq<-read.csv("Data/SEO_YE_Biomass_subd_100722.csv")
+#allmods<-read.csv("Data/SEO_YE_Biomass_all_models.csv")# %>% 
+#sq<-read.csv("Data/SEO_YE_Biomass_subd_100722.csv")
 #  filter(Model_name == 21.1)
 
 str(bio)

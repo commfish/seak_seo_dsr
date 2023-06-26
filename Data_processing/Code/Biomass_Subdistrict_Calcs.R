@@ -24,7 +24,7 @@ meanfun <- function(x, d) {
 # 2) Get port sampling data for weights
 # 3) recalculate biomass
 
-YEAR<-2023
+YEAR<-2022
 #===========================================================================================
 # 1) Get subdistrict density data
 Dens<-read.csv("Data_processing/Data/YE_Density_SEOsubdistricts.csv")
@@ -54,6 +54,8 @@ ggplot(Dens, aes(x=Year)) +
 ggsave(paste0("Figures/YE_Density_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
 #===========================================================================================
 # 2) Get port sampling data for weights
+#last update of port sampling data was: 10-7-22 <-update this whenever you run this!!
+
 {Port<-port.bio(2022)
 
 unique(Port$Sample.Type)
@@ -202,7 +204,8 @@ table<-Wt.smpl %>% #group_by(Year) %>%
   #kable_paper("hover",full_width=F)
   kable_classic(full_width=F, html_font = "Times", position="center")
   #kable_classic_2(full_width=F, position = "left")
-save_kable(table,"Figures/Weight_Table.pdf")
+webshot::install_phantomjs()
+save_kable(table,"Figures/Weight_Table_SAFE14p1.pdf")
 
 Port.rand %>% group_by(GFMU,Year) %>% 
   filter(!is.na(GFMU),
@@ -213,8 +216,8 @@ Port.rand %>% group_by(GFMU,Year) %>%
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
   complete(Year = 1984:YEAR) -> Wt.smpl.rand
 
-write.csv(Wt.smpl,"Data/SEO_YE_mean_wts_all.csv")
-write.csv(Wt.smpl.rand,"Data/SEO_YE_mean_wts_randomonly.csv")
+write.csv(Wt.smpl,"Data_processing/Data/SEO_YE_mean_wts_all.csv")
+write.csv(Wt.smpl.rand,"Data_processing/Data/SEO_YE_mean_wts_randomonly.csv")
 
 ggplot(data = Dens %>% filter(Year > 2007), 
        aes(mean.YE.kg_hal,mean.YE.kg_dir)) + geom_point() +
@@ -318,7 +321,7 @@ Biomass.sq$Biomass_mt<-Biomass.sq$Biomass/1000
 Biomass.sq$Biomass_mt_lo90<-Biomass.sq$Biomass_mt-Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 Biomass.sq$Biomass_mt_hi90<-Biomass.sq$Biomass_mt+Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 
-write.csv(Biomass.sq,"Data/SEO_YE_Biomass_100722.csv")
+#write.csv(Biomass.sq,"Data/SEO_YE_Biomass_100722.csv")
 
 #plot it for SAFE report
 head(Biomass.sq)
@@ -335,7 +338,7 @@ Biomass.sq %>% mutate(Bio.CSEO.mt = Biomass.CS/1000,
                       Bio.NSEO.lo90 = Bio.NSEO.mt-1.68*Bio.NSEO.cv*Bio.NSEO.mt,
                       Bio.SSEO.lo90 = Bio.SSEO.mt-1.68*Bio.SSEO.cv*Bio.SSEO.mt,) -> Biomass.sq
 
-write.csv(Biomass.sq,"Data/SEO_YE_Biomass_subd_100722.csv")
+#write.csv(Biomass.sq,"Data/SEO_YE_Biomass_subd_100722.csv")
 #===================================================================================
 xl<-expression()
 
@@ -349,8 +352,8 @@ polygon(x=c(Biomass.sq$Year,rev(Biomass.sq$Year)),
 lines(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="l",lwd=2, pch=18)
 points(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="p",cex=1.5, pch=19)
 
-
-write.csv(Dens,"Data/SEO_YE_Biomass_subdistrict_100722.csv")
+CurrentDate<-Sys.Date()
+write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_",CurrentDate,".csv"))
   
   
 ggplot(Biomass.sq, aes(x=Year)) +

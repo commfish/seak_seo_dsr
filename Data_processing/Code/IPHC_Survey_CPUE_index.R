@@ -1,21 +1,33 @@
-library(dplyr)
+################################################################################
+## This code is used to process, cull and organize the IPHC survey data for use
+## as a secondary index of yelloweye rockfish abundance in the SEO
+YEAR<-2023
+
+{library(dplyr)
 library(boot)
 library(ggplot2)
 library(RColorBrewer)
 library(sf)
-library(geom_sf)
+library(geom_sf)}
 #wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
 #setwd(wd)
 #getwd()
 
-source("Code/Port_bio_function.R")
+source("r_helper/Port_bio_function.R")
 #IPHCfunction<-function(){
 {
-  HA.Harv<-read.csv("Data/halibut_catch_data.csv", header=T)
+  HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
   
   #GET Latest Data and prep to add into 1998-2020 data that script is set to handle
-  But2C3A_2021<-read.csv("Data/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)
-  YE2C3A_2021<-read.csv("Data/Non-Pacific halibut data YE 2C3A 2021.csv", header=T)
+  
+  But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", 
+                         header=T,fileEncoding="UTF-16LE",skipNul = TRUE,quote = "\"")
+  But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", header=T,skipNul = TRUE, fileEncoding='latin1')
+  head(But2C3A_2022)
+  YE2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data 2C3A 2022.csv")
+  
+  But2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)
+  YE2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 2C3A 2021.csv", header=T)
   
   Surv21<-But2C3A_2021 %>% full_join(YE2C3A_2021, by="Stlkey")
   head(Surv21)
@@ -23,8 +35,8 @@ source("Code/Port_bio_function.R")
   Sur3A_21<-Surv21[Surv21$IPHC.Reg.Area == "3A",]
   #******************************************************************************
   #*
-  BUT2C<-read.csv("Data/IPHC Set and Pacific halibut data 2C.csv", header=T)
-  YE2C<-read.csv("Data/Non-Pacific halibut data YE 2C.csv", header=T)
+  BUT2C<-read.csv("Data_processing/Data/IPHC Set and Pacific halibut data 2C.csv", header=T)
+  YE2C<-read.csv("Data_processing/Data/Non-Pacific halibut data YE 2C.csv", header=T)
   
   Sur2C<- BUT2C %>% full_join(YE2C, by="Stlkey")  
   Sur2C <- Sur2C %>% rbind(Sur2C,Sur2C_21)
@@ -41,8 +53,8 @@ source("Code/Port_bio_function.R")
                                                               ifelse(MidLat.fished<56,"SSEO",NA)))),NA))))
   
   ## Lets bring in 3A and pull out surveys in the Yakutat area...
-  BUT3A<-read.csv("Data/IPHC Set and Pacific halibut data 3A.csv", header=T)
-  YE3A<-read.csv("Data/Non-Pacific halibut data YE 3A.csv", header=T)
+  BUT3A<-read.csv("Data_processing/Data/IPHC Set and Pacific halibut data 3A.csv", header=T)
+  YE3A<-read.csv("Data_processing/Data/Non-Pacific halibut data YE 3A.csv", header=T)
   
   Sur3A<- BUT3A %>% full_join(YE3A, by="Stlkey")
   Sur3A <- Sur3A %>% rbind(Sur3A,Sur3A_21)
