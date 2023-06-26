@@ -31,9 +31,9 @@ This repository will contain the following sub directories that contain differen
 
 4. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
 
-   a. https://www.iphc.int/data/fiss-data-query : This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and Non-Pacific halibut data.  Make sure you label this file with the year when saved to the proper folder.
+   a. https://www.iphc.int/data/fiss-data-query : This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.
 
-   b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : This page will allow you to download the WPUE data for halibut and save it to the same folder. Follow the same instructions (except you don't have to select species) to download and save in the same location.
+   b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
 
    c. [`IPHC_Survey_CPUE_index`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.
    
