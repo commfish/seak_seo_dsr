@@ -8,7 +8,7 @@ library(boot)
 library(ggplot2)
 library(RColorBrewer)
 library(sf)
-library(geom_sf)}
+}
 #wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
 #setwd(wd)
 #getwd()
@@ -24,6 +24,7 @@ source("r_helper/Port_bio_function.R")
                          header=T,fileEncoding="UTF-16LE",skipNul = TRUE,quote = "\"")
   But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", header=T,skipNul = TRUE, fileEncoding='latin1')
   head(But2C3A_2022)
+  
   YE2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data 2C3A 2022.csv")
   
   But2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)

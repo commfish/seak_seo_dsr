@@ -19,6 +19,12 @@ This repository will contain the following sub directories that contain differen
 
 2. **Update catch and portside sampleing data**: blah blah
 
+   a. *Portside sampling for biological data* is available here:
+   
+   b. *Yelloweye harvest data* is available here
+   
+   c. *Halibut harvest data* is available here.  This is necessary for estimating yelloweye bycatch. 
+
 3. **Estimate yelloweye density for new ROV surveys** If new areas have been sampled since the last assessment, estimate density and then biomass.
    
    a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw **ROV** data, prepping it for GIS work, and then complete the processing.
@@ -35,6 +41,6 @@ This repository will contain the following sub directories that contain differen
 
    b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
 
-   c. [`IPHC_Survey_CPUE_index`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.
+   c. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.
    
 5.   
