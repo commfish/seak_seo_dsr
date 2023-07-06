@@ -17,15 +17,15 @@ This repository will contain the following sub directories that contain differen
 
 1. [`r_helper/`] Folder with pre-canned functions referenced throughout the assessment
 
-2. **Update catch and portside sampling data**: blah blah
+2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
    a. *Portside sampling for biological data* is available here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data
    
-   b. *Yelloweye harvest data* is available here: 
-   
-         i.  *Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
-      
-         ii. *Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
+   b. *Yelloweye harvest data* is available here:
+
+      ---*Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
+
+      ---*Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
    
    c. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
 
@@ -47,4 +47,4 @@ This repository will contain the following sub directories that contain differen
 
    c. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
    
-5.    
+5.  **Calculate expected yelloweye bycatch in the halibut fishery** [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`]: Estimate the expected bycatch from the halibut fishery using the IPHC survey data and historical halibut harvests.  CAS estimates can be retrieved from INSERT HERE  
