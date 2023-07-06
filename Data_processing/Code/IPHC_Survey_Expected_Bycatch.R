@@ -14,79 +14,10 @@ library(RColorBrewer)
 library(matrixStats)
 
 source("Code/Port_bio_function.R")
-#wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
-#setwd(wd)
-#getwd()
 
-#IPHCfunction<-function(){
-{
-  HA.Harv<-read.csv("Data/halibut_catch_data.csv", header=T)
-  
-  #GET Latest Data and prep to add into 1998-2020 data that script is set to handle
-  But2C3A_2021<-read.csv("Data/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)
-  YE2C3A_2021<-read.csv("Data/Non-Pacific halibut data YE 2C3A 2021.csv", header=T)
-  
-  Surv21<-But2C3A_2021 %>% full_join(YE2C3A_2021, by="Stlkey")
-  head(Surv21)
-  Sur2C_21<-Surv21[Surv21$IPHC.Reg.Area == "2C",]
-  Sur3A_21<-Surv21[Surv21$IPHC.Reg.Area == "3A",]
-  #******************************************************************************
-  #*
-  BUT2C<-read.csv("Data/IPHC Set and Pacific halibut data 2C.csv", header=T)
-  YE2C<-read.csv("Data/Non-Pacific halibut data YE 2C.csv", header=T)
-  
-  Sur2C<- BUT2C %>% full_join(YE2C, by="Stlkey")  
-  Sur2C <- Sur2C %>% rbind(Sur2C,Sur2C_21)
-  
-  Sur2C[Sur2C$Stlkey == 20200208,]
-  
-  Sur2C<- Sur2C %>%
-    mutate(SEdist = ifelse(IPHC.Stat.Area %in% c(182:184,171,173,174,161:163),"NSEI", 
-                           ifelse(IPHC.Stat.Area %in% c(142:144,152,153),"SSEI",
-                                  ifelse(IPHC.Stat.Area %in% c(140,141,151,150,160,170,181),
-                                         ifelse(-MidLon.fished>137,"EYKT",
-                                                ifelse(MidLat.fished>=57.5,"NSEO",
-                                                       ifelse(MidLat.fished<57.5 & MidLat.fished>=56,"CSEO",
-                                                              ifelse(MidLat.fished<56,"SSEO",NA)))),NA))))
-  
-  ## Lets bring in 3A and pull out surveys in the Yakutat area...
-  BUT3A<-read.csv("Data/IPHC Set and Pacific halibut data 3A.csv", header=T)
-  YE3A<-read.csv("Data/Non-Pacific halibut data YE 3A.csv", header=T)
-  
-  Sur3A<- BUT3A %>% full_join(YE3A, by="Stlkey")
-  Sur3A <- Sur3A %>% rbind(Sur3A,Sur3A_21)
-  
-  Sur3A<-Sur3A %>%
-    mutate(SEdist = ifelse(-MidLon.fished <= 137 & MidLat.fished >= 57.5,"NSEO",
-                           ifelse(-MidLon.fished > 137 & -MidLon.fished <139 & MidLat.fished > 54.5,  #Lon should be less than 138 but included here to increase sample size of the index... 
-                                  "EYKT","whocares")))
-  nrow(Sur3A)
-  Sur3A<-Sur3A[Sur3A$SEdist != "whocares",]
-  
-  ## connect the two data sets
-  Survey<-rbind(Sur3A,Sur2C)
-  #make one more column to define inside versus outside for dealing with older data sets...
-  Survey<-Survey %>% 
-    mutate(In.Out = ifelse(SEdist %in% c("NSEO","CSEO","SSEO","EYKT"),"SEO",
-                           ifelse(SEdist %in% c("NSEI","SSEI"),"SEI",NA))) %>%
-    rename(YE.obs = Number.Observed,
-           AvgDepth.fm = AvgDepth..fm.,
-           Year = Year.x)%>%
-    mutate(depth_bin = cut(AvgDepth.fm, breaks = seq(0,400,50),
-                           labels = paste (seq(50,400,50))),
-           YE.obs = ifelse(is.na(YE.obs),0,YE.obs),
-           HooksObserved  = ifelse(is.na(HooksObserved ),140,HooksObserved ))
-  
-  Survey$HooksRetrieved<-as.numeric(Survey$HooksRetrieved)
-  Survey$YE.exp<-Survey$HooksRetrieved/Survey$HooksObserved
-  
-  Survey<-Survey[order(Survey$Year),]
-  
-  Depths<-unique(Survey$depth_bin)
-  
-  Survey$O32.Pacific.halibut.weight<-as.numeric(Survey$O32.Pacific.halibut.weight)
-  Survey$U32.Pacific.halibut.weight<-as.numeric(Survey$U32.Pacific.halibut.weight)
-}
+#get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
+Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+
 str(Survey); head(Survey,10)
 str(HA.Harv)
 #================================================================================

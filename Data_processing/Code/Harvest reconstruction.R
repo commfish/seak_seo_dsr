@@ -11,21 +11,21 @@ library(scales)
 
 YEAR<-2022
 
-YE.Harv<-read.csv("Data/Harvests/yelloweye_catch_data.csv", header=T)
-HA.Harv<-read.csv("Data/halibut_catch_data_new071422.csv", header=T)
-YE.Subs<-read.csv("Data/Harvests/subsistence.csv", header=T)
-YE.Sport<-read.csv("Data/Harvests/sport.csv", header=T)
+YE.Harv<-read.csv("Data_processing/Data/Harvests/yelloweye_catch_data.csv", header=T)
+HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data_new071422.csv", header=T)
+YE.Subs<-read.csv("Data_processing/Data/Harvests/subsistence.csv", header=T)
+YE.Sport<-read.csv(Data_processing/"Data/Harvests/sport.csv", header=T)
 
 ## Recent data updated
-YE.Harv.update1<-read.csv("Data/Yelloweye harvest SEO in groundfish fish ticket data 2015-current.csv")
-YE.Harv.update2<-read.csv("Data/Yelloweye harvest SEO in salmon fish ticket data 2015-current.csv")
+YE.Harv.update1<-read.csv("Data_processing/Data/Harvests/Yelloweye harvest SEO in groundfish fish ticket data 2015-current.csv")
+YE.Harv.update2<-read.csv("Data_processing/Data/Harvests/Yelloweye harvest SEO in salmon fish ticket data 2015-current.csv")
 
 #Halibut fish ticket data:
-HA.Harv.update<-read.csv("Data/Halibut harvest from fish ticket data_071522.csv")
+HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv")
 #Halibut by IPHC area from web source data
-HA.IPHCweb<-read.csv("Data/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
+HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
 #Halibut harvest from IPHC data request 1982 - present
-HA.IPHCreq<-read.csv("Data/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
+HA.IPHCreq<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
 
 str(HA.Harv.IPHC)
 #********************************************************************************
