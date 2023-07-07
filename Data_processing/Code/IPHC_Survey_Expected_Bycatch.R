@@ -106,7 +106,7 @@ Survey$mean.YE.kg
 #=============================================================================
 # Load halibut harvests by subdistrict to calculate expected bycatch values;
 #Deal with Rhea's subdistrict data (halibut_catch_data.csv) and Randy's halibut harvest
-# reconstruction (halibut_SEO_catch_RPderivation.scv)
+# reconstruction (halibut_SEO_catch_RPderivation.csv)
 SubHal<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
 SubHal2<-read.csv("Data/SE_Halibut_removals_1975-2022.csv", header=T)
 

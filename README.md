@@ -48,3 +48,5 @@ This repository will contain the following sub directories that contain differen
    c. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
    
 5.  **Calculate expected yelloweye bycatch in the halibut fishery** [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`]: Estimate the expected bycatch from the halibut fishery using the IPHC survey data and historical halibut harvests.  CAS estimates can be retrieved from INSERT HERE  
+
+6. **REMA model** Run the random effects model using the biomass estimates and IPHC cpue estimates.  This is the model used in the 2022 SAFE report.

@@ -11,7 +11,7 @@ RPHal<-read.csv("Data/halibut_SEO_catch_RPderivation.csv", header=T)
 # Look at Rhea's new data
 str(RheaHal2)
 
-#notes: look at Rhea and Randy' data to check for discrepencies... contact Rhea if
+#notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
 # there is something.  
 #Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
 #function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
@@ -28,7 +28,7 @@ for (y in 1:(length(ys)-1)){
   }
 }
 str(fishtix)
-fishtix$Year<-fishtix$ï..Year.Landed
+fishtix$Year<-fishtix$?..Year.Landed
 min(fishtix$Year);max(fishtix$Year)
 unique(fishtix$ADFG.Management.Area.Code)
 unique(fishtix$Groundfish.Mgt.Area.District)
