@@ -13,18 +13,20 @@ library(ggplot2)
 library(RColorBrewer)
 library(matrixStats)
 
-source("Code/Port_bio_function.R")
+source("r_helper/Port_bio_function.R")
 
 #get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
+YEAR <- 2023
+
 Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
 
 str(Survey); head(Survey,10)
 str(HA.Harv)
 #================================================================================
 # Look at some depth stuff... 
-hist(Survey$BeginDepth..fm.)
-hist(Survey$EndDepth..fm.)
-hist(Survey$AvgDepth.fm)
+hist(Survey$BeginDepth..fm., breaks=10)
+hist(Survey$EndDepth..fm., breaks=10)
+hist(Survey$AvgDepth.fm, breaks=10)
 
 plot(Survey$YE.obs ~ Survey$AvgDepth.fm)
 plot(Survey$O32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
@@ -44,8 +46,10 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
   Survey$var.YE.kg<-NA
   Survey$N.YE.kg<-NA
   
+  ## Get best data for average weights and add columns to survey data.  Because many 
+  ## years have inadequate sample sizes we will use the most recent year's prior 
+  ## to a given year for the average.  This code does that... 
   
-  ## Get best data for average weights and add columns to survey data
   Years<-sort(unique(Survey$Year))
   GFMA<-unique(Survey$SEdist)
   
@@ -60,12 +64,12 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
         #reach back from year i and see if you can get 150 weights...
         Nw<-nrow(P[P$Year == i,])
         k<-0
-        while (Nw < 75 & i-k >= min(Port.rand$Year) ){         #go back as far as needed to get 150 weights... 
+        while (Nw < 75 & i-k >= min(Port.rand$Year) ){#go back as far as needed to get 150 weights... 
           k<-k+1
           Nw<-nrow(P[P$Year >=i-k & P$Year <= i,])   #P[P$Year == 1990:2002,]
         }
         m<-0
-        while (Nw < 75 & i+m <= max(Port.rand$Year)) {     #go forward if you failed to find enough weights... 
+        while (Nw < 75 & i+m <= max(Port.rand$Year)) {  #go forward if you failed to find enough weights in the first couple of years 
           m<-m+1                                                        
           Nw<-nrow(P[P$Year >=i-k & P$Year <= i+m,])   #P[P$Year == 1986,]
         }
@@ -107,29 +111,30 @@ Survey$mean.YE.kg
 # Load halibut harvests by subdistrict to calculate expected bycatch values;
 #Deal with Rhea's subdistrict data (halibut_catch_data.csv) and Randy's halibut harvest
 # reconstruction (halibut_SEO_catch_RPderivation.csv)
-SubHal<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
-SubHal2<-read.csv("Data/SE_Halibut_removals_1975-2022.csv", header=T)
+
+SubHal<-read.csv("Data_processing/Data/Harvests/halibut_catch_data.csv", header=T)
+SubHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T)
 
 str(SubHal)
 str(SubHal2)
 
-SEOHal<-read.csv("Data/SEO_Halibut_removals_1888-2021.csv", header=T)
+SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 
-#notes: look at Rhea and Randy' data to check for discrepencies... contact Rhea if
+#notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
 # there is something.  
 #Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
 #function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
 
 Halibut<-function(){
  # HA.Harv<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
-  HA.Harv<-read.csv("Data/SE_Halibut_removals_1975-2022.csv", header=T)
+  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T)
   LL<-HA.Harv #[HA.Harv$gear.description == "Longline",]
   head(LL)
   colnames(LL)
   
   LL<-HA.Harv
   #LL<-rename(LL, SEdist = groundfish.mgt.area.district)
-  LL<-rename(LL, SEdist = Mgt.Area)
+  LL<-dplyr::rename(LL, SEdist = Mgt.Area)
   #LL<-rename(LL, Year = year.landed)
   Hali<-LL; head(LL)
   
@@ -158,6 +163,7 @@ IPHC.wcpue<-data.frame()
 Subs<-unique(Survey$SEdist)
 Years<-unique(Survey$Year)
 nboot<-1000
+Depths<-sort(unique(Survey$depth_bin))
 
 j<-1
 for (y in Years) {  #y<-Years[1]
@@ -218,10 +224,16 @@ for (y in Years) {  #y<-Years[1]
           IPHC.wcpue[j,"Year"]<-y
           IPHC.wcpue[j,"depth_strat"]<-d
           IPHC.wcpue[j,"length.cat"]<-32
-          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.32)
-          IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.32,c(0.5)))  #mean WCPUE from Tribuzio
-          IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.32,c(0.025)))
-          IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.32,c(0.975)))
+          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.32, na.rm=T)
+          if (is.na(mean(WCPUEi.32, na.rm=T))) {
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-NaN  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-NaN
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-NaN
+          } else {
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.32,c(0.5)))  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.32,c(0.025)))
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.32,c(0.975)))
+          }
           IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.32)
           IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.32)/mean(WCPUEi.32)
           j<-j+1
@@ -229,10 +241,17 @@ for (y in Years) {  #y<-Years[1]
           IPHC.wcpue[j,"Year"]<-y
           IPHC.wcpue[j,"depth_strat"]<-d
           IPHC.wcpue[j,"length.cat"]<-"all"
-          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.all)
-          IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.all,c(0.5)))  #mean WCPUE from Tribuzio
-          IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.all,c(0.025)))
-          IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.all,c(0.975)))
+          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.all, na.rm=T)
+          if (is.na(mean(WCPUEi.32, na.rm=T))) {
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-NaN  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-NaN
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-NaN
+          } else {
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.all,c(0.5)))  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.all,c(0.025)))
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.all,c(0.975)))
+          }
+          
           IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.all)
           IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.all)/mean(WCPUEi.all)
           j<-j+1
@@ -346,8 +365,6 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
   Subs<-unique(Survey[,col.ref])
   Years<-unique(Survey$Year)
   
-  
-  
   j<-1
   for (y in Years) {  #y<-Years[24]
     for (s in Subs){  #s<-Subs[2]
@@ -433,36 +450,60 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
         IPHC.expBy[j,"deep.bound"]<-Deep
         IPHC.expBy[j,"shallow.bound"]<-Shallow
         IPHC.expBy[j,"no.stations"]<-length(Stations)
+        IPHC.expBy[j,"WCPUE32.mean"]<-mean(WCPUEi.32, na.rm=T)
+        if (is.na(mean(WCPUEi.32, na.rm=T))) {
+          IPHC.expBy[j,"WCPUE32.bootmean"]<-0  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"WCPUE32.lo95ci"]<-0
+          IPHC.expBy[j,"WCPUE32.hi95ci"]<-0
+        } else {
+          IPHC.expBy[j,"WCPUE32.bootmean"]<-unname(quantile(Out$WCPUE.32,c(0.5)))  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"WCPUE32.lo95ci"]<-unname(quantile(Out$WCPUE.32,c(0.025)))
+          IPHC.expBy[j,"WCPUE32.hi95ci"]<-unname(quantile(Out$WCPUE.32,c(0.975)))
+        }
         
-        IPHC.expBy[j,"WCPUE32.mean"]<-mean(WCPUEi.32)
-        IPHC.expBy[j,"WCPUE32.bootmean"]<-unname(quantile(Out$WCPUE.32,c(0.5)))  #mean WCPUE from Tribuzio
-        IPHC.expBy[j,"WCPUE32.lo95ci"]<-unname(quantile(Out$WCPUE.32,c(0.025)))
-        IPHC.expBy[j,"WCPUE32.hi95ci"]<-unname(quantile(Out$WCPUE.32,c(0.975)))
         IPHC.expBy[j,"WCPUE32.var"]<-var(Out$WCPUE.32)
         IPHC.expBy[j,"WCPUE32.cv"]<-sd(Out$WCPUE.32)/mean(Out$WCPUE.32)
         #    IPHC.expBy[j,"WCPUE32.cv"]<-sqrt(var(WCPUEi.32))/mean(WCPUEi.32)
+        IPHC.expBy[j,"WCPUEall.mean"]<-mean(WCPUEi.all, na.rm=T)
+        if (is.na(mean(WCPUEi.all, na.rm=T))) {
+          IPHC.expBy[j,"WCPUEall.bootmean"]<-0  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"WCPUEall.lo95ci"]<-0
+          IPHC.expBy[j,"WCPUEall.hi95ci"]<-0
+        } else {
+          IPHC.expBy[j,"WCPUEall.bootmean"]<-unname(quantile(Out$WCPUE.all,c(0.5)))  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"WCPUEall.lo95ci"]<-unname(quantile(Out$WCPUE.all,c(0.025)))
+          IPHC.expBy[j,"WCPUEall.hi95ci"]<-unname(quantile(Out$WCPUE.all,c(0.975)))
+        }
         
-        IPHC.expBy[j,"WCPUEall.mean"]<-mean(WCPUEi.all)
-        IPHC.expBy[j,"WCPUEall.bootmean"]<-unname(quantile(Out$WCPUE.all,c(0.5)))  #mean WCPUE from Tribuzio
-        IPHC.expBy[j,"WCPUEall.lo95ci"]<-unname(quantile(Out$WCPUE.all,c(0.025)))
-        IPHC.expBy[j,"WCPUEall.hi95ci"]<-unname(quantile(Out$WCPUE.all,c(0.975)))
         IPHC.expBy[j,"WCPUEall.var"]<-var(Out$WCPUE.all)
         IPHC.expBy[j,"WCPUEall.cv"]<-sd(Out$WCPUE.all)/mean(Out$WCPUE.all)
         
         #IPHC.expBy[j,"Halibut_rnd_pnds"]<-sum(H.catch$round_lbs_hali)
         IPHC.expBy[j,"Halibut_mt"]<-sum(H.catch$HA.mt)
-        
-        IPHC.expBy[j,"expBy32_mt.mean"]<-mean(expByi.32)
-        IPHC.expBy[j,"expBy32.bootmean"]<-unname(quantile(Out$expBy.32,c(0.5)))  #mean WCPUE from Tribuzio
-        IPHC.expBy[j,"expBy32.lo95ci"]<-unname(quantile(Out$expBy.32,c(0.025)))
-        IPHC.expBy[j,"expBy32.hi95ci"]<-unname(quantile(Out$expBy.32,c(0.975)))
+        IPHC.expBy[j,"expBy32_mt.mean"]<-mean(expByi.32, na.rm=T)
+        if (is.na(mean(expByi.32, na.rm=T))){
+          IPHC.expBy[j,"expBy32.bootmean"]<-0 #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"expBy32.lo95ci"]<-0
+          IPHC.expBy[j,"expBy32.hi95ci"]<-0
+        } else {
+          IPHC.expBy[j,"expBy32.bootmean"]<-unname(quantile(Out$expBy.32,c(0.5)))  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"expBy32.lo95ci"]<-unname(quantile(Out$expBy.32,c(0.025)))
+          IPHC.expBy[j,"expBy32.hi95ci"]<-unname(quantile(Out$expBy.32,c(0.975)))
+        }
         IPHC.expBy[j,"expBy32.var"]<-var(Out$expBy.32)
         IPHC.expBy[j,"expBy32.cv"]<-sd(Out$expBy.32)/mean(Out$expBy.32)
         
         IPHC.expBy[j,"expByall_mt.mean"]<-mean(expByi.32)
-        IPHC.expBy[j,"expByall.bootmean"]<-unname(quantile(Out$expBy.32,c(0.5)))  #mean WCPUE from Tribuzio
-        IPHC.expBy[j,"expByall.lo95ci"]<-unname(quantile(Out$expBy.32,c(0.025)))
-        IPHC.expBy[j,"expByall.hi95ci"]<-unname(quantile(Out$expBy.32,c(0.975)))
+        if (is.na(mean(expByi.32, na.rm=T))){
+          IPHC.expBy[j,"expByall.bootmean"]<-0  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"expByall.lo95ci"]<-0
+          IPHC.expBy[j,"expByall.hi95ci"]<-0
+        } else {
+          IPHC.expBy[j,"expByall.bootmean"]<-unname(quantile(Out$expBy.32,c(0.5)))  #mean WCPUE from Tribuzio
+          IPHC.expBy[j,"expByall.lo95ci"]<-unname(quantile(Out$expBy.32,c(0.025)))
+          IPHC.expBy[j,"expByall.hi95ci"]<-unname(quantile(Out$expBy.32,c(0.975)))
+        }
+        
         IPHC.expBy[j,"expByall.var"]<-var(Out$expBy.32)
         IPHC.expBy[j,"expByall.cv"]<-sd(Out$expBy.32)/mean(Out$expBy.32)
         
@@ -615,7 +656,7 @@ ggplot(data = SEO.expBy, aes(x = Year)) +
   #theme(legend.position = "none") -> byyear_plot
 
 #plot_grid(byage_plot, byyear_plot, align = c("h"), ncol = 1)
-YEAR<-2022
+
 ggsave(paste0("Figures/exp_bycatch_in_halibut_fishery_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
 colnames(SEO.expBy)
@@ -631,6 +672,7 @@ YEAR<-2022
 ggsave(paste0("Figures/wcpue_ests_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
 SEO.expBy[SEO.expBy$mngmt.area == "NSEO" & SEO.expBy$Year == 2021,]
+
 write.csv(SEO.expBy,"Data/SEO_expBy_7.31.22.csv")
 
 #=====================================================================

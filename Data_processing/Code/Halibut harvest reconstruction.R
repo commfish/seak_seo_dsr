@@ -8,15 +8,15 @@
 ## management units, there is some extrapolation that include propagation of
 ## error
 ################################################################################
-
+library(plyr)
 library(dplyr)
 library(boot)
 library(ggplot2)
 library(scales)
 
-YEAR<-2022
+YEAR<-2023
 
-#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
+{#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
 HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
 #Halibut fish ticket data:
 HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv")
@@ -58,9 +58,11 @@ Halibut.harv.1975<-rbind(HA.Harv.old %>%
   summarise(HA.lbs = sum(ha.lbs),
             HA.mt = sum(ha.mt))
 
+#SAVE this data for use in estimating historical bycatch
+
 write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1975$Year),"-",
                                    max(Halibut.harv.1975$Year),".csv"))
-
+}
 #**********************************************************************************
 #*Get SEO estimates of Halibut removals pre-1975 from RP compiled data and 
 #Step 1) get the contemporary data from IPHC request, get SEO data from there: HA.IPHCreq
@@ -69,14 +71,29 @@ write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",m
 # step 2) get 1929-1981 data, get SEO data plus plus small proportion of 3A
 # step 3) get 1888-1928 data, partition using proportions: HA.IPHCweb
 #         a) apply 2Cprop and 3Aprop
+
+# Get FISH TICKEt halibut data
+#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
+
 HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
 #Halibut fish ticket data:
 #HA.fishtix<-read.csv("Data/Halibut harvest from fish ticket data_071522.csv")
 HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv") 
 
-Halibut.harv.1975
+#Get IPHC HALOIBUT DATA: 
 
 #Halibut harvest from IPHC data request 1982 - present
+# Available from: https://www.iphc.int/data/commercial-datasets and 
+# under "Pacific Halibut Directed Commercial Landings" download
+# "IPHC Statistical Area and Year - head-off, dressed weight; 1991-" with the net weight in lbs
+# save it to the Data_processing/Data/Harvests/ folder and call it IPHC_harv_YEAR.csv
+# The spreadsheet is heavily formatted so you'll need to do some cleaning to 
+# get just the header row and the data for the most recent year.  This will then be
+# added to the sheet Randy came up with (HA.req) and then saved for next year 
+
+HA.newreq<-read.csv(paste0("Data_processing/Data/Harvests/IPHC_harv_",YEAR-1,".csv"))
+
+#get the request Randy put in... 
 HA.req<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
 #Halibut harvest from IPHC 1929-1975; IPHC Scientific report 67
 HA.29_75<-read.csv("Data_processing/Data/Harvests/IPHC_Halibut_harv_1929-1975.csv")
@@ -115,17 +132,48 @@ Halibut.harv.1975<-rbind(HA.Harv.old %>%
 
 ch98<-HA.Harv[HA.Harv$year.landed == 1998,]
 
+#SAVE this data for use in estimating historical bycatch
+
 write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1975$Year),"-",
                                    max(Halibut.harv.1975$Year),".csv"))
 
 #STEP 1------------------------------------------------------------------------
+# get the contemporary data from IPHC request, get SEO data from there: HA.IPHCreq
+#         a) 2C partitioned into SEO and SEI - measure this PROPORTION (2Cprops)
+#         b) 3A to SEO from FISHTICKET data proportion - measure and apply (3A prop)
+
+IOs<-unique(HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>%
+              select(IPHC.Statistical.Area,IPHC.Stat.Area..1929.1975,IPHC.Region.2..1929.1975))
+
+HA.newreq %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>% 
+  mutate(Net_lbs=Net.wt..lb./1000) %>%
+#         Halibut_mt = NA) %>%
+  dplyr::select(Year, 
+                IPHC.Regulatory.Area,
+                IPHC.Statistical.Area = IPHC..Statistical.Area,
+                Net_lbs) -> HA.newreq
+
+HA.newreq <- plyr::join(HA.newreq,IOs,by="IPHC.Statistical.Area")
+
+head(HA.req)
+head(HA.newreq)
+
+HA.req<-rbind(HA.req %>% select(Year, IPHC.Regulatory.Area, IPHC.Statistical.Area,
+                                Net_lbs = Pacific.halibut.Net.wt..000.lbs.,
+                                IPHC.Stat.Area..1929.1975,
+                                IPHC.Region.2..1929.1975),
+              HA.newreq) %>% mutate(Net_lbs = as.numeric(Net_lbs))
+str(HA.req)
+
 HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>%
-  group_by(IPHC.Regulatory.Area,Year,IPHC.Region.2..1929.1975) %>%
-  summarise(Halibut_lbs = sum(Pacific.halibut.Net.wt..000.lbs.)) %>%
+  group_by(IPHC.Regulatory.Area, Year, IPHC.Region.2..1929.1975) %>%
+  dplyr::summarise(Halibut_lbs = sum(Net_lbs)) %>%
   mutate(Halibut_mt = Halibut_lbs*0.00045359*1000,
          IO = IPHC.Region.2..1929.1975) %>% 
   dplyr::select(Year,IPHC.regarea=IPHC.Regulatory.Area,IO,Halibut_lbs,
                 Halibut_mt)-> HA.req_2C_3A
+
+HA.req_2C_3A %>% filter(Year == 2021 | Year == 2022)
 
 Hal.SPM<-data.frame()
 
@@ -160,7 +208,7 @@ for (y in years) {  #y<-years[1]
   i<-i+1
 }
 
-plot(data=Hal.SPM,SEO2C.req~Year, ylim=c(0,3000), type="l")
+plot(data=Hal.SPM, SEO2C.req~Year, ylim=c(0,3000), type="l")
 lines(data=Hal.SPM,SEO2C.tix~Year,type="l",col="blue")
 
 #for hindcasting proportions lets use pre-full retention
@@ -177,6 +225,8 @@ Halibut_harvest_forSPM<- Hal.SPM %>%
 Halibut_harvest_forSPM$var<-0
 
 #STEP 2------------------------------------------------------------------------
+# Data from 1929-1975
+# 
 str(HA.29_75)
 head(Hal.SPM)
 yrs29<-unique(HA.29_75$Year)
@@ -185,7 +235,7 @@ HA.29_75 %>% filter(IPHC.Region.2 == "SE-O" |
                       IPHC.Region.2 == "SE-I" |
                       IPHC.Region.2 == "Yakutat") %>%
   group_by(Year,IPHC.Region.2) %>% 
-  summarize(harv.ustons = sum(Total.Catch..US.Tons..Round.Weight.)) %>%
+  dplyr::summarize(harv.ustons = sum(Total.Catch..US.Tons..Round.Weight.)) %>%
   mutate(harv_mt = harv.ustons*0.90718474) -> prep
 
 out29<-data.frame()
@@ -279,7 +329,7 @@ str(HA.IPHCreq)
 
 HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>%
   group_by(IPHC.Regulatory.Area,Year,IPHC.Region.2..1929.1975) %>%
-  summarise(Halibut_lbs = sum(Pacific.halibut.Net.wt..000.lbs.)) %>%
+  dplyr::summarise(Halibut_lbs = sum(Net_lbs)) %>%
   mutate(Halibut_mt = Halibut_lbs*0.00045359*1000,
          IO = IPHC.Region.2..1929.1975)-> HA.IPHCreq_2C_3A
 

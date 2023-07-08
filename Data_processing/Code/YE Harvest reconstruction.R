@@ -109,9 +109,13 @@ write.csv(YE.comm.rem,paste0("Data_processing/Data/SE_YE_comm_removals",min(YE.c
 #**********************************************************************************
 # add in sport fish harvests... 
 # get the most up to date data here:
-# Sport fish estimates usually lag behing commercial data because they rely on 
-# the statewide harvest survey to make those estimates.  As such, we use historical averages
-# to fill in for recent years (hopefully just the most recent year)
+# Sport fish estimates usually lag have been a moving target as the division tries
+# to settle on a satisfactory method to estimate catch and release mortality
+# The current sport fish contact for this assessment is Mike Jaenike (mike.jaenike@alaska.gov)
+# Sport fish data usually lags behind by at least one year due to the statewide
+# harvest survey.  As such the code will insert the average catch into the newest year(s)
+# for which data is missing.
+
 str(YE.Sport); str(YE.comm.rem)
 unique(YE.Sport$species)
 YE.Sport<-YE.Sport[YE.Sport$species == 145,]
