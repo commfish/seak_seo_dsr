@@ -868,7 +868,7 @@ theme(legend.position = "none") #-> byyear_plot
 
 ggsave(paste0("Figures/exp_bycatch_in_halibut_fishery_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
-write.csv(SE.expBy,"Data_processing/Data/SE_expBy_1888_2020_7.31.22.csv")
+write.csv(SE.expBy,paste0("Data_processing/Data/SE_expBy_1888_",YEAR,".csv"))
 
 #=====================================================================
 # compare to landed bycatch

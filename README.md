@@ -5,7 +5,7 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
 
-This repository will contain the following sub directories that contain different analysis that are part of the assessment.  They are,
+This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
 1. **Data processing:** This folder contains script and raw data files for putting together data for use in the analysis contained in the folders below.  This includes catch data and biological data.
 2. **Density estimation:**  Script and data for estimating yelloweye rockfish density using distance sampling methods and transect data from ROV surveys.
@@ -13,7 +13,7 @@ This repository will contain the following sub directories that contain differen
 4. **REMA analysis:** This folder contains the scripts for running the random effects model that is the current model used in the federal assessment.
 5. **Production models:** This folder contains scripts for developing and running the bayesian state-space surplus production model (SS-SPM).
 
-## Code path to follow for assessment:
+## Code path and data sources for the assessment:
 
 1. [`r_helper/`] Folder with pre-canned functions referenced throughout the assessment
 
@@ -59,6 +59,28 @@ This repository will contain the following sub directories that contain differen
    
 8. **REMA model** Run the random effects model using the biomass estimates and IPHC cpue estimates [`REMA/Code/REMA_run.R`].  This is the model used in the 2022 SAFE report.  **Model 22.2** is the current assessment model for the NPFMC as of 2022.  This code contains multiple rema models, methods for comparisons and figures. 
 
-9. **Surplus Production Models** 
+9. **Surplus Production Models** This folder contains code for running the state-space surplus production model (SS-SPM), plotting results, saving output and comparing different models.  There are 3 stages to running the model, all of which ivole a Pella-Tomlinson surplus production model currently configured to maximize the production curve at $B_{40}$ (biomass at 40% of virgin biomass).  The first two stages involves running the models under minimal assumptions (i.e., priors) and using those results to construct informative priors for *K* (carrying capacity for the SEO as a whole) and $\phi_{80}$ (the proportion of K present in 1980).  Part of the reason for this is the difficulty in the long term data series (back to 1888) and the spatial resolution available in the data.  Since 1980 data is available for the 4 management areas in the SEO.  Prior to that data is only available at the scale of the SEO.  The ROV derived biomass estimates that form the foundation of this assessment are at the scale of the 4 management areas during different years making it necessary to come up with a statistical way to estimate SEO-wide biomass.  I have made efforts to combine this into one model, but have so far failed to come up with a better solution that takes advantage of all of the data sources. This analysis also included a risk analysis to determine how under- and over-estimating bycatch in the halibut fishery affects the assessment.  
+
+   a.  *Stage 1*: This stage involves running the spatially stratified SPM using data going back to 1980.  This model has minimal priors placed on key parameters and the goal of this stage is to produce posterior estimates of SEO biomass to use in Stage 2.  The model can be constructed and run using [`Production_models/Code/Stage1_run_model.R`].  The code [`Production_models/Code/Stage1_run_multiple_models.R`] allows you to load and run multiple models and runs much smoother.  (I use the multiple_model scripts as modify the models in a text editor) The model for stage one is currently [`Production_models/Models/v22.3_Stage1`].
+   
+   b.  *Stage 2*:  This stage involves  simple, non-stratified, production model that uses the posterior distributions of SEO biomass from 1996 through now and catch estimates going back to 1881.  Catch data consist of broad estimates of removals by the foreign fleet during the 60's and estimates of discards in the halibut fishery derived from 7b [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`].  Extra variance is included in estimating historical bycatch and discarding in the halibut fishery.  As with stage 1 there are two available scripts [`Production_models/Code/Stage2_run_model.R`] and [`Production_models/Code/Stage2_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage2`].  
+   
+   c.  *K and $\phi_{80}$ priors*:  With the results from Stage 1 and 2, use [`Production_models/Code/K and phi prior development.R`] to extract prior distributions for *K* and $\phi_{80}$.
+   
+   d.  *R prior*:  [`Production_models/Code/r prior development.R`] provides methods for developing a prior for *r*, the rate of intrinsic growth at low population density.  This script follows the methods of McAllister et al. 2001 and produces beta and gamma distributions based on the results from Stage 2.  The final model used for v22.3 used an uninformative beta prior, $\Beta$(1,1) which resulted in beta distributions similar to the priors.  
+   
+   e.  *Stage 3*:  This model is the same as Stage 1, a spatially stratified SPM, but now includes priors on *K* and $\phi_{80}$.  The *K* for the 4 management areas are estimated using a dirichlet distribution such that the sum of the management area *K's* add up to *K*.  Results from this model are used to estimate MSY, Fmsy, stock status ($\phi_{now}$), and other biological reference points as well as project the population into the future and perform risk analysis.  This model may be run with [`Production_models/Code/Stage3_run_model.R`] and [`Production_models/Code/Stage3_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage3`].
+   
+   f.  *Projections*: [`Production_models/Code/Projections.R`]  This is code to project the results of Stage 3 models into the future under various harvest policies.  
+   
+   g.  *Simulations*: This folder [`Production_models/Code/Simulations/.R`] contains code for running simulations to determine the models ability to accruately estimate model parameters and associated biological reference points.  
+   
+      i.  [`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
+      
+      ii. [`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
+      
+      iii. [`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
+      
+      iv.  [`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims.R`] and [`Production_models/Code/Figures/Sims.R`]. 
 
   

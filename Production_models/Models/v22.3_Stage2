@@ -1,0 +1,127 @@
+model { 
+
+#Bycatch Model and Discard Calculations =========================================
+
+for (t in 1:108) {   #Derby years pre-1995
+  logBy[t] ~ dunif(-10,10)
+  tau.log.By[t] <- 1 / log(cv.ExpByc[t]*cv.ExpByc[t] + 1)
+  ExpByc[t] ~ dlnorm(logBy[t],tau.log.By[t]) #T(0.01,)  #(50,)
+  By[t]<-exp(logBy[t])
+  logD[t]<-log(max(1,(By[t]*exp(derb.err[t]))-Lnd.By[t]))
+  D[t]<-exp(logD[t])  
+}
+for (t in 109:N) {   #IFQ years 1995 on
+  logBy[t] ~ dunif(-10,10) 
+  tau.log.By[t] <- 1 / log(cv.ExpByc[t]*cv.ExpByc[t] + 1)
+  ExpByc[t] ~ dlnorm(logBy[t],tau.log.By[t])T(0.01,)  #(50,)
+  By[t]<-exp(logBy[t])
+  logD[t]<-log(max(1,By[t]-Lnd.By[t]))
+  D[t]<-exp(logD[t]) 
+}
+
+tau.log.derb<-1/(DEsd*DEsd+1)
+for (t in 1:N){
+  derb.err[t] <- depsilon[t]-(DEsd*DEsd/2)
+  depsilon[t] ~ dnorm(Derby.Eff,tau.log.derb)T(Derby.Eff-0.3,Derby.Eff+0.3)
+}
+
+#Known Catches
+for (t in 1:N){
+  logKnC[t] ~ dunif(-10,10)
+  KnC.obs[t] ~ dlnorm(logKnC[t], tau.log.KnC[t])  
+  tau.log.KnC[t]<-1/log(cv.KnC[t]*cv.KnC[t]+1)  
+  KnC[t]<-exp(logKnC[t])
+  
+  logFor.catch[t] ~ dunif(-20,7.09)   #(log(0),log(500))
+  For[t] ~ dlnorm(logFor.catch[t], tau.logFor.catch[t])
+  tau.logFor.catch[t]<-1/(cv.For[t]*cv.For[t]+1)
+  For.catch[t]<-exp(logFor.catch[t])
+
+#Total catches
+  logC[t]<-log(D[t]+KnC[t]+For.catch[t])
+  C[t]<-exp(logC[t])
+}
+
+## POPULATION MODEL...=====================================
+#Process error 
+logvar ~ dunif(-10,upvar) #dunif(-10,0.5)   #log variance prior = very restrictive to keep it small
+sigma <- sqrt(exp(logvar)) 
+tau.log.pe<-1/log(sigma*sigma+1)
+for (t in 1:(N+Fu)) {
+  PE[t]<-epsilon[t]-(sigma*sigma/2)
+  epsilon[t] ~ dnorm(0,tau.log.pe)T(-0.1,0.1) #epsilon truncation = +/- 10%  
+}
+
+#Year 1
+  K<-exp(logK)
+  logB[1] <-log(K) 
+  B[1]<-exp(logB[1])
+  
+for( t in 2:N )   #PT with Biomass starting in year 2
+  { 
+    logB[t]<-log(max(B[t-1]+(r/p)*B[t-1]*(1-(B[t-1]/K)^p)-C[t-1],1)*exp(PE[t-1]))
+    B[t] <- exp(logB[t])
+  }
+
+#surplus production 
+for (t in 1:N){
+    Surplus[t]<-(r/p)*B[t]*(1-(B[t]/K)^p) 
+}
+
+
+#Biomass likelihoods...============================================
+for (t in 1:N) {          #Submersible surveys until 2011, year 124
+    use.cv1[t]<-sqrt(cv.biom[t]*cv.biom[t]+Tau1*Tau1)
+    tau.log.B1[t] <- 1 / log(use.cv1[t]*use.cv1[t] + 1)
+    biom[t] ~ dlnorm(logB[t],tau.log.B1[t])
+    
+    #PP.check.log
+    res[t] <- log(biom[t]) - logB[t]  #observed - predicted
+    subB.new[t] ~ dnorm(logB[t], tau.log.B1[t])  #draw from posterior
+    subres.new[t] <- subB.new[t] - logB[t]
+}
+
+#derived parameters for PP.check
+  fit <- sum(res)       
+  subfit.new <- sum(subres.new)
+  
+#PROJECTIONS:================================================================
+#future catches and biomass...
+  for (t in (N+1):(N+Fu)){                              #this might not work because need the cv for B?
+    FC[t]<-OFLABC*(max(0.01,B[t-1]-HarvStrat*B[t-1]))
+  }
+  
+  #gap year to deal with offset catches and biomass...
+  logB[N+1]<-log(max(B[N]+(r/p)*B[N]*(1-(B[N]/K)^p)-C[N],1)*exp(epsilon[N]))
+   B[N+1]<-exp(logB[N+1])
+  
+#  rest of projection
+  for( t in (N+2):(N+Fu)){ 
+    logB[t]<-log(max(B[t-1]+(r/p)*B[t-1]*(1-(B[t-1]/K)^p)-FC[t-1],1)*exp(epsilon[t-1]))
+    B[t]<-exp(logB[t])
+  }
+  
+#metrics==============================================================
+    CBtoK<-B[N]/K
+    FBtoK<-B[N+Fu]/K
+    FBtoCB <-  B[N+Fu]/B[N]
+    MSY<-r*K/((p+1)^((p+1)/p)) #r*K/4 for Schaefer
+    Bmsy<-0.4*K  #0.5 for Schaefer
+    Fmsy<-MSY/Bmsy
+    Hmsy<-r/(1+p) 
+    B1980<-B[93]/K
+    Stock.Status<-B[N]/(0.4*K)
+    
+    for (t in 1:N){
+    CtoB[t]<-C[t]/B[t]
+    }
+
+#priors =================================================
+  r ~ dbeta(B1,B2)T(0.001,0.2) #
+  logK ~ dunif(log(5000),log(175000))  
+  
+p <- 0.18815 #0.18815 = Bmsy =0.4K; 1=Schaefer; 1e-08 ~ modfied fox
+Tau1 ~ dunif(0.01,1)
+
+#fcv.B ~ dlnorm(log(0.2+Tau1),0.1)T(0.05,0.5) #future cv of biomass estimates...
+}
