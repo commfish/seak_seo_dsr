@@ -57,7 +57,7 @@ This repository will contain the following sub directories that contain differen
    
       b. [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`]: Estimate the expected bycatch from the halibut fishery using the IPHC survey data and historical halibut harvests.  CAS estimates can be retrieved from INSERT HERE
    
-8. **REMA model** Run the random effects model using the biomass estimates and IPHC cpue estimates.  This is the model used in the 2022 SAFE report.
+8. **REMA model** Run the random effects model using the biomass estimates and IPHC cpue estimates [`REMA/Code/REMA_run.R`].  This is the model used in the 2022 SAFE report.  **Model 22.2** is the current assessment model for the NPFMC as of 2022.  This code contains multiple rema models, methods for comparisons and figures. 
 
 9. **Surplus Production Models** 
 

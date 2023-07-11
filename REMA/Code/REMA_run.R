@@ -3,27 +3,39 @@
 ## from Jane Sullivan's package "rema" with guidance from Jane :)
 ## Rerunnig for Nov. 2022 plan team meeting
 ################################################################################
-library("rema")
+#If REMA package need to be loaded, here it is: 
+# install.packages("devtools")
+devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vignettes = TRUE)
+
+# Example R scripts are downloaded when `rema` is installed. Locate them on your computer by running the following commands:
+(rema_path <- find.package('rema'))
+(rema_examples <- file.path(rema_path, 'example_scripts'))
+list.files(rema_examples)
+
+{library("rema")
 library("scales")
 library("viridis")
 library("dplyr")
 library("ggplot2")
 library("ggpubr")
-library("kableExtra")
+library("kableExtra")}
 
-#getwd()
-#setwd("../YE_Production_SEO")
+YEAR<-2023
 
-YEAR<-2022
-
-#bio<-read.csv("Data/SEO_YE_Biomass_subdistrict_080122_for_Jane.csv")
+#ROV biomass .. check date tag to get most recent
 bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2023-06-21.csv")
 str(bio_new)
 str(bio)
 
-bio<-bio_new %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
+bio<-bio %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
                     cv = Biomass.cv)
-ind<-read.csv("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_11.22.22.csv")
+
+#IPHC longline survey CPUE 
+# using all survey stations where yelloweye have been seen at least once: 
+ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
+#Or.. use more restrictive... this using stations where YE seen at least 40% of the time: 
+#ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
+
 ind<-ind %>% select(strata = mngmt.area, year = Year, cpue = CPUE.mean, cv = CPUE.cv)
 
 #allmods<-read.csv("Data/SEO_YE_Biomass_all_models.csv")# %>% 
@@ -34,7 +46,7 @@ str(bio)
 str(ind)
 str(sq)
 
-?prepare_rema_input
+??prepare_rema_input
 ?fit_rema
 ?tidy_rema
 ?plot_rema
@@ -112,7 +124,6 @@ print(output22_2$total_predicted_biomass,n = 30)
 output22_2$biomass_by_cpue_strata
 # can ignore because not relevant
 output22_2$parameter_estimates
-?tidy_rema
 
 plots22_2 <- plot_rema(output22_2, biomass_ylab = 'ROV biomass', cpue_ylab = 'IPHC setline survey CPUE')
 plots22_2$biomass_by_strata
@@ -148,7 +159,6 @@ print(output22_4$total_predicted_biomass,n = 30)
 output22_4$biomass_by_cpue_strata
 # can ignore because not relevant
 output22_4$parameter_estimates
-?tidy_rema
 
 plots22_4 <- plot_rema(output22_4, biomass_ylab = 'ROV biomass', cpue_ylab = 'IPHC setline survey CPUE')
 plots22_4$biomass_by_strata
@@ -208,7 +218,6 @@ print(output22_6$total_predicted_biomass,n = 30)
 output22_6$biomass_by_cpue_strata
 # can ignore because not relevant
 output22_6$parameter_estimates
-?tidy_rema
 
 plots22_6 <- plot_rema(output22_6, biomass_ylab = 'ROV biomass', cpue_ylab = 'IPHC setline survey CPUE')
 plots22_6$biomass_by_strata
@@ -244,7 +253,6 @@ print(output22_7$total_predicted_biomass,n = 30)
 output22_7$biomass_by_cpue_strata
 # can ignore because not relevant
 output22_7$parameter_estimates
-?tidy_rema
 
 plots22_7 <- plot_rema(output22_7, biomass_ylab = 'ROV biomass', cpue_ylab = 'IPHC setline survey CPUE')
 plots22_7$biomass_by_strata
@@ -288,7 +296,7 @@ cowplot::plot_grid(compare_bio$plots$biomass_by_strata +
                      facet_wrap(~strata, nrow = 1) +
                      theme(legend.position = 'top'),
                    nrow = 1)
-ggsave(paste0("Figures/2022safe/REMA_22.5_22.5_MA_biomass_comp_", YEAR, ".png"), dpi=300,  height=4, width=7, units="in")
+ggsave(paste0("REMA/Figures/REMA_22.5_22.5_MA_biomass_comp_", YEAR, ".png"), dpi=300,  height=4, width=7, units="in")
 #-------------------------------------------------------------------------------
 # Make plots comparing status quo and REMA models for SAFE report
 #1) make data frame to plot different models...
@@ -301,15 +309,16 @@ bio22_5<-as.data.frame(output22_5$total_predicted_biomass)
 bio22_6<-as.data.frame(output22_6$total_predicted_biomass)
 bio22_7<-as.data.frame(output22_7$total_predicted_biomass)
 
-sq.comp<-sq %>% select(year=Year, pred = Biomass_mt, cv=Biomass.cv) %>%
-  mutate(model_name = "status_quo (21.1)", 
-         variable = "tot_biomass_pred",
-         pred_lci = pred-1.96*cv*pred,
-         pred_uci = pred+1.96*cv*pred)
-str(sq.comp)
+# this code compared the biomass estimation methods pre-2022.  REMA estimates have
+# been accepted as preferred methods and this is defunct. 
+#sq.comp<-sq %>% select(year=Year, pred = Biomass_mt, cv=Biomass.cv) %>%
+#  mutate(model_name = "status_quo (21.1)", 
+#         variable = "tot_biomass_pred",
+#         pred_lci = pred-1.96*cv*pred,
+#         pred_uci = pred+1.96*cv*pred)
+#str(sq.comp)
 
-mods<-rbind(bio22_1,bio22_2,bio22_4,bio22_5,bio22_6,bio22_7,
-            sq.comp %>% select (-cv))
+mods<-rbind(bio22_1,bio22_2,bio22_4,bio22_5,bio22_6,bio22_7)
 str(mods)
 
 ggplot(mods, aes(x=year, col=model_name, fill=model_name)) +
@@ -328,28 +337,28 @@ ggplot(mods, aes(x=year, col=model_name, fill=model_name)) +
 # Get table of biomass estimates
 str(mods)
 
-write.csv(mods,"Data/Biomass_ests_for_SAFE_table.csv")
+write.csv(mods,"REMA/Output/REAM_Biomass_ests_for_SAFE_table.csv")
 
+mods_tab<-mods
+mods_tab[,c(4:6)]<-formatC(as.numeric(unlist(mods_tab[,c(4:6)])),format="d",digits=0,big.mark=",")
+  
 opts <- options(knitr.kable.NA = "-")            
-table<-mods %>% #group_by(Year) %>% 
+table<-mods_tab %>% #group_by(Year) %>% 
   select(-variable) %>%
   rename(Model = model_name, Year = year, Biomass = pred, Lower_CI = pred_lci, Upper_CI = pred_uci) %>% 
   kbl(digits=0) %>% 
-  column_spec(3,format.args = list(big.mark = ",",scientific = FALSE)) %>%
+  column_spec(3) %>% #,format.args = list(big.mark = ",",scientific = FALSE)) %>%
       #format.args = list(big.mark = ",",
       #                            scientific = FALSE)) %>% #, col.names = gsub("[.]", " ", names(head(mods)))) %>% #kable_styling
   #kable_paper("hover",full_width=F)
   kable_classic(full_width=F, html_font = "Times", position="center")
 #kable_classic_2(full_width=F, position = "left")
-save_kable(table,"Figures/Biomass_Table.pdf")
-
-
+save_kable(table,"REMA/Output/REMA_Biomass_Table.pdf")
 
 #--------------------------------------------------------------------------------
 # More comparson plots
 
-
-NV<-ggplot(mods %>% filter(model_name == "22.1" | model_name == "22.4" | model_name == "status_quo (21.1)"),
+NV<-ggplot(mods %>% filter(model_name == "22.1" | model_name == "22.4" ),
        aes(x=year)) +
   geom_line(aes(y=pred, col=model_name, linetype = model_name),size=0.5) +
   geom_ribbon(aes(ymin = pred_lci, ymax= pred_uci,col=NULL, fill=model_name), alpha=0.3) +
@@ -365,7 +374,7 @@ NV<-ggplot(mods %>% filter(model_name == "22.1" | model_name == "22.4" | model_n
   scale_fill_manual(values = c(pal[1],pal[3],"black"))
 #ggsave(paste0("Figures/REMA_IPHC_comp_noXtraPE_", YEAR, ".png"), dpi=300,  height=4, width=6, units="in")
 
-XV<-ggplot(mods %>% filter(model_name == "22.2" | model_name == "22.5" | model_name == "status_quo (21.1)"),
+XV<-ggplot(mods %>% filter(model_name == "22.2" | model_name == "22.5"),
        aes(x=year)) +
   geom_line(aes(y=pred, col=model_name, linetype = model_name),size=0.5) +
   geom_ribbon(aes(ymin = pred_lci, ymax= pred_uci,col=NULL, fill=model_name), alpha=0.25) +
@@ -381,7 +390,7 @@ XV<-ggplot(mods %>% filter(model_name == "22.2" | model_name == "22.5" | model_n
 #(paste0("Figures/REMA_IPHC_comp_XtraPE_", YEAR, ".png"), dpi=300,  height=4, width=6, units="in")
 figure<-ggarrange(NV, XV, labels = c("A","B"), ncol=1, nrow=2)
 figure
-ggsave(paste0("Figures/2022safe/REMA_totbio_modcomp_", YEAR, ".png"), dpi=300,  height=4, width=6, units="in")
+ggsave(paste0("REMA/Figures/REMA_totbio_modcomp_", YEAR, ".png"), dpi=300,  height=4, width=6, units="in")
 
 #---------------------------------------------------------------------------------
 bio22_1s<-as.data.frame(output22_1$biomass_by_strata)
@@ -428,7 +437,7 @@ xtraV<-ggplot(mods_strata %>% filter(model_name == "22.2" | model_name == "22.5"
 figure<-ggarrange(Norm, xtraV, labels = c("A","B"), ncol=1, nrow=2)
 figure
 
-ggsave(paste0("Figures/2022safe/REMA_strata_modcomp_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
+ggsave(paste0("REMA/Figures/REMA_strata_modcomp_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
 
 #--------------------------------------------------------------------------------
 cowplot::plot_grid(compare_bio_IPHC$plots$biomass_by_strata +
@@ -485,7 +494,7 @@ CPUE_IPHC<-ggplot(mods_cpue %>% filter(model_name == "22.1" | model_name == "22.
 
 figure<-ggarrange(Bio_IPHC, CPUE_IPHC, ncol=1, nrow=2, common.legend = TRUE, legend="top")
 figure
-ggsave(paste0("Figures/REMA_cpue_modcomp_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
+ggsave(paste0("REMA/Figures/REMA_cpue_modcomp_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
 
 scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9", "#009E73",
                                                               "#F0E442", "#0072B2", "#D55E00", "#CC79A7"))
@@ -528,7 +537,7 @@ CPUE_IPHC<-ggplot(mods_cpue %>% filter(model_name == "22.2" | model_name == "22.
 
 figure<-ggarrange(Bio_IPHC, CPUE_IPHC, ncol=1, nrow=2, common.legend = TRUE, legend="top")
 figure
-ggsave(paste0("Figures/REMA_cpue_modcomp_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
+ggsave(paste0("REMA/Figures/REMA_cpue_modcomp2_", YEAR, ".png"), dpi=300,  height=5, width=9, units="in")
 
 
 

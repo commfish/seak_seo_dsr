@@ -15,10 +15,17 @@ library(matrixStats)
 
 source("r_helper/Port_bio_function.R")
 
-#get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
 YEAR <- 2023
 
+#get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
 Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+
+oldSurv<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR-1,".csv"))
+
+yr<-2020
+smp<-sample_n(oldSurv %>% filter(Year == yr),1)
+smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
+smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
 
 str(Survey); head(Survey,10)
 str(HA.Harv)
@@ -52,6 +59,7 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
   
   Years<-sort(unique(Survey$Year))
   GFMA<-unique(Survey$SEdist)
+  unique(Port.rand$Groundfish.Management.Area.Code)
   
   for (i in Years){    #i<-Years[1]
     for (j in GFMA){   #j<-GFMA[1]
@@ -105,18 +113,36 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
     }
   }
 }
-Survey$mean.YE.kg
+colnames(Survey)
 
+ggplot(data = Survey %>% filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x = Year)) +
+  geom_line(aes(y = mean.YE.kg, col = SEdist), size = 1) +
+  geom_ribbon(aes(ymin = mean.YE.kg - (sqrt(var.YE.kg)), 
+                  ymax = mean.YE.kg + (sqrt(var.YE.kg)), 
+                  fill = SEdist),  alpha = 0.2) +
+  xlab("\nYear") +
+  ylab("Average weight of port sampled yelloweye (kg)") 
+
+ggplot(data = Survey %>% filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x = as.factor(Year))) +
+  geom_boxplot(aes(y = O32.Pacific.halibut.weight, fill = SEdist, col=SEdist), size = 1) 
+
+ggplot(data = Survey %>% filter(Year > 2015,
+                                SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x=O32.Pacific.halibut.weight)) + 
+  geom_density(aes(fill = as.factor(Year), col=as.factor(Year)),alpha = 0.3) + 
+  #geom_histogram(aes(fill = as.factor(Year), col=as.factor(Year), y=..density..),alpha = 0.3) +
+  facet_wrap(~SEdist) +
+  ylim(0,0.005)#+
+#  geom_vline(aes(xintercept = mean(O32.Pacific.halibut.weight, na.rm=T), col=as.factor(Year)))
 #=============================================================================
 # Load halibut harvests by subdistrict to calculate expected bycatch values;
 #Deal with Rhea's subdistrict data (halibut_catch_data.csv) and Randy's halibut harvest
 # reconstruction (halibut_SEO_catch_RPderivation.csv)
 
-SubHal<-read.csv("Data_processing/Data/Harvests/halibut_catch_data.csv", header=T)
-SubHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T)
+#SubHal<-read.csv("Data_processing/Data/Harvests/halibut_catch_data.csv", header=T) #old data from methods development
+#SubHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
 
-str(SubHal)
-str(SubHal2)
+#str(SubHal)
+#str(SubHal2)
 
 SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 
@@ -125,9 +151,11 @@ SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1
 #Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
 #function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
 
+#get halibut harvest from fishticket data...
+
 Halibut<-function(){
  # HA.Harv<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
-  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T)
+  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
   LL<-HA.Harv #[HA.Harv$gear.description == "Longline",]
   head(LL)
   colnames(LL)
@@ -152,10 +180,15 @@ Halibut<-function(){
 }
 Hali<-Halibut()
 str(Hali)
+ggplot(Hali %>% filter(SEdist %in% c("EYKT","NSEO","CSEO","SSEO")), aes(x=Year, y = HA.mt)) + 
+  geom_line(aes(col=SEdist))
 #=============================================================================
 # 
 #to gauge relationship between depth and wcpue estimates calculate for different depth 
 # bins and compare... 
+unique(Survey$depth_bin)
+with(Survey, table(depth_bin))
+hist(Survey$depth_bin)
 
 #*** IFQ started in 1995; prior to that it's Derby style ***
 
@@ -165,18 +198,25 @@ Years<-unique(Survey$Year)
 nboot<-1000
 Depths<-sort(unique(Survey$depth_bin))
 
+s22<-Survey %>% filter(Year == 2022)
+s21<-Survey %>% filter(Year == 2021)
+str(s22)
+str(s21)
+
 j<-1
-for (y in Years) {  #y<-Years[1]
+for (y in Years) {  #
+  #y<-Years[25]
   for (d in Depths){  #d<-Depths[2]
     Dat<-Survey[Survey$Year == y & Survey$depth_bin == d,]
-    if (nrow(Dat)>0){
-      Stations<-unique(Dat$Station.x)
+    Dat<-Dat %>% filter(In.Out == "SEO")
+    if (nrow(Dat) == 0){} else {
+      Stations<-unique(Dat$Station)
       WCPUEi.32<-vector()
       WCPUEi.all<-vector()
       CPUEi<-vector()
       i<-1
       for (st in Stations){    #st<-Stations[1]   length(Stations)  st<-1
-        Stat.Dat<-Dat[Dat$Station.x == st,] #; Stat.Dat
+        Stat.Dat<-Dat[Dat$Station == st,] #; Stat.Dat
         #debug
         #if (nrow(Stat.Dat) > 1){aaa} else {}
         CPUE<-mean(Stat.Dat$YE.obs/Stat.Dat$HooksObserved)
@@ -224,42 +264,52 @@ for (y in Years) {  #y<-Years[1]
           IPHC.wcpue[j,"Year"]<-y
           IPHC.wcpue[j,"depth_strat"]<-d
           IPHC.wcpue[j,"length.cat"]<-32
-          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.32, na.rm=T)
+          
           if (is.na(mean(WCPUEi.32, na.rm=T))) {
-            IPHC.wcpue[j,"WCPUE.bootmean"]<-NaN  #mean WCPUE from Tribuzio
-            IPHC.wcpue[j,"WCPUE.lo95ci"]<-NaN
-            IPHC.wcpue[j,"WCPUE.hi95ci"]<-NaN
+            IPHC.wcpue[j,"WCPUE.mean"]<-0
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-0  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-0
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-0
+            IPHC.wcpue[j,"WCPUE.var"]<-0
+            IPHC.wcpue[j,"WCPUE.cv"]<-0
           } else {
+            IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.32, na.rm=T)
             IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.32,c(0.5)))  #mean WCPUE from Tribuzio
             IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.32,c(0.025)))
             IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.32,c(0.975)))
+            IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.32)
+            IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.32)/mean(WCPUEi.32)
           }
-          IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.32)
-          IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.32)/mean(WCPUEi.32)
+          
           j<-j+1
         } else {
           IPHC.wcpue[j,"Year"]<-y
           IPHC.wcpue[j,"depth_strat"]<-d
           IPHC.wcpue[j,"length.cat"]<-"all"
-          IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.all, na.rm=T)
+          
           if (is.na(mean(WCPUEi.32, na.rm=T))) {
-            IPHC.wcpue[j,"WCPUE.bootmean"]<-NaN  #mean WCPUE from Tribuzio
-            IPHC.wcpue[j,"WCPUE.lo95ci"]<-NaN
-            IPHC.wcpue[j,"WCPUE.hi95ci"]<-NaN
+            IPHC.wcpue[j,"WCPUE.mean"]<-0
+            IPHC.wcpue[j,"WCPUE.bootmean"]<-0  #mean WCPUE from Tribuzio
+            IPHC.wcpue[j,"WCPUE.lo95ci"]<-0
+            IPHC.wcpue[j,"WCPUE.hi95ci"]<-0
+            IPHC.wcpue[j,"WCPUE.var"]<-0
+            IPHC.wcpue[j,"WCPUE.cv"]<-0
           } else {
+            IPHC.wcpue[j,"WCPUE.mean"]<-mean(WCPUEi.all, na.rm=T)
             IPHC.wcpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE.all,c(0.5)))  #mean WCPUE from Tribuzio
             IPHC.wcpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE.all,c(0.025)))
             IPHC.wcpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE.all,c(0.975)))
+            IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.all)
+            IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.all)/mean(WCPUEi.all)
           }
           
-          IPHC.wcpue[j,"WCPUE.var"]<-var(Out$WCPUE.all)
-          IPHC.wcpue[j,"WCPUE.cv"]<-sd(Out$WCPUE.all)/mean(WCPUEi.all)
+          
           j<-j+1
         }
       }
       
       #j<-j+1
-    } else {}
+    } 
   }
 }
 
@@ -279,7 +329,7 @@ points(IPHC.wcpue$WCPUE.mean[IPHC.wcpue$length.cat == "all"]~
        xlab="Depth strata (fathoms)", 
        ylab="WCPUE.all", col="blue",
        type="p", pch=18)
-simp<-lm(IPHC.wcpue$WCPUE32.mean~IPHC.wcpue$depth_strat*IPHC.wcpue$Year)
+simp<-lm(IPHC.wcpue$WCPUE.mean~IPHC.wcpue$depth_strat*IPHC.wcpue$Year)
 summary(simp)
 
 ggplot(IPHC.wcpue,aes(depth_strat,WCPUE.mean, fill = length.cat))+geom_boxplot()
@@ -291,21 +341,23 @@ ggplot(IPHC.wcpue,aes(depth_strat,WCPUE.mean, fill = length.cat))+geom_boxplot()
   i<-1
   for (d in YE.depths){  #d<-Depths[1]
     Dat32<-IPHC.wcpue[IPHC.wcpue$depth_strat == d & IPHC.wcpue$length.cat==32,]
-    
-    if (d == Depths[1]){
-      plot(Dat32$WCPUE.mean ~ Dat32$Year, type="l", col=cols[1], ylim=c(0,0.25), 
-           lwd=2, ylab="WCPUE.32", xlab="Year")
-      Y1<-Dat32$WCPUE.lo95ci; Y2<-Dat32$WCPUE.hi95ci
-      polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-              col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-      i<-i+1
-    } else {
-      lines(Dat32$WCPUE.mean ~ Dat32$Year, col=cols[i], lwd=2)
-      Y1<-Dat32$WCPUE.lo95ci; Y2<-Dat32$WCPUE.hi95ci
-      polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-              col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-      i<-i+1
+    if (nrow(Dat32) == 0){i<-i+1} else {
+      if (d == Depths[1]){
+        plot(Dat32$WCPUE.mean ~ Dat32$Year, type="l", col=cols[1], ylim=c(0,0.25), 
+             lwd=2, ylab="WCPUE.32", xlab="Year")
+        Y1<-Dat32$WCPUE.lo95ci; Y2<-Dat32$WCPUE.hi95ci
+        polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
+                col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
+        i<-i+1
+      } else {
+        lines(Dat32$WCPUE.mean ~ Dat32$Year, col=cols[i], lwd=2)
+        Y1<-Dat32$WCPUE.lo95ci; Y2<-Dat32$WCPUE.hi95ci
+        polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
+                col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
+        i<-i+1
+      }
     }
+    
   }
   legend(x="topright", title="Depth Strata",
          legend=c(YE.depths), bty="n",
@@ -366,10 +418,11 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
   Years<-unique(Survey$Year)
   
   j<-1
-  for (y in Years) {  #y<-Years[24]
-    for (s in Subs){  #s<-Subs[2]
+  for (y in Years) {  #y<-Years[1]
+    for (s in Subs){  #s<-Subs[1]
       Dat<-Survey[Survey$Year == y & Survey[,col.ref] == s &
-                    Survey$AvgDepth.fm > Shallow & Survey$AvgDepth.fm < Deep,]
+                    Survey$AvgDepth.fm >= Shallow & Survey$AvgDepth.fm <= Deep,]
+      Dat<-Dat %>% filter(In.Out == "SEO")
       if (Area == "SEdist") {
         H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
       }
@@ -379,15 +432,15 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
       }
       
       if (nrow(Dat)>0){
-        Stations<-unique(Dat$Station.x)
+        Stations<-unique(Dat$Station)
         WCPUEi.32<-vector()
         WCPUEi.all<-vector()
         expByi.32<-vector()
         expByi.all<-vector()
         CPUEi<-vector()
         i<-1
-        for (st in Stations){    #st<-Stations[7]   length(Stations)  st<-1
-          Stat.Dat<-Dat[Dat$Station.x == st,] #; Stat.Dat
+        for (st in Stations){    #st<-Stations[1]   length(Stations)  st<-1
+          Stat.Dat<-unique(Dat[Dat$Station == st,]) #; Stat.Dat
           #debug
           #if (nrow(Stat.Dat) > 1){aaa} else {}
           CPUE<-mean(Stat.Dat$YE.obs/Stat.Dat$HooksObserved)
@@ -512,54 +565,6 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
     }
   }
   
- # str(IPHC.expBy)
-  
-  #couple of plots in output
-#  Sub.cnt<-length(Subs)
-#  cols<-brewer.pal(min(Sub.cnt,8),"Dark2")
-  
-#  if (Sub.cnt < 8) {par(mfrow=c(1,1))}
-#  if (Sub.cnt > 8 & Sub.cnt < 17) {par(mfrow=c(2,1))}
-#  if (Sub.cnt > 16) {par(mfrow=c(3,1))}
-  
-#  nplot<-ceiling(Sub.cnt/8)
-  #cols<-brewer.pal(length(Subs),"Set3")
-#  for (n in 1:nplot){  #n<-1
-#    i<-1
-#    pSubs<-Subs[(1+(n-1)*8):(8+(n-1)*8)]
-#    pSubs<-pSubs[!is.na(pSubs)]
-    
-#    for (s in pSubs) {   #s<-pSubs[1]
-#      Pdat<-IPHC.expBy[IPHC.expBy$mngmt.area == s,]
-#      if (s == pSubs[1]){
-#        plot(Pdat$expBy32_rnd_pds.mean ~ Pdat$Year, col=cols[i], ylim=c(0,max(IPHC.expBy$expBy32.hi95ci)), type="l",
-#             ylab="expected bycatch", xlab="Year", main=Area)
-#        Y1<-Pdat$expBy32.lo95ci; Y2<-Pdat$expBy32.hi95ci
-#        polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-#                col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-#        i<-i+1
-#      } else {
-#        Y1<-Pdat$expBy32.lo95ci; Y2<-Pdat$expBy32.hi95ci
-#        if (length(Y1)==1){}else {
-#          polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-#                  col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-#          i<-i+1
-#        }
-        
-#      }
-#    }
-#    i<-1
-#    for (s in pSubs) {   #s<-pSubs[1]
-#      Pdat<-IPHC.expBy[IPHC.expBy$mngmt.area == s,]
-#      lines(Pdat$expBy32_rnd_pds.mean ~ Pdat$Year, col=cols[i], type="l",
-#            lwd=1.5)
-#      i<-i+1
-#    }
-#   legend(x="topleft", cex=0.8,
-#           legend=c(pSubs), bty="n",
-   #        col=cols,text.col=cols)
-  #}
-  
   return(IPHC.expBy)
 }
 
@@ -568,13 +573,32 @@ colnames(Survey)
 #IPHC.reg.area<- YEHA.fxn(Area="IPHC.Reg.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 #IPHC.stat.area<- YEHA.fxn(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 SE.subdistricts<- YEHA.fxn(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Shallow=0, Hali=Hali,nboot=1000)
+
 SE.out<- YEHA.fxn(Survey=Survey[Survey$In.Out == "SEO",], Hali = SEOHal,
                          Area="In.Out",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000)
 
 #get just outside districts
 SEO.subs<-SE.subdistricts[SE.subdistricts$mngmt.area != "NSEI" & SE.subdistricts$mngmt.area != "SSEI",]
+
+colnames(SEO.subs)
+ggplot(data = SEO.subs, aes(x = Year)) +
+  geom_line(aes(y = expBy32_mt.mean, col = mngmt.area), size = 1) +
+  geom_ribbon(aes(ymin = expBy32_mt.mean - expBy32.cv*expBy32_mt.mean, 
+                  ymax = expBy32_mt.mean + expBy32.cv*expBy32_mt.mean, 
+                  fill = mngmt.area),  alpha = 0.2) +
+  xlab("\nYear") +
+  ylab("Expected yelloweye bycatch (t)\n") 
+
+ggplot(data = SEO.subs, aes(x = Year)) +
+  geom_line(aes(y = WCPUE32.mean, col = mngmt.area), size = 1) +
+  geom_ribbon(aes(ymin = WCPUE32.mean - WCPUE32.mean*(sqrt(WCPUE32.var)/WCPUE32.mean), 
+                  ymax = WCPUE32.mean + WCPUE32.mean*(sqrt(WCPUE32.var)/WCPUE32.mean), 
+                  fill = mngmt.area),  alpha = 0.2) +
+  xlab("\nYear") +
+  ylab("yelloweye bycatch rate (ye:halibut by weight") 
+
 unique(SEO.subs$mngmt.area)
-SEO.subs[SEO.subs$mngmt.area == "NSEO",]
+SEO.subs[SEO.subs$mngmt.area == "CSEO",]
 SEO.subs[SEO.subs$mngmt.area == "EYKT",]
 #================================================================================
 # Calculate expected bycatch for years before 1998; pre-survey years
@@ -632,6 +656,7 @@ head(presurvey.bycatch)
 # Save the data for use in SS-SPMs
 colnames(SEO.subs)
 colnames(presurvey.bycatch)
+
 SEO.red<-SEO.subs[,c(1,3,19,7,11,20,24,25,13,17,26,30,31)]
 SEO.red$expBy32.cv2<-SEO.red$expBy32.cv
 SEO.red$expByall.cv2<-SEO.red$expByall.cv
@@ -668,17 +693,17 @@ ggplot(data = SEO.expBy %>% filter(Year > 1997), aes(x = Year)) +
   xlab("\nYear") +
   ylab("wcpue/ yelloweye bycatch rate (kg yelloweye/kg legal halibut)") 
 
-YEAR<-2022
+#YEAR<-2022
 ggsave(paste0("Figures/wcpue_ests_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
 SEO.expBy[SEO.expBy$mngmt.area == "NSEO" & SEO.expBy$Year == 2021,]
 
-write.csv(SEO.expBy,"Data/SEO_expBy_7.31.22.csv")
+write.csv(SEO.expBy,paste0("Data_processing/Data/SEO_expBy_",YEAR,".csv"))
 
 #=====================================================================
 # compare to landed bycatch
-Removals.subd.1<-read.csv("Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
-Removals.subd<-read.csv("Data/SE_YE_known_removals_1980-2022.csv")  #YE reconstruction from most recent
+Removals.subd.1<-read.csv("Data_processing/Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
+Removals.subd<-read.csv("Data_processing/Data/SE_YE_known_removals_1980-2022.csv")  #YE reconstruction from most recent
 #2) pre-1980 removals from SEO as a whole... 
 # Removals.pre<-read.csv("Data/XXX.csv") #Waiting on Donnie; 
 # generate fake data here for model development...
@@ -723,13 +748,15 @@ ggplot(data = Tst, aes(x = Year)) +
   theme(legend.position = "top")
   #labs(x= "\nLanded Bycatch", y="\nExpected Bycatch")
 
-ggsave(paste0("Figures/exp_and_landed_bycatch_in_halibut_fishery_", YEAR, "_2.png"), dpi=300,  height=6, width=7, units="in")
+ggsave(paste0("Figures/exp_and_landed_bycatch_in_halibut_fishery_by_ma_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
 #*******************************************************************************
 #*GET SEO scale data
 #*******************************************************************************
-SEOHal1<-read.csv("Data/SEO_Halibut_removals_1888-2021.csv", header=T)
-SEOHal2<-read.csv("Data/SE_Halibut_removals_1975-2022.csv", header=T) %>%
+#*#IPHC records:
+SEOHal1<-read.csv("Data_processing/Data/SEO_Halibut_removals_1888-2022.csv", header=T)
+# Fish ticket records:
+SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) %>%
   filter(Mgt.Area == "CSEO" | Mgt.Area == "SSEO" | Mgt.Area == "NSEO" | Mgt.Area == "EYKT") 
 
 ys<-unique(SEOHal2$Year)
@@ -743,13 +770,23 @@ for (i in 1:length(ys)){  #i<-1
   j<-j+1
 }
 
-SEOHal<-SEOHal3
+#SEOHal<-SEOHal3
+
+unique(SEOHal$Year)
+str(SEOHal1)
+str(SEOHal2)
+str(SEOHal3)
+
+SEOHal1 %>% filter(Year %in% seq(1970,1985,1))
+SEOHal2 %>% filter(Year %in% seq(1970,1985,1))
+
+SEOHal<-rbind(SEOHal1 %>% select(-X) %>%
+                filter(Year < min(SEOHal3$Year)),  #favoring fish ticket data here... 
+              SEOHal3)
 
 pres.yrs<-seq(1888,1997,by=1)
-pres.yrs<-seq(1975,1997,by=1)
+#pres.yrs<-seq(1975,1997,by=1)
 subs<-unique(SE.out$mngmt.area)
-
-?cov
 
 presurvey.bycatch<-data.frame()
 i<-1
@@ -797,7 +834,9 @@ for (y in pres.yrs) { #y<-pres.yrs[1]
 #-------------------------------------------------------------------------------
 colnames(SE.out)
 colnames(presurvey.bycatch)
+
 SEO.red<-SE.out[,c(1,3,19,7,11,20,24,25,13,17,26,30,31)]
+
 SEO.red$expBy32.cv2<-SEO.red$expBy32.cv
 SEO.red$expByall.cv2<-SEO.red$expByall.cv
 SEO.red$var.Halibut_mt<-0
@@ -808,6 +847,7 @@ head(SE.out)
 SE.expBy<-rbind(presurvey.bycatch,SEO.red)
 #SEO.expBy$expBy32_mt.mean<-SEO.expBy$expBy32_mt.mean*0.00045359
 colnames(SE.expBy)
+unique(SE.expBy$Year)
 SE.expBy$mngmt.area
 
 ggplot(data = SE.expBy, aes(x = Year)) +
@@ -825,14 +865,14 @@ ggplot(data = SE.expBy, aes(x = Year)) +
 theme(legend.position = "none") #-> byyear_plot
 
 #plot_grid(byage_plot, byyear_plot, align = c("h"), ncol = 1)
-YEAR<-2022
+
 ggsave(paste0("Figures/exp_bycatch_in_halibut_fishery_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
-write.csv(SE.expBy,"Data/SE_expBy_1888_2020_7.31.22.csv")
+write.csv(SE.expBy,"Data_processing/Data/SE_expBy_1888_2020_7.31.22.csv")
 
 #=====================================================================
 # compare to landed bycatch
-Removals.subd<-read.csv("Data/SE_YE_known_removals_1980-2022.csv")  #YE reconstruction from Rhea
+Removals.subd<-read.csv(paste0("Data_processing/Data/SE_YE_known_removals_1980-",YEAR-1,".csv"))  #YE reconstruction from Rhea
 str(Removals.subd); unique(Removals.subd$Year)
 Removals.subd$mngmt.area<-Removals.subd$Subdistrict
 
@@ -909,7 +949,7 @@ SAFE.discards$Discards.mt<-rowMaxs(as.matrix(SAFE.discards[,c(19,20)]))
 
 SAFE.disc<-SAFE.discards[,c(1,19)]
 
-write.csv(SAFE.disc,"Data/SEO_YEdisc_in_hali_fsh_TribuzioMethods_1980_2021_10.3.22.csv")
+write.csv(SAFE.disc,paste0("Data_processing/Data/SEO_YEdisc_in_hali_fsh_TribuzioMethods_1980_",YEAR,".csv"))
 
 
 

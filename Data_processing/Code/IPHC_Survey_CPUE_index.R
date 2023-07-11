@@ -19,17 +19,17 @@ source("r_helper/Port_bio_function.R")
 
 #IPHCfunction<-function(){
 {
-  HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
+  #HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
   
   #GET Latest Data and prep to add into 1998-2020 data that script is set to handle
   But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", check.names = TRUE)
-  
-  View(But2C3A_2022)
+#  View(But2C3A_2022)
   
   YE2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data 2C3A 2022.csv", check.names = TRUE)
-  View(YE2C3A_2022)
+  unique(YE2C3A_2022$Year)
+#  View(YE2C3A_2022)
   
-  Surv22<-But2C3A_2022 %>% full_join(YE2C3A_2022, by="Stlkey")
+  Surv22<-But2C3A_2022 %>% full_join(YE2C3A_2022, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
   colnames(Surv22)
   Sur2C_22<-Surv22[Surv22$IPHC.Reg.Area == "2C",]
   Sur3A_22<-Surv22[Surv22$IPHC.Reg.Area == "3A",]
@@ -37,7 +37,7 @@ source("r_helper/Port_bio_function.R")
   But2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)
   YE2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 2C3A 2021.csv", header=T)
   
-  Surv21<-But2C3A_2021 %>% full_join(YE2C3A_2021, by="Stlkey")
+  Surv21<-But2C3A_2021 %>% full_join(YE2C3A_2021, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
   head(Surv21)
   Sur2C_21<-Surv21[Surv21$IPHC.Reg.Area == "2C",]
   Sur3A_21<-Surv21[Surv21$IPHC.Reg.Area == "3A",]
@@ -46,8 +46,8 @@ source("r_helper/Port_bio_function.R")
   BUT2C<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C.csv", header=T)
   YE2C<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 2C.csv", header=T)
   
-  Sur2C<- BUT2C %>% full_join(YE2C, by="Stlkey")  
-  Sur2C <- Sur2C %>% rbind(Sur2C,Sur2C_21,Sur2C_22)
+  Sur2C<- BUT2C %>% full_join(YE2C, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))  
+  Sur2C <- Sur2C %>% rbind(Sur2C, Sur2C_21, Sur2C_22)
   
   Sur2C[Sur2C$Stlkey == 20200208,]
   
@@ -60,11 +60,12 @@ source("r_helper/Port_bio_function.R")
                                                        ifelse(MidLat.fished<57.5 & MidLat.fished>=56,"CSEO",
                                                               ifelse(MidLat.fished<56,"SSEO",NA)))),NA))))
   
+  nrow(Sur2C)
   ## Lets bring in 3A and pull out surveys in the Yakutat area...
   BUT3A<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 3A.csv", header=T)
   YE3A<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 3A.csv", header=T)
   
-  Sur3A<- BUT3A %>% full_join(YE3A, by="Stlkey")
+  Sur3A<- BUT3A %>% full_join(YE3A, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
   Sur3A <- Sur3A %>% rbind(Sur3A,Sur3A_21, Sur3A_22)
   
   Sur3A<-Sur3A %>%
@@ -97,10 +98,21 @@ source("r_helper/Port_bio_function.R")
   
   Survey$O32.Pacific.halibut.weight<-as.numeric(Survey$O32.Pacific.halibut.weight)
   Survey$U32.Pacific.halibut.weight<-as.numeric(Survey$U32.Pacific.halibut.weight)
+  
+  Survey<-unique(Survey %>% select(-c(Row.number.x,Row.number.y)))
 }
+
+{y<-sample(unique(Survey$Year),1)
+d<-sample(unique(Survey$depth_bin[Survey$Year==y]),1)
+s<-sample(unique(Survey$Station[Survey$Year==y & Survey$depth_bin==d]),1)
+Dat<-Survey[Survey$Year == y & Survey$depth_bin == d & Survey$Station == s,]
+unique(Dat); nrow(Dat)}
+
 str(Survey); head(Survey,10)
 str(HA.Harv)
+mean(Survey$AvgDepth.fm)
 
+#Survey <-Survey %>% filter(Year < 2022)
 write.csv(Survey,paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
 
 #================================================================================
@@ -113,9 +125,7 @@ plot(Survey$YE.obs ~ Survey$AvgDepth.fm)
 plot(Survey$O32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
 plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
 
-Depths<-unique(Survey$depth_bin)
-
-Survey %>% group_by(Station.x) %>%
+Survey %>% group_by(Station) %>%
   dplyr::summarise(Lat = mean(MidLat.fished, na.rm=T),
                    Lon = mean(MidLon.fished, na.rm=T),
                    Depth = mean(AvgDepth.fm, na.rm=T),
@@ -143,12 +153,12 @@ hist(Station.sum$prop.0, breaks=25)
 hist(Station.sum$prop.0[Station.sum$prop.0<1], breaks=25)
 max(Station.sum$prop.0[Station.sum$prop.0<1])
 
-blanks.stations<-Station.sum$Station.x[Station.sum$mean.YEcpue == 0]
-YE.stations<-Station.sum$Station.x[Station.sum$mean.YEcpue != 0]
-YE.stations_10p<-Station.sum$Station.x[Station.sum$prop.0 < 0.9]
-YE.stations_20p<-Station.sum$Station.x[Station.sum$prop.0 < 0.8]
-YE.stations_25p<-Station.sum$Station.x[Station.sum$prop.0 < 0.75]
-YE.stations_40p<-Station.sum$Station.x[Station.sum$prop.0 < 0.6]
+blanks.stations<-Station.sum$Station[Station.sum$mean.YEcpue == 0]
+YE.stations<-Station.sum$Station[Station.sum$mean.YEcpue != 0]
+YE.stations_10p<-Station.sum$Station[Station.sum$prop.0 < 0.9]
+YE.stations_20p<-Station.sum$Station[Station.sum$prop.0 < 0.8]
+YE.stations_25p<-Station.sum$Station[Station.sum$prop.0 < 0.75]
+YE.stations_40p<-Station.sum$Station[Station.sum$prop.0 < 0.6]
 
 length(YE.stations);length(YE.stations_10p);length(YE.stations_20p);length(YE.stations_25p);length(YE.stations_40p)
 
@@ -158,15 +168,15 @@ plot_stations<-st_set_crs(plot_stations,crs=4326)
 
 use_stations<-YE.stations_40p
 
-ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) + 
+ggplot(plot_stations %>% filter(Station %in% c(use_stations))) + 
   geom_sf(aes(color = mean.YE, size = mean.YE)) +
   scale_color_viridis_c(option = "magma",begin = 0)
 
-ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) + 
+ggplot(plot_stations %>% filter(Station %in% c(use_stations))) + 
   geom_sf(aes(color = mean.YEcpue, size = mean.YEcpue)) +
   scale_color_viridis_c(option = "plasma",begin = 0)
 
-ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) + 
+ggplot(plot_stations %>% filter(Station %in% c(use_stations))) + 
   geom_sf(aes(color = var.YEcpue, size = var.YEcpue)) +
   scale_color_viridis_c(option = "viridis",begin = 0)
 
@@ -234,7 +244,7 @@ Survey$mean.YE.kg
 #=============================================================================
 # FUNCTION for generating cpue estimates from IPHC surveys for different management areas
 
-YEHA.fxn<-function(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000){
+YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000){
   col.ref<-which(colnames(Survey)==Area)
   
   IPHC.cpue<-data.frame()
@@ -247,13 +257,13 @@ YEHA.fxn<-function(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0
       Dat<-Survey[Survey$Year == y & Survey[,col.ref] == s &
                     Survey$AvgDepth.fm > Shallow & Survey$AvgDepth.fm < Deep,]
       if (nrow(Dat)>0){
-        Stations<-unique(Dat$Station.x)
+        Stations<-unique(Dat$Station)
         #WCPUEi.32<-vector()
         #WCPUEi.all<-vector()
         CPUEi<-vector()
         i<-1
         for (st in Stations){    #st<-Stations[1]   length(Stations)  st<-1
-          Stat.Dat<-Dat[Dat$Station.x == st,] #; Stat.Dat
+          Stat.Dat<-Dat[Dat$Station == st,] #; Stat.Dat
           #debug
           #if (nrow(Stat.Dat) > 1){aaa} else {}
           CPUE<-mean(Stat.Dat$YE.obs/Stat.Dat$HooksObserved)
@@ -264,34 +274,15 @@ YEHA.fxn<-function(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0
           }
           
           CPUEi[i]<-CPUE
-          #K<-C*Dat$mean.YE.kg[1]
-          #WCPUE.32 <-K/mean(Stat.Dat$O32.Pacific.halibut.weight)
-          #WCPUE.all<-K/mean(Stat.Dat$O32.Pacific.halibut.weight+Stat.Dat$U32.Pacific.halibut.weight)
-          #WCPUEi.32[i]<-WCPUE.32
-          #WCPUEi.all[i]<-WCPUE.all
           i<-i+1
         }
-        #get rid of NA's where no halibut were caught!!! 
-        #WCPUEi.32<-WCPUEi.32[!is.na(WCPUEi.32)]
-        #WCPUEi.all<-WCPUEi.all[!is.na(WCPUEi.all)]
-        #bootstrap WCPUE
+        
         Out<-data.frame()
         #CPUE.out<-data.frame()
         for (ii in 1:nboot){ #nboot<-1000  ii<-1
-          #Resamp<-sample(WCPUEi.32,length(WCPUEi.32),replace=T)
-          #Out[ii,"WCPUE.32"]<-mean(Resamp, na.rm=T)
-          #Out[ii,"var.WCPUE.32"]<-var(Resamp, na.rm=T)
-          #Resamp2<-sample(WCPUEi.all,length(WCPUEi.all),replace=T)
-          #Out[ii,"WCPUE.all"]<-mean(Resamp2, na.rm=T)
-          #Out[ii,"var.WCPUE.all"]<-var(Resamp2, na.rm=T)
           Resamp3<-sample(CPUEi,length(CPUEi),replace=T)
           Out[ii,"CPUE"]<-mean(Resamp3, na.rm=T)
           Out[ii,"CPUE.var"]<-var(Resamp3, na.rm=T)
-          #bootstrap bycatch and discards 12-20-21: exact same results if you pu
-          #Out[ii,"YE.bycatch.kg"]<-sum(Harv$round_lbs_hali)*0.45359237*Out[ii,"WCPUE"]
-          #Out[ii,"raw.YE.discards.kg"]<-Out[ii,"YE.bycatch.kg"]-Land.YEby$YE_fr_hal_fish.kgs #max(1,Out[ii,"YE.bycatch.kg"]-Land.YEby$YE_fr_hal_fish.kgs, na.rm=T)
-          #min.D.boot<-min(1,rnorm(1,mean=min.Discard ,sd=sqrt(min.D.var))*Land.YEby$YE_fr_hal_fish.kgs)
-          #Out[ii,"trunc.YE.discards.kg"]<-max(min.D.boot,Out[ii,"YE.bycatch.kg"]-Land.YEby$YE_fr_hal_fish.kgs, na.rm=T)
         }
         
         #hist(Out$KgHa, breaks = 25)
@@ -367,18 +358,23 @@ YEHA.fxn<-function(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0
 
 
 colnames(Survey)
-Survey<-Survey %>% filter(Station.x %in% c(YE.stations_40p))
+
+#Decision: which stations to use to calculate CPUE??? 
+
+Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
+Survey_non0<-Survey %>% filter(Station %in% c(YE.stations))
 
 #IPHC.reg.area<- YEHA.fxn(Area="IPHC.Reg.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 #IPHC.stat.area<- YEHA.fxn(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
-SE.subdistricts<- YEHA.fxn(Area="SEdist",Deep=250, Shallow=0, nboot=1000)
+SE.subdistricts<- YEHA.fxn(Survey=Survey_non0, Area="SEdist",Deep=250, Shallow=0, nboot=1000)
+SE.subdistricts_40p<- YEHA.fxn(Survey=Survey_40p, Area="SEdist",Deep=250, Shallow=0, nboot=1000)
 
 str(SE.subdistricts); unique(SE.subdistricts$mngmt.area)
 
 IPHC.index<-SE.subdistricts[SE.subdistricts$mngmt.area != "NSEI" & 
                               SE.subdistricts$mngmt.area != "SSEI",]
-unique(IPHC.index$mngmt.area)
-IPHC.index[IPHC.index$Year == 2022,]
+write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 
-
-write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE",as.character(Sys.Date()),".csv"))
+IPHC.index_40p<-SE.subdistricts[SE.subdistricts_40p$mngmt.area != "NSEI" & 
+                              SE.subdistricts_40p$mngmt.area != "SSEI",]
+write.csv(IPHC.index_40p,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
