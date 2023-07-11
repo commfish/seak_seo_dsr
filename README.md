@@ -67,20 +67,20 @@ This repository contains the following sub directories that contain different an
    
    c.  *K and $\phi_{80}$ priors*:  With the results from Stage 1 and 2, use [`Production_models/Code/K and phi prior development.R`] to extract prior distributions for *K* and $\phi_{80}$.
    
-   d.  *R prior*:  [`Production_models/Code/r prior development.R`] provides methods for developing a prior for *r*, the rate of intrinsic growth at low population density.  This script follows the methods of McAllister et al. 2001 and produces beta and gamma distributions based on the results from Stage 2.  The final model used for v22.3 used an uninformative beta prior, $\Beta$(1,1) which resulted in beta distributions similar to the priors.  
+   d.  *R prior*:  [`Production_models/Code/r prior development.R`] provides methods for developing a prior for *r*, the rate of intrinsic growth at low population density.  This script follows the methods of McAllister et al. 2001 and produces beta and gamma distributions based on the results from Stage 2.  The final model used for v22.3 used an uninformative beta prior, $Beta$(1,1), which resulted in beta distributions similar to the priors.  
    
    e.  *Stage 3*:  This model is the same as Stage 1, a spatially stratified SPM, but now includes priors on *K* and $\phi_{80}$.  The *K* for the 4 management areas are estimated using a dirichlet distribution such that the sum of the management area *K's* add up to *K*.  Results from this model are used to estimate MSY, Fmsy, stock status ($\phi_{now}$), and other biological reference points as well as project the population into the future and perform risk analysis.  This model may be run with [`Production_models/Code/Stage3_run_model.R`] and [`Production_models/Code/Stage3_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage3`].
    
    f.  *Projections*: [`Production_models/Code/Projections.R`]  This is code to project the results of Stage 3 models into the future under various harvest policies.  
    
    g.  *Simulations*: This folder [`Production_models/Code/Simulations/.R`] contains code for running simulations to determine the models ability to accruately estimate model parameters and associated biological reference points.  
-   
-      i.  [`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
+
+      ---[`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
       
-      ii. [`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
+      ---[`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
       
-      iii. [`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
+      ---[`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
       
-      iv.  [`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims.R`] and [`Production_models/Code/Figures/Sims.R`]. 
+      ---[`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims/`] and [`Production_models/Code/Figures/Sims/`]. 
 
   
