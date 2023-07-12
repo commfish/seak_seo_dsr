@@ -9,6 +9,8 @@ Resultant assessments associated with this code can be found here:
 
 ![alt text](https://github.com/commfish/seak_seo_dsr/master/readme/seomap.png)
 
+![alt text](https://github.com/commfish/seak_seo_dsr/blob/master/readme/seomap.png)
+
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
 1. **Data processing:** This folder contains script and raw data files for putting together data for use in the analysis contained in the folders below.  This includes catch data and biological data.
