@@ -15,72 +15,85 @@ This repository contains the following sub directories that contain different an
 
 ## Code path and data sources for the assessment:
 
-1. [`r_helper/`] Folder with pre-canned functions referenced throughout the assessment
+1. [`r_helper/`]: Folder with pre-canned functions referenced throughout the assessment
 
 2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
-   a. *Portside sampling for biological data* is available here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data
+    1. *Portside sampling for biological data* is available here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data
    
-   b. *Yelloweye harvest data* is available here:
+    2. *Yelloweye harvest data* is available here:
 
-      ---*Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
+        1. *Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
 
-      ---*Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
+        2. *Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
    
-   c. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
+    3. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
 
-3. **Compile harvest data** [`Data_processing/Code/YE Harvest reconstruction.R`]: Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
+3. **Compile harvest data**: [`Data_processing/Code/YE Harvest reconstruction.R`]: Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
 
 4. **Biological**: Examine and make graphics of biological data for yelloweye rockfish [`IN DEVELOPMENT`]
 
-5. **Estimate yelloweye density for new ROV surveys** If new areas have been sampled since the last assessment, estimate density and then biomass.
+5. **Estimate yelloweye density for new ROV surveys**: If new areas have been sampled since the last assessment, estimate density and then biomass.
    
-   a. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw **ROV** data, prepping it for GIS work, and then complete the processing.
+    1. [`YE_density_estimation/Code/ROV_Processing.R`]: Script for processing raw **ROV** data, prepping it for GIS work, and then complete the processing.
    
-   b. [`YE_density_estimation/Code/ROV_base_distance_modelling.R`]: Examine covariates in the data and run the basic distance models.
+    2. [`YE_density_estimation/Code/ROV_base_distance_modelling.R`]: Examine covariates in the data and run the basic distance models.
 
-   c. [`YE_density_estimation/Code/ROV_dist_model_avg.R`]: Code for averaging multiple distance models for estimate of yelloweye density.
+    3. [`YE_density_estimation/Code/ROV_dist_model_avg.R`]: Code for averaging multiple distance models for estimate of yelloweye density.
 
-   d. [`Data_processing/Code/Biomass_Subdistrict_Calcs.R`]: Code for converting yelloweye density to biomass estimates using the latest available weight data from portside samples.
+    4. [`Data_processing/Code/Biomass_Subdistrict_Calcs.R`]: Code for converting yelloweye density to biomass estimates using the latest available weight data from portside samples.
 
 6. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
 
-   a. https://www.iphc.int/data/fiss-data-query : This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
+    1. https://www.iphc.int/data/fiss-data-query: This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
 
-   b. https://www.iphc.int/datatest/fiss-pacific-halibut-data : As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
+    2. https://www.iphc.int/datatest/fiss-pacific-halibut-data: As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
 
-   c. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
+    3. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
    
 7.  **Calculate expected yelloweye bycatch in the halibut fishery**: This section involves estimating historical discards of yelloweye in the halibut fishery by applying bycatch rates estimated during contemporary times to historical catches and propogating uncertainty.  
-   
-      a. [`Data_processing/Code/Halibut_harvest_reconstruction.R`]: Code for compiling halibut harvest data and apportion catches to SEO management areas.
-   
-      b. [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`]: Estimate the expected bycatch from the halibut fishery using the IPHC survey data and historical halibut harvests.  CAS estimates can be retrieved from INSERT HERE
-   
-8. **REMA model** Run the random effects model using the biomass estimates and IPHC cpue estimates [`REMA/Code/REMA_run.R`].  This is the model used in the 2022 SAFE report.  **Model 22.2** is the current assessment model for the NPFMC as of 2022.  This code contains multiple rema models, methods for comparisons and figures. 
 
-9. **Surplus Production Models** This folder contains code for running the state-space surplus production model (SS-SPM), plotting results, saving output and comparing different models.  There are 3 stages to running the model, all of which ivole a Pella-Tomlinson surplus production model currently configured to maximize the production curve at $B_{40}$ (biomass at 40% of virgin biomass).  The first two stages involves running the models under minimal assumptions (i.e., priors) and using those results to construct informative priors for *K* (carrying capacity for the SEO as a whole) and $\phi_{80}$ (the proportion of K present in 1980).  Part of the reason for this is the difficulty in the long term data series (back to 1888) and the spatial resolution available in the data.  Since 1980 data is available for the 4 management areas in the SEO.  Prior to that data is only available at the scale of the SEO.  The ROV derived biomass estimates that form the foundation of this assessment are at the scale of the 4 management areas during different years making it necessary to come up with a statistical way to estimate SEO-wide biomass.  I have made efforts to combine this into one model, but have so far failed to come up with a better solution that takes advantage of all of the data sources. This analysis also included a risk analysis to determine how under- and over-estimating bycatch in the halibut fishery affects the assessment.  
+    1. [`Data_processing/Code/Halibut_harvest_reconstruction.R`]: Code for compiling halibut harvest data and apportion catches to SEO management areas.
+   
+    2. [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`]: Estimate the expected bycatch from the halibut fishery using the IPHC survey data and historical halibut harvests.  CAS estimates can be retrieved from INSERT HERE
+   
+9. **REMA model**: Run the random effects model using the biomass estimates and IPHC cpue estimates [`REMA/Code/REMA_run.R`].  This is the model used in the 2022 SAFE report.  **Model 22.2** is the current assessment model for the NPFMC as of 2022.  This code contains multiple rema models, methods for comparisons and figures. 
 
-   a.  *Stage 1*: This stage involves running the spatially stratified SPM using data going back to 1980.  This model has minimal priors placed on key parameters and the goal of this stage is to produce posterior estimates of SEO biomass to use in Stage 2.  The model can be constructed and run using [`Production_models/Code/Stage1_run_model.R`].  The code [`Production_models/Code/Stage1_run_multiple_models.R`] allows you to load and run multiple models and runs much smoother.  (I use the multiple_model scripts as modify the models in a text editor) The model for stage one is currently [`Production_models/Models/v22.3_Stage1`].
-   
-   b.  *Stage 2*:  This stage involves  simple, non-stratified, production model that uses the posterior distributions of SEO biomass from 1996 through now and catch estimates going back to 1881.  Catch data consist of broad estimates of removals by the foreign fleet during the 60's and estimates of discards in the halibut fishery derived from 7b [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`].  Extra variance is included in estimating historical bycatch and discarding in the halibut fishery.  As with stage 1 there are two available scripts [`Production_models/Code/Stage2_run_model.R`] and [`Production_models/Code/Stage2_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage2`].  
-   
-   c.  *K and $\phi_{80}$ priors*:  With the results from Stage 1 and 2, use [`Production_models/Code/K and phi prior development.R`] to extract prior distributions for *K* and $\phi_{80}$.
-   
-   d.  *R prior*:  [`Production_models/Code/r prior development.R`] provides methods for developing a prior for *r*, the rate of intrinsic growth at low population density.  This script follows the methods of McAllister et al. 2001 and produces beta and gamma distributions based on the results from Stage 2.  The final model used for v22.3 used an uninformative beta prior, $Beta$(1,1), which resulted in beta distributions similar to the priors.  
-   
-   e.  *Stage 3*:  This model is the same as Stage 1, a spatially stratified SPM, but now includes priors on *K* and $\phi_{80}$.  The *K* for the 4 management areas are estimated using a dirichlet distribution such that the sum of the management area *K's* add up to *K*.  Results from this model are used to estimate MSY, Fmsy, stock status ($\phi_{now}$), and other biological reference points as well as project the population into the future and perform risk analysis.  This model may be run with [`Production_models/Code/Stage3_run_model.R`] and [`Production_models/Code/Stage3_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage3`].
-   
-   f.  *Projections*: [`Production_models/Code/Projections.R`]  This is code to project the results of Stage 3 models into the future under various harvest policies.  
-   
-   g.  *Simulations*: This folder [`Production_models/Code/Simulations/.R`] contains code for running simulations to determine the models ability to accruately estimate model parameters and associated biological reference points.  
+10. **Surplus Production Models**: This folder contains code for running the state-space surplus production model (SS-SPM), plotting results, saving output and comparing different models. Details of this model are included in the appendices of the 2022 SAFE report linked above. There are 3 stages to running the model, all of which ivole a Pella-Tomlinson surplus production model currently configured to maximize the production curve at $B_{40}$ (biomass at 40% of virgin biomass).  The first two stages involves running the models under minimal assumptions (i.e., priors) and using those results to construct informative priors for *K* (carrying capacity for the SEO as a whole) and $\phi_{80}$ (the proportion of K present in 1980).  Part of the reason for this is the difficulty in the long term data series (back to 1888) and the spatial resolution available in the data.  Since 1980 data is available for the 4 management areas in the SEO.  Prior to that data is only available at the scale of the SEO.  The ROV derived biomass estimates that form the foundation of this assessment are at the scale of the 4 management areas during different years making it necessary to come up with a statistical way to estimate SEO-wide biomass.  I have made efforts to combine this into one model, but have so far failed to come up with a better solution that takes advantage of all of the data sources. This analysis also included a risk analysis to determine how under- and over-estimating bycatch in the halibut fishery affects the assessment.
 
-      ---[`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
+    1. [`Production_models/Code/SPM_helper.R`]: Functions for working with the SPMs. 
+
+    2. *Stage 1*: This stage involves running the spatially stratified SPM using data going back to 1980.  This model has minimal priors placed on key parameters and the goal of this stage is to produce posterior estimates of SEO biomass to use in Stage 2.  The model can be constructed and run using [`Production_models/Code/Stage1_run_model.R`].  The code [`Production_models/Code/Stage1_run_multiple_models.R`] allows you to load and run multiple models and runs much smoother.  (I use the multiple_model scripts as modify the models in a text editor) The model for stage one is currently [`Production_models/Models/v22.3_Stage1`].
+   
+    3. *Stage 2*:  This stage involves  simple, non-stratified, production model that uses the posterior distributions of SEO biomass from 1996 through now and catch estimates going back to 1881.  Catch data consist of broad estimates of removals by the foreign fleet during the 60's and estimates of discards in the halibut fishery derived from 7b [`Data_processing/Code/IPHC_Survey_Expected_Bycatch.R`].  Extra variance is included in estimating historical bycatch and discarding in the halibut fishery.  As with stage 1 there are two available scripts [`Production_models/Code/Stage2_run_model.R`] and [`Production_models/Code/Stage2_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage2`].  
+   
+    4. *K and* $\phi_{80}$ *priors*:  With the results from Stage 1 and 2, use [`Production_models/Code/K and phi prior development.R`] to extract prior distributions for *K* and $\phi_{80}$.
+   
+    5. *R prior*:  [`Production_models/Code/r prior development.R`] provides methods for developing a prior for *r*, the rate of intrinsic growth at low population density.  This script follows the methods of McAllister et al. 2001 and produces beta and gamma distributions based on the results from Stage 2.  The final model used for v22.3 used an uninformative beta prior, $Beta$(1,1), which resulted in beta distributions similar to the priors.  
+   
+    6. *Stage 3*:  This model is the same as Stage 1, a spatially stratified SPM, but now includes priors on *K* and $\phi_{80}$.  The *K* for the 4 management areas are estimated using a dirichlet distribution such that the sum of the management area *K's* add up to *K*.  Results from this model are used to estimate MSY, Fmsy, stock status ($\phi_{now}$), and other biological reference points as well as project the population into the future and perform risk analysis.  This model may be run with [`Production_models/Code/Stage3_run_model.R`] and [`Production_models/Code/Stage3_run_multiple_models.R`] and the model used for v22.3 is [`Production_models/Models/v22.3_Stage3`].
+   
+    7. *Projections*: [`Production_models/Code/Projections.R`]  This is code to project the results of Stage 3 models into the future under various harvest policies.  
+   
+    8. *Simulations*: This folder [`Production_models/Code/Simulations/.R`] contains code for running simulations to determine the models ability to accruately estimate model parameters and associated biological reference points.  
+
+        1. [`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
       
-      ---[`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
+        2. [`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
       
-      ---[`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
+        3. [`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
       
-      ---[`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims/`] and [`Production_models/Code/Figures/Sims/`]. 
+        4. [`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims/`] and [`Production_models/Code/Figures/Sims/`].
+
+    9. *Outstanding issues with SS-SPMs*: 
+
+        1. *Model underestimates r:* I think this may be due to misspecification in the r hyper-prior, or issues with constraints on process error.  Will try a simpler model with a single r parameter shared by the four management areas.  Will also explore loosing bounds on the process error.
+
+        2. *Long run times:* One Stage of the model can take over 12 hours to converge.  Will try reformulating the model so the $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.
+      
+        3. *3 stage approach:* Is this acceptable??? 
+    
+
+   
 
   
