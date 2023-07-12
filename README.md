@@ -97,7 +97,15 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
         2. *Long run times:* One Stage of the model can take over 12 hours to converge.  Will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Stan may also allow faster processing as well.  
       
-        3. *3 stage approach:* Is this acceptable??? 
+        3. *3 stage approach:* Is this legit???
+      
+        4. *IPHC data:* After a couple of meetings with IPHC staff there are some modifications that need to be made to those calculations that include:
+      
+            1. Filtering out ineffective stations (I wasn't aware of this before).
+          
+            2. Correcting CPUE/NPUE/WCPUE for hook saturation.  Should be easy once I get the correction factor.
+          
+            3. Filtering stations for only those that are in yelloweye habitat.  The station locations can very by up to 3 nm per year, so a given station may drift in and out of yelloweye habitat.  This may be best accomplished with a habitat map... likely using the one's defined for the ROV survey.  The State Rockfish Initiative (SRI) has assigned various people to reworking the habitat maps but has yet to be completed.  
     
 
    
