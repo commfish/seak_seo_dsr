@@ -28,26 +28,24 @@
   library(ggridges)
   library(xlsx)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #============================================================
 #Organize which models to run
 #ModPHASE3.1<-"PT2i_base_PHASE3_beta-phi"
-ModPHASE3.2<-"PT2i_base_PHASE3_norm-phi"
+#ModPHASE3.2<-"PT2i_base_PHASE3_norm-phi"
 
-phase3<-ModPHASE3.2
-simMod<-"PHASE_3_sim"
+phase3<-"Production_models/Models/v22.3_Stage3"
+simMod<-"Production_models/Models/v22.3_Stage3_Sims"
 #simMod<-"PHASE_3_sim_rBvers"
 
 #Mod.list<-c(ModPHASE3.1,ModPHASE3.2)
 
 #pick which model run you want to simulate:
-res.to.sim<-"PHASE3_B1-1_B2-1_upv-5_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.2_derb_0_1500k"
-
+res.to.sim<-"Production_models/Output/RISK3_B1-1_B2-1_upv-5_derb_0_recABC_-0perc_1500k"
+res.to.sim<-"Production_models/Output/testing3"
 #set the appropriate settings for hyper priors
 Derby.list<-c(0)#c(0,0.3,-0.3)
 DEsdlist<-c(0.1)
@@ -71,7 +69,7 @@ upvarlist<- c(-5)
 #=====================================================================
 ## Load up the model to simulate and extract the parameter values
 
-ests<-read.csv(paste0("Model Output/",res.to.sim,"/results_sum.csv"))
+ests<-read.csv(paste0(res.to.sim,"/results_sum.csv"))
 ests<-as.data.frame(ests)
 
 #view(ests)
@@ -95,7 +93,7 @@ logvar<-log(ests$mean[ests$parameter=="sigma"])
 
 #=====================================================================
 ## Load the data for simulating the data
-Data<-load.data(YEAR=2022,
+Data<-load.data(YEAR=Year,
                 Derby.Eff = Derby.list[1],
                 DEsd=0.1,  #this is CV for derby
                 B1=B1list[1],
@@ -134,16 +132,16 @@ simparameters=c("B.obs","sCPUE" ,"KnC.obs","ExpByc","B", "epsilon")
 #
 #FLAG: good idea to run list on tiny chains (2K) to check for bugs in model code! 
 #beta500k not fully converged, 3.5 hours
-nsims<-50   #described above the simulation data frames to save... 
-start.sim.no<-51
-niter<-1250000#300000 #350000
-burnin<-500000
+nsims<-3 #50   #described above the simulation data frames to save... 
+start.sim.no<-1
+niter<-2000 #1250000#300000 #350000
+burnin<-500 #500000
 #5K, 2.5m.
 #600K - 4.8 hours; really close to converged for both norm- and beta-phi models
 #700K ~ 6.3 hours; not converged but close.  small r only bounded to 0.3.  to 0.2 will help  Probably 1m like phase 1 gets us there...
 set.seed(1234)
 
-for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
+for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-1
   sim <- jagsUI::jags(model.file=simMod, data=simdata,
                       parameters.to.save=simparameters, #inits=inits,
                       n.chains=1, parallel=F, n.iter=1,
@@ -209,7 +207,8 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   sim.KnC<-matrix(sim.KnC,nrow=4)
   sim.eby<-matrix(sim.eby,nrow=4)
   sim.modB<-matrix(sim.modB,nrow=4)
-  sim.eps<-matrix(sim.eps,nrow=4)
+  #sim.eps<-matrix(sim.eps,nrow=4)
+  sim.eps<-matrix(sim.eps,nrow=1)
   
   sim.cv.c<-as.vector(rep(0,ncol(cv.sCPUE)))
   sim.sv.b<-as.vector(rep(0,ncol(cv.B)))
@@ -218,25 +217,25 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   EYKT.sCPUE.simvals[1,]<-sim.sCPUE[1,]
   EYKT.KnC.simvals[1,]<-sim.KnC[1,]
   EYKT.eby.simvals[1,]<-sim.eby[1,]
-  EYKT.modB.simvals[1,]<-sim.modB[1,]
+  EYKT.modB.simvals[1,]<-sim.modB[1,c(1:ncol(EYKT.biomass.simvals[j,]))]
   
   NSEO.biomass.simvals[1,]<-sim.B[2,]
   NSEO.sCPUE.simvals[1,]<-sim.sCPUE[2,]
   NSEO.KnC.simvals[1,]<-sim.KnC[2,]
   NSEO.eby.simvals[1,]<-sim.eby[2,]
-  NSEO.modB.simvals[1,]<-sim.modB[2,]
+  NSEO.modB.simvals[1,]<-sim.modB[2,c(1:ncol(EYKT.biomass.simvals[j,]))]
   
   CSEO.biomass.simvals[1,]<-sim.B[3,]
   CSEO.sCPUE.simvals[1,]<-sim.sCPUE[3,]
   CSEO.KnC.simvals[1,]<-sim.KnC[3,]
   CSEO.eby.simvals[1,]<-sim.eby[3,]
-  CSEO.modB.simvals[1,]<-sim.modB[3,]
+  CSEO.modB.simvals[1,]<-sim.modB[3,c(1:ncol(EYKT.biomass.simvals[j,]))]
   
   SSEO.biomass.simvals[1,]<-sim.B[4,]
   SSEO.sCPUE.simvals[1,]<-sim.sCPUE[4,]
   SSEO.KnC.simvals[1,]<-sim.KnC[4,]
   SSEO.eby.simvals[1,]<-sim.eby[4,]
-  SSEO.modB.simvals[1,]<-sim.modB[4,]
+  SSEO.modB.simvals[1,]<-sim.modB[4,c(1:ncol(EYKT.biomass.simvals[j,]))]
   
   eps.simvals[1,]<-sim.eps
   
@@ -293,7 +292,7 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   #load(file=paste("Model Output/",res.to.sim,"/postsim",j,".Rdata", sep=""))
   
   #dir.create(paste("Figures/",res.to.sim,"/sim",j,sep=""))
-  dir.create(paste("Model Output/", res.to.sim,"/simulations/",sep=""))
+  dir.create(paste("Production_models/Output/Sims/", strsplit(res.to.sim,"/")[[1]][3],"/",sep=""))
   
   B.ey<-par.ext(par="B",years=N+Fu,areai=1)
   B.ns<-par.ext("B",N+Fu,2)
@@ -307,7 +306,7 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   colch<-c("blue","red","purple","orange","forestgreen")
   vars<-list(B.ey,B.ns,B.cs,B.ss)
   
-  png(paste("Model Output/", res.to.sim,"/simulations/plot_",j,".png",sep=""),
+  png(paste("Production_models/Output/Sims/", strsplit(res.to.sim,"/")[[1]][3],j,".png",sep=""),
       width=7,height=6,#width=9.5,height=8.5,
       units="in",res=1200)
   par(mfrow=c(2,2), mar=c(4,5,3,1))
@@ -390,7 +389,7 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   }
   
   write.csv(sim.results,
-            file=paste("Model Output/", res.to.sim,"/simulations/results_sims_",
+            file=paste("Production_models/Output/Sims/", strsplit(res.to.sim,"/")[[1]][3],"/results_sims_",
                        start.sim.no,"-",nsims+start.sim.no-1,".csv",sep=""))
   
   wb <- createWorkbook()     
@@ -409,7 +408,7 @@ for (j in start.sim.no:(nsims+start.sim.no-1)){  #j<-2
   #addPicture("C:/HER/ASA/herring_assessments/togiak_herring/2023_forecast/figures/fig1.png", sheet1, startRow=1, startColumn=1)
   
   saveWorkbook(wb, 
-               file=paste("Model Output/", res.to.sim,"/simulations/simdata_sims_",
+               file=paste("Production_models/Output/Sims/", strsplit(res.to.sim,"/")[[1]][3],"/results_sims_",
                           start.sim.no,"-",nsims+start.sim.no-1,".xlsx",sep=""))
 }
 

@@ -17,6 +17,14 @@ source("r_helper/Port_bio_function.R")
 
 YEAR <- 2023
 
+#*******************************************************************************
+### NEED TO DO!!!!!!!! 7-12-23
+# 1) Add in hook saturation correction factor for both cpue and bycatch 
+# 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it
+# 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
+#    Station locations move by 3nm year to year, so may be in and out of actual habitat
+#*******************************************************************************
+
 #get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
 Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
 

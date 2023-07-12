@@ -17,6 +17,14 @@ library(vroom)
 
 source("r_helper/Port_bio_function.R")
 
+#*******************************************************************************
+### NEED TO DO!!!!!!!! 7-12-23
+# 1) Add in hook saturation correction factor for both cpue and bycatch 
+# 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it
+# 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
+#    Station locations move by 3nm year to year, so may be in and out of actual habitat
+#*******************************************************************************
+
 #IPHCfunction<-function(){
 {
   #HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)

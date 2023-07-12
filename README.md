@@ -85,7 +85,7 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
         1. [`Production_models/Code/Simulations/PHASE3_simulator.R`]: Modify the desired model to simulate data from known parameter values.
       
-        2. [`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.
+        2. [`Production_models/Code/Simulations/Data_simulator.R`]: Create simulated data sets from a given model output and compare simulated values to posteriors from the original model.This is mostly a visual tool to compare simulated data to posteriors from the model.
       
         3. [`Production_models/Code/Simulations/Model_simulated_data.R`]: Run the simulations.  Given that these models were taking over 12 hours to converge, this is a long term commitment.  
       

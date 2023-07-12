@@ -20,30 +20,27 @@
   library(jagsUI)
   library(ggmcmc)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
-  
-  YEAR<-2022
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #============================================================
 #OFL<-c(0.019,0.026,0.016,0.015)  #means
+#Biomass estimates from posterior... 
 BestBio<-c(4604,1409,5994,6019)  #min PE, unif R
 BestBio<-c(4619,1416,6070,6046) #mod PE, broad R
 
-#SQ Bio
-SQ<-read.csv("Data/SEO_YE_Biomass_subd_082322.csv") %>% filter(Year == YEAR)
-SQ %>% mutate(harv.EY = Biomass_mt_lo90*Bio.EYKT.mt/Biomass_mt,
-              harv.NS = Biomass_mt_lo90*Bio.NSEO.mt/Biomass_mt,
-              harv.CS = Biomass_mt_lo90*Bio.CSEO.mt/Biomass_mt,
-              harv.SS = Biomass_mt_lo90*Bio.SSEO.mt/Biomass_mt) -> SQ
+#Pre-2022 biomass estimates with old methods that are now defunct... 
+#SQ<-read.csv("Data_processing/Data/SEO_YE_Biomass_subd_082322.csv") %>% filter(Year == YEAR)
+#SQ %>% mutate(harv.EY = Biomass_mt_lo90*Bio.EYKT.mt/Biomass_mt,
+#              harv.NS = Biomass_mt_lo90*Bio.NSEO.mt/Biomass_mt,
+#              harv.CS = Biomass_mt_lo90*Bio.CSEO.mt/Biomass_mt,
+#              harv.SS = Biomass_mt_lo90*Bio.SSEO.mt/Biomass_mt) -> SQ
 
-SQBio.lo<-as.vector(c(SQ$harv.EY, SQ$harv.NS, SQ$harv.CS, SQ$harv.SS) )
-sum(SQBio.lo); 0.032*sum(SQBio.lo); 0.026*sum(SQBio.lo); 0.02*sum(SQBio.lo)
-SQBio.pt<-as.vector(c(SQ$Bio.EYKT.mt, SQ$Bio.NSEO.mt,SQ$Bio.CSEO.mt,SQ$Bio.SSEO.mt))
-sum(SQBio.pt); 0.032*sum(SQBio.pt); 0.026*sum(SQBio.pt); 0.02*sum(SQBio.pt)
+#SQBio.lo<-as.vector(c(SQ$harv.EY, SQ$harv.NS, SQ$harv.CS, SQ$harv.SS) )
+#sum(SQBio.lo); 0.032*sum(SQBio.lo); 0.026*sum(SQBio.lo); 0.02*sum(SQBio.lo)
+#SQBio.pt<-as.vector(c(SQ$Bio.EYKT.mt, SQ$Bio.NSEO.mt,SQ$Bio.CSEO.mt,SQ$Bio.SSEO.mt))
+#sum(SQBio.pt); 0.032*sum(SQBio.pt); 0.026*sum(SQBio.pt); 0.02*sum(SQBio.pt)
 
 OFL<-c(0.013,0.019,0.012,0.011)  #medians  #min PE, unif R
 OFL<-c(0.019,0.024,0.018,0.016)  #mod PE, broad R
@@ -62,26 +59,26 @@ SEOcalc<-data.frame()
 
 FU<-50
 
-FY<-2022
+FY<-Year
 p <- 0.18815
 sdlist<-c("EYKT", "NSEO", "CSEO", "SSEO")
 
-ABClist<-list(BestBio*ABC,BestBio*(ABC*0.9),BestBio*(ABC*0.75) ,SQBio.lo*0.02, SQBio.pt*0.02)
+ABClist<-list(BestBio*ABC,BestBio*(ABC*0.9),BestBio*(ABC*0.75))# ,SQBio.lo*0.02, SQBio.pt*0.02)
 harvpol<-c("SPM_maxABC","SPM_redABC10","SPM_redABC25","SQ_lo90","SQ_pt")
 
 D.mods<-list("RISK3_B1-1_B2-1_upv-5_derb_0_recABC_-0perc_1500k/post.Rdata",   #min PE, unif R
              "RISK3_B1-1_B2-1_upv-5_derb_0.3_recABC_-0perc_1500k/post.Rdata",
              "RISK3_B1-1_B2-1_upv-5_derb_-0.3_recABC_-0perc_1500k/post.Rdata")
-D.mods<-list("PHASE3_B1-1.48_B2-23_upv-3_phmu-0.7_phsig-1.2_Kmu-10.7_Ksig-9.7_derb_0_1500k/post.Rdata",   #mod PE, broad R R
-             "PHASE3_B1-1.48_B2-23_upv-3_phmu-0.6_phsig-1.2_Kmu-10.8_Ksig-9.6_derb_0.3_1500k/post.Rdata",
-             "PHASE3_B1-1.48_B2-23_upv-3_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.4_derb_-0.3_1500k/post.Rdata")
+#D.mods<-list("PHASE3_B1-1.48_B2-23_upv-3_phmu-0.7_phsig-1.2_Kmu-10.7_Ksig-9.7_derb_0_1500k/post.Rdata",   #mod PE, broad R R
+#             "PHASE3_B1-1.48_B2-23_upv-3_phmu-0.6_phsig-1.2_Kmu-10.8_Ksig-9.6_derb_0.3_1500k/post.Rdata",
+#             "PHASE3_B1-1.48_B2-23_upv-3_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.4_derb_-0.3_1500k/post.Rdata")
 derb.lbl<-c("unbiased","biased low","biased hi")
 
 j<-1
 
 for (h in 1:length(ABClist)){  #h<-1
   for (d in 1:length(D.mods)){  #d<-1
-    load(file=paste("Model Output/",D.mods[d],sep="")); post<-post
+    load(file=paste("Production_models/Output/",D.mods[d],sep="")); post<-post
     
     #get vector of posteriors for R, K, epsilon, B22
     sigs<-MCMCchains(object=post, params=c("sigma"),ISB=FALSE,exact=TRUE)
@@ -198,13 +195,13 @@ for (h in 1:length(ABClist)){  #h<-1
   }
 }
 
-write.csv(OUT,"Model Output/Risk_Analysis_minPE_unifR.csv")  
-write.csv(OUT,"Model Output/Risk_Analysis_modPE_broadR.csv")
+write.csv(OUT,"Production_models/Output/Risk_Analysis_minPE_2022.csv")  
+#write.csv(OUT,"Production_models/Output/Risk_Analysis_modPE_broadR.csv")
 ###################################################################################
 ###################################################################################
 
 for (d in 1:length(D.mods)){  #d<-1
-  load(file=paste("Model Output/",D.mods[d],sep="")); post<-post
+  load(file=paste("Production_models/Output/",D.mods[d],sep="")); post<-post
   
   #get vector of posteriors for R, K, epsilon, B22
   sigs<-MCMCchains(object=post, params=c("sigma"),ISB=FALSE,exact=TRUE)

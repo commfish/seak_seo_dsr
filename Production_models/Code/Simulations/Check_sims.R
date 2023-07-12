@@ -19,10 +19,8 @@
   library(tidyverse)
   library(ggridges)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #============================================================

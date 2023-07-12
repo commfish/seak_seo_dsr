@@ -27,26 +27,25 @@
   library(tidyverse)
   library(ggridges)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #============================================================
 #Organize which models to run
 #ModPHASE3.1<-"PT2i_base_PHASE3_beta-phi"
-ModPHASE3.2<-"PT2i_base_PHASE3_norm-phi"
+#??? ModPHASE3.2<-"PT2i_base_PHASE3_norm-phi"
 
-phase3<-ModPHASE3.2
-simMod<-"PHASE_3_sim"
+#??? phase3<-ModPHASE3.2
+simMod<-"Production_models/Models/v22.3_Stage3_Sims"
 #simMod<-"PHASE_3_sim_rBvers"
 
 #Mod.list<-c(ModPHASE3.1,ModPHASE3.2)
 
 #pick which model run you want to simulate:
-res.to.sim<-"PHASE3_B1-1_B2-1_upv-5_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.2_derb_0_1500k"
-
+#res.to.sim<-"Production_models/Output/PHASE3_B1-1_B2-1_upv-5_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.2_derb_0_1500k"
+res.to.sim<-"Production_models/Output/RISK3_B1-1_B2-1_upv-5_derb_0_recABC_-0perc_1500k"
+res.to.sim<-"Production_models/Output/testing3"
 #set the appropriate settings for hyper priors
 Derby.list<-c(0)#c(0,0.3,-0.3)
 DEsdlist<-c(0.1)
@@ -65,17 +64,15 @@ B2list<-c(1)
 #upvarlist<- c(-5)
 
 #===================================================================
-#FLAG: good idea to run list on tiny chains (2K) to check for bugs in model code! 
-#beta500k not fully converged, 3.5 hours
 
 set.seed(1234)
 
 #!!!: FLAG: adjust initial values and data in loop for specific models!!! 
 
-  ests<-read.csv(paste0("Model Output/",res.to.sim,"/results_sum.csv"))
+  ests<-read.csv(paste0(res.to.sim,"/results_sum.csv"))
   ests<-as.data.frame(ests)
   
-  view(ests)
+  #view(ests)
   
   r<-ests$X50[grep(c("r\\["),ests$parameter)]
   #r<-ests$mean[grep(c("r\\["),ests$parameter)]
@@ -93,7 +90,7 @@ set.seed(1234)
   logKseo<-log(ests$X50[ests$parameter=="Kseo"])
   logvar<-log(ests$mean[ests$parameter=="sigma"])
   #bigKsigma<-c(0.269)   #c(0.269)
-  Data<-load.data(YEAR=2022,
+  Data<-load.data(YEAR=Year,
                   Derby.Eff = Derby.list[1],
                   DEsd=0.1,  #this is CV for derby
                   B1=B1list[1],
@@ -125,7 +122,7 @@ set.seed(1234)
   realC <- KnC.obs
   realBy <- ExpByc
   
-  str(post)
+  #str(post)
   
   parameters=c("B.obs","sCPUE" ,"KnC.obs","ExpByc","B", "epsilon") 
   
@@ -133,11 +130,11 @@ set.seed(1234)
 
   #plot simulated data...
   
-  ests<-read.csv(paste0("Model Output/",res.to.sim,"/results_sum.csv"))
-  load(file=paste("Model Output/",res.to.sim,"/post.Rdata", sep=""))
+  #ests<-read.csv(paste0(res.to.sim,"/results_sum.csv"))
+  load(file=paste(res.to.sim,"/post.Rdata", sep=""))
   
   All.years<-seq(min(Years),max(Years)+1,by=1)
-  FuYear<-Years+1
+  #FuYear<-Years+1
   sdlist<-c("EYKT", "NSEO", "CSEO", "SSEO")
   
   colch<-c("blue","red","purple","orange","forestgreen")
@@ -145,7 +142,7 @@ set.seed(1234)
     #png(paste("Figures/",filename,"/Biomass_fit_FIX.png",sep=""),
   #    width=7,height=6,#width=9.5,height=8.5,
   #    units="in",res=1200)
-  nsims<-100
+  nsims<-10
   
   #par(mfrow=c(2,2), mar=c(4,5,3,1))
   {biomass.simvals<-as.data.frame(matrix(nrow=nsims, ncol=ncol(B.obs)))
@@ -174,23 +171,29 @@ set.seed(1234)
   CSEO.eby.simvals<-sCPUE.simvals
   SSEO.eby.simvals<-sCPUE.simvals
   
-  modB.simvals<-as.data.frame(matrix(nrow=nsims, ncol=ncol(B.obs)+1))
-  colnames(modB.simvals)<-seq(1980,(1980+ncol(B.obs)),1)
+  #modB.simvals<-as.data.frame(matrix(nrow=nsims, ncol=ncol(B.obs)))
+  #colnames(modB.simvals)<-seq(1980,(1980+ncol(B.obs)-1),1)
+  #ncol(modB.simvals)
+  #ncol(sCPUE.simvals)
+  
   EYKT.modB.simvals<-sCPUE.simvals
   NSEO.modB.simvals<-sCPUE.simvals
   CSEO.modB.simvals<-sCPUE.simvals
   SSEO.modB.simvals<-sCPUE.simvals
   
-  eps.simvals<-as.data.frame(matrix(nrow=nsims, ncol=ncol(B.obs)+1))
-  colnames(eps.simvals)<-seq(1980,(1980+ncol(B.obs)),1)
+  #N
+  #eps.simvals<-as.data.frame(matrix(nrow=nsims, ncol=ncol(B.obs)))
+  #colnames(eps.simvals)<-seq(1980,(1980+ncol(B.obs)-1),1)
   EYKT.eps.simvals<-sCPUE.simvals
   NSEO.eps.simvals<-sCPUE.simvals
   CSEO.eps.simvals<-sCPUE.simvals
-  SSEO.eps.simvals<-sCPUE.simvals}
+  SSEO.eps.simvals<-sCPUE.simvals
+  
+  eps.simvals<-as.data.frame(matrix(nrow=nsims, ncol=N))}
 
   #save values from simulations... 
-  getwd()
-  write.csv(data, file=paste("Model Output/", res.to.sim,"/simulations/simulated_values.csv", sep=""))
+  #getwd()
+  write.csv(data, file=paste("Production_models/Output/Sims/sim_vals_",strsplit(res.to.sim,"/")[[1]][3],".csv", sep=""))
   
   for (j in 1:nsims){  #j<-1
       sim <- jagsUI::jags(model.file=simMod, data=data,
@@ -218,7 +221,7 @@ set.seed(1234)
       sim.KnC<-matrix(sim.KnC,nrow=4)
       sim.eby<-matrix(sim.eby,nrow=4)
       sim.modB<-matrix(sim.modB,nrow=4)
-      sim.eps<-matrix(sim.eps,nrow=4)
+      sim.eps<-matrix(sim.eps,nrow=1)
       
       sim.cv.c<-as.vector(rep(0,ncol(cv.sCPUE)))
       sim.sv.b<-as.vector(rep(0,ncol(cv.B)))
@@ -227,25 +230,25 @@ set.seed(1234)
       EYKT.sCPUE.simvals[j,]<-sim.sCPUE[1,]
       EYKT.KnC.simvals[j,]<-sim.KnC[1,]
       EYKT.eby.simvals[j,]<-sim.eby[1,]
-      EYKT.modB.simvals[j,]<-sim.modB[1,]
+      EYKT.modB.simvals[j,]<-sim.modB[1,c(1:ncol(EYKT.biomass.simvals[j,]))]  #BUG
       
       NSEO.biomass.simvals[j,]<-sim.B[2,]
       NSEO.sCPUE.simvals[j,]<-sim.sCPUE[2,]
       NSEO.KnC.simvals[j,]<-sim.KnC[2,]
       NSEO.eby.simvals[j,]<-sim.eby[2,]
-      NSEO.modB.simvals[j,]<-sim.modB[2,]
+      NSEO.modB.simvals[j,]<-sim.modB[2,c(1:ncol(EYKT.biomass.simvals[j,]))]
       
       CSEO.biomass.simvals[j,]<-sim.B[3,]
       CSEO.sCPUE.simvals[j,]<-sim.sCPUE[3,]
       CSEO.KnC.simvals[j,]<-sim.KnC[3,]
       CSEO.eby.simvals[j,]<-sim.eby[3,]
-      CSEO.modB.simvals[j,]<-sim.modB[3,]
+      CSEO.modB.simvals[j,]<-sim.modB[3,c(1:ncol(EYKT.biomass.simvals[j,]))]
       
       SSEO.biomass.simvals[j,]<-sim.B[4,]
       SSEO.sCPUE.simvals[j,]<-sim.sCPUE[4,]
       SSEO.KnC.simvals[j,]<-sim.KnC[4,]
       SSEO.eby.simvals[j,]<-sim.eby[4,]
-      SSEO.modB.simvals[j,]<-sim.modB[4,]
+      SSEO.modB.simvals[j,]<-sim.modB[4,c(1:ncol(EYKT.biomass.simvals[j,]))]
       
       eps.simvals[j,]<-sim.eps
     }
@@ -266,7 +269,7 @@ set.seed(1234)
     B.ss<-par.ext("B",N+1,4)
     vars<-list(B.ey,B.ns,B.cs,B.ss)
     
-    png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_biomass.png", sep=""),
+    png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_biomass.png", sep=""),
         width=8,height=8,#width=9.5,height=8.5,
         units="in",res=1200)
     
@@ -321,7 +324,7 @@ set.seed(1234)
     B.ss<-par.ext("B",N+1,4)
     vars<-list(B.ey,B.ns,B.cs,B.ss)
     
-    png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_biomass_horsehair.png", sep=""),
+    png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_biomass_horsehair.png", sep=""),
         width=8,height=8,#width=9.5,height=8.5,
         units="in",res=1200)
     
@@ -380,7 +383,7 @@ set.seed(1234)
   B.ss<-par.ext("B",N+1,4)
   vars<-list(B.ey,B.ns,B.cs,B.ss)
   
-  png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_biomass_CPUE_ht.png", sep=""),
+  png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_biomass_CPUE_ht.png", sep=""),
       width=8,height=8,#width=9.5,height=8.5,
       units="in",res=1200)
   
@@ -433,16 +436,18 @@ set.seed(1234)
   
   #--------------------------------------------------------------------------
   #PLOT simulated catch and bycatch... 
+  #!! FLAG!! N-1 used here because using posterior from last year's model.  Update
+  # when new model run
   
-  KnC.ey<-par.ext(par="KnC",years=N,areai=1)
-  KnC.ns<-par.ext("KnC",N,2)
-  KnC.cs<-par.ext("KnC",N,3)
-  KnC.ss<-par.ext("KnC",N,4)
+  KnC.ey<-par.ext(par="KnC",years=N-1,areai=1)  #FLAG N/N-1
+  KnC.ns<-par.ext("KnC",N-1,2)                  #FLAG N/N-1
+  KnC.cs<-par.ext("KnC",N-1,3)                  #FLAG N/N-1
+  KnC.ss<-par.ext("KnC",N-1,4)                  #FLAG N/N-1
   
   colch<-c("blue","forestgreen","purple")
   vars<-list(KnC.ey,KnC.ns,KnC.cs,KnC.ss)
   
-  png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_catch.png", sep=""),
+  png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_catch.png", sep=""),
       width=8,height=8,#width=9.5,height=8.5,
       units="in",res=1200)
   
@@ -483,16 +488,18 @@ set.seed(1234)
   dev.off()
 #------------------------------------------------------------------------------
 # Expected Bycatch
+  #!! FLAG!! N-1 used here because using posterior from last year's model.  Update
+  # when new model run
   
-  By.ey<-par.ext(par="By",years=N,areai=1)
-  By.ns<-par.ext("By",N,2)
-  By.cs<-par.ext("By",N,3)
-  By.ss<-par.ext("By",N,4)
+  By.ey<-par.ext(par="By",years=N-1,areai=1)
+  By.ns<-par.ext("By",N-1,2)
+  By.cs<-par.ext("By",N-1,3)
+  By.ss<-par.ext("By",N-1,4)
   
   colch<-c("blue","orange","purple")
   vars<-list(By.ey,By.ns,By.cs,By.ss)
   
-  png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_bycatch.png", sep=""),
+  png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_bycatch.png", sep=""),
       width=8,height=8,#width=9.5,height=8.5,
       units="in",res=1200)
   
@@ -551,9 +558,9 @@ set.seed(1234)
   par(mfrow=c(1,1))
   #envplot(pe,1980:(1980+N),cols=c("black","black"),n=0,ylab="epsilon",xlab="Year",ylim=c(-0.2,0.2))
   #abline(h=0,col="red",lty=2)
-  Years2<-seq(1980,2023,1)
+  Years2<-seq(1980,Year,1)
   
-  png(file=paste("Model Output/", res.to.sim,"/simulations/simulated_vs_posterior_PE.png", sep=""),
+  png(file=paste("Production_models/Figures/Sims/",strsplit(res.to.sim,"/")[[1]][3],"_simulated_vs_posterior_PE.png", sep=""),
       width=5,height=5,#width=9.5,height=8.5,
       units="in",res=1200)
   

@@ -18,13 +18,15 @@ library(MASS)
 library(R2OpenBUGS)
 library(jagsUI)
 library(ggmcmc)
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
+  
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 ###########################################################################################################
 
 #=========================================================================================
 #name the model
-Mod.title<-"PHASE_3_sim"
+Mod.title<-"Production_models/Models/v22.3_Stage3_Sims"
 #=========================================================================================
 cat('data { 
 
@@ -244,6 +246,11 @@ alpha <- c(1,1,1,1)
 model{
 fake<-0
 }', file=Mod.title) 
+
+
+#################################################################################
+## SCRAP
+#################################################################################
 
 #beta formulation from Albert, J. and J. Hu.  2019.  Probability and Bayesian Modeling.  Chapman and Hall/CRC New York.  552. pg. 
 

@@ -27,24 +27,22 @@
   library(tidyverse)
   library(ggridges)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 ### identify which model results you're working with.  This should match the other
 # 2 scripts!!!
-res.to.sim<-"PHASE3_B1-1_B2-1_upv-5_phmu-0.7_phsig-1.2_Kmu-10.6_Ksig-9.2_derb_0_1500k"
-
+res.to.sim<-"Production_models/Output/RISK3_B1-1_B2-1_upv-5_derb_0_recABC_-0perc_1500k"
+res.to.sim<-"Production_models/Output/testing3"
 ### Pull up parameter values used in the simulation:
 
-Sim.params<-read.csv(paste0("Model Output/",res.to.sim,"/simulations/simulated_values.csv"))
+Sim.params<-read.csv(paste0("Production_models/Output/Sims/sim_vals_",strsplit(res.to.sim,"/")[[1]][3],".csv"))
 str(Sim.params)
 
 ##Load simulation results... 
 
-a<-read.csv(paste0("Model Output/",res.to.sim,"/simulations/results_sims_1-50.csv"))
+a<-read.csv(paste0("Production_models/Output/Sims/",strsplit(res.to.sim,"/")[[1]][3],"/results_sims_1-3.csv"))
 b<-read.csv(paste0("Model Output/",res.to.sim,"/simulations/results_sims_51-100.csv"))
 sims<-rbind(a,b)
 str(sims)
@@ -335,7 +333,7 @@ sim.sum[,5]<-as.numeric(sim.sum[,5])
 sim.sum[,6]<-as.numeric(sim.sum[,6])
 sim.sum[,7]<-as.numeric(sim.sum[,7])
 
-write.csv(sim.sum, file=paste0("Model Output/",res.to.sim,"/simulations/sim_results_summary.csv"))
+write.csv(sim.sum, file=paste0("Production_models/Output/Sims/",strsplit(res.to.sim,"/")[[1]][3],"/sim_results_summary.csv"))
 
 #-------------------------------------------------------------------------------
 # Any better at the level of the entire SEO?
