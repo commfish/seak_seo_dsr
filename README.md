@@ -7,10 +7,7 @@ Resultant assessments associated with this code can be found here:
 
 2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
 
-```{r seomap, out.width = "50%",fig.align="center", fig.cap="left-aligned", fig.cap= paste0("Figure 1.  The Southeast Outside Subdistrict of the Gulf of Alaska (SEO) with the Alaska Department of Fish and Game groundfish management areas used for managing the demersal shelf rockfish fishery: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections.")}
-
-knitr::include_graphics(paste0("C:/Users/pjjoy/Documents/Groundfish Biometrics/SEO_DSR/seak_seo_dsr/Figuresseomap.png"), rel_path=FALSE)
-```
+![alt text](https://github.com/commfish/seak_seo_dsr/blob/master/Figures/seomap.png)
 
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
