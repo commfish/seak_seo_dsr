@@ -472,7 +472,7 @@ plot_spm<-function(post=post, Mod.title="test",filename){
     colch<-c("blue","forestgreen","purple")
     vars<-list(KnC.ey,KnC.ns,KnC.cs,KnC.ss)}
   
-  png(paste("Figures/", filename,"/KnownCatch_fit.png",sep=""),
+  png(paste("Production_models/Figures/", filename,"/KnownCatch_fit.png",sep=""),
       width=7,height=6,#width=9.5,height=8.5,
       units="in",res=1200)
   par(mfrow=c(2,2), mar=c(4,5,3,1))

@@ -19,9 +19,13 @@ library(R2OpenBUGS)
 library(jagsUI)
 library(ggmcmc)
 
-source("Code/2022_DSR_SAFE_models/DATALOAD_SEO_YE_SPM_Func.R")
-Data<-load.data()
-list2env(Data,.GlobalEnv)
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
+  Data<-load.data(YEAR=Year, 
+                  Derby.Eff = 0, #this is bias of expBy versus true bycatch ... risk analysis
+                  DEsd=0.1,  #this is extra CV for derby
+                  B1=1,B2=1)  #prior for r 
+  list2env(Data,.GlobalEnv)
 }
 ###########################################################################################################
 #Set future management strategy

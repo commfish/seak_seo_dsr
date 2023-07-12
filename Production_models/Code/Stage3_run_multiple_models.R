@@ -15,28 +15,26 @@
   library(jagsUI)
   library(ggmcmc)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase3/DATAPREP_SPM_1980_PHASE3.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #============================================================
 #Organize which models to run, set derby if needed
 #ModPHASE3.1<-"PT2i_base_PHASE3_beta-phi"
-ModPHASE3.2<-"PT2i_base_PHASE3_norm-phi"
+ModPHASE3.2<-"Production_models/Models/v22.3_Stage3"
 
 Mod.list<-c(ModPHASE3.2)
 
-Derby.list<-c(0.3, -0.3)#c(0,0.3,-0.3)
+Derby.list<-c(0)#c(0,0.3,-0.3)
 DEsdlist<-c(0.1)
 
 #Blist from r prior developed such that
 
 #B1list<-c(1,1.483,1.247,1.241)
 #B2list<-c(1,22.908,31.478,53.481)
-B1list<-c(1.483)  
-B2list<-c(22.908)  
+B1list<-c(1)  
+B2list<-c(1)  
 
 phiB1<-c(2.339) #from Phase2
 phiB2<-c(1.22)
@@ -50,19 +48,19 @@ phiB2<-c(1.22)
 #5)  lv5_derb3p: phi(0.6726209,0.1690635) logK(10.75576,9.390445)
 #6)  lv5_derb3o: phi(0.7702393,0.1795257) logK(10.58545,9.140554)
 
-phimu.list<-c(0.6333498,0.7340861)#c(0.6802432,0.6333498,0.7340861) #c(0.6802432) #c(0.7420787) #c(0.6802432)
-phisig.list<-c(0.1911159,0.207902)#c(0.2054276,0.1911159,0.207902) #c(0.2054276) #c(0.1796734) #c(0.2054276)
+phimu.list<-c(0.6802432)#c(0.6802432,0.6333498,0.7340861) #c(0.6802432) #c(0.7420787) #c(0.6802432)
+phisig.list<-c(0.2054276)#c(0.2054276,0.1911159,0.207902) #c(0.2054276) #c(0.1796734) #c(0.2054276)
 
-bigKmu.list<-c(10.78994,10.61891)#c(10.74306,10.78994,10.61891) #c(10.65388) #c(10.6366) 
-bigKsigma.list<-c(9.600169,9.37281)#c(0.2940348)
+bigKmu.list<-c(10.74306)#c(10.74306,10.78994,10.61891) #c(10.65388) #c(10.6366) 
+bigKsigma.list<-c(9.600169) #c(9.600169,9.37281)#c(0.2940348)
 
 upvarlist<- c(-3) #c(-5)
 
 #===================================================================
 #FLAG: good idea to run list on tiny chains (2K) to check for bugs in model code! 
 #beta500k not fully converged, 3.5 hours
-niter<-1500000 #1000000 #300000 #350000
-burnin<-500000 #300000
+niter<-5000 # 1500000 #1000000 #300000 #350000
+burnin<-2000 #500000 #300000
 #5K, 2.5m.
 #600K - 4.8 hours; really close to converged for both norm- and beta-phi models
 #700K ~ 6.3 hours; not converged but close.  small r only bounded to 0.3.  to 0.2 will help  Probably 1m like phase 1 gets us there...
@@ -79,7 +77,7 @@ for (m in 1:length(Mod.list)) {  #m<-1
   Fu<-1
   #Derby.Eff<-Derby.list[d]
   
-  Data<-load.data(YEAR=2022,
+  Data<-load.data(YEAR=Year,
                   Derby.Eff = Derby.list[d],
                   DEsd=0.1,  #this is CV for derby
                   B1=B1list[b],
@@ -118,18 +116,8 @@ for (m in 1:length(Mod.list)) {  #m<-1
                        n.burnin=burnin, n.thin=(niter-burnin)/1000)  # can mess with n.adapt=
   print(Sys.time() - tstart)
   
-  if (grepl("beta-phi",Mod.list[m],fixed=TRUE) == TRUE) {
-    filename<-paste("PHASE3_B1-",round(B1list[b],2),
-                    "_B2-",round(B2list[b]),"_",
-                    "upv",(upvarlist[v]),"_",
-                    "phB1-",round(phiB1,2),"_",
-                    "phB2-",round(phiB2,2),"_",
-                    "Kmu-",round(bigKmu,1),"_",
-                    "Ksig-",round(bigKsigma,1),"_",
-                    "derb_",Derby.list[d],"_",
-                    niter/1000,"k",sep="")
-  } else {
-  filename<-paste("PHASE3_B1-",round(B1list[b],2),
+  filename<-paste(strsplit(Mod.list[m],"/")[[1]][3],
+                  round(B1list[b],2),
                   "_B2-",round(B2list[b]),"_",
                   "upv",(upvarlist[v]),"_",
                   "phmu-",round(phimu,1),"_",
@@ -138,32 +126,24 @@ for (m in 1:length(Mod.list)) {  #m<-1
                   "Ksig-",round(bigKsigma,1),"_",
                   "derb_",Derby.list[d],"_",
                   niter/1000,"k",sep="")
-  }
+  #filename<-"testing3"
   
-  dir.create(paste("Model Output/",filename,sep=""))
-  save(post,file=paste("Model Output/", filename,"/post.Rdata", sep=""))
+  dir.create(paste("Production_models/Output/",filename,sep=""))
+  save(post,file=paste("Production_models/Output/", filename,"/post.Rdata", sep=""))
   #save(post,file=paste("Model Output/", Mod.list[m],"_",niter/1000000,"m/post.Rdata", sep=""))
-  save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", filename,".Rdata", sep=""))
-  dir.create(paste("Figures/",filename,sep=""))
+  #save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", filename,".Rdata", sep=""))
+  dir.create(paste("Production_models/Figures/",filename,sep=""))
   
-  if (grepl("beta-phi",Mod.list[m],fixed=TRUE) == TRUE){
-    MCMCtrace(post, params=c("R.hyp" ,"r","Kseo","K","phi",#"qfCPUE","qsCPUE",
-                             "Tau1","Tau2","Tau3", "sigma","eta", "rB1","rB2",
-                             "bigphi","phi.eta","littlephiB1","littlephiB2","pi"),
-              ISB=TRUE, pdf=TRUE, Rhat=TRUE, 
-              file=paste("Figures/",filename,"/Param_trace.pdf",sep=""))
-  } else {
-    MCMCtrace(post, params=c("R.hyp" ,"r","Kseo","K","phi",#"qfCPUE","qsCPUE",
+ MCMCtrace(post, params=c("R.hyp" ,"r","Kseo","K","phi",#"qfCPUE","qsCPUE",
                              "Tau1","Tau2","Tau3", "sigma","eta", "rB1","rB2",
                              "bigphi","phiTau","pi"),
               ISB=TRUE, pdf=TRUE, Rhat=TRUE, 
-              file=paste("Figures/",filename,"/Param_trace.pdf",sep=""))
-  }
+              file=paste("Production_models/Figures/",filename,"/Param_trace.pdf",sep=""))
   
-  ggmcmc(ggs(post$samples),family="r",file=paste("Model Output/",filename,"/DIAG_r.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="K",file=paste("Model Output/",filename,"/DIAG_K.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="phi",file=paste("Model Output/",filename,"/DIAG_phi.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="sigma",file=paste("Model Output/",filename,"/DIAG_sigma.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="r",file=paste("Production_models/Output/",filename,"/DIAG_r.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="K",file=paste("Production_models/Output/",filename,"/DIAG_K.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="phi",file=paste("Production_models/Output/",filename,"/DIAG_phi.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="sigma",file=paste("Production_models/Output/",filename,"/DIAG_sigma.pdf", sep=""))
  # ggmcmc(ggs(post$samples),family="Tau1",file=paste("Model Output/",filename,"/DIAG_tau1.pdf", sep=""))
 #  ggmcmc(ggs(post$samples),family="Tau3",file=paste("Model Output/",filename,"/DIAG_tau3.pdf", sep=""))
   print(Sys.time() - tstart)
@@ -185,7 +165,7 @@ for (m in 1:length(Mod.list)) {  #m<-1
   colch<-c("blue","red","purple","orange","forestgreen")
   vars<-list(B.ey,B.ns,B.cs,B.ss)
   
-  png(paste("Figures/",filename,"/Biomass_fit_FIX.png",sep=""),
+  png(paste("Production_models/Figures/",filename,"/Biomass_fit_FIX.png",sep=""),
       width=7,height=6,#width=9.5,height=8.5,
       units="in",res=1200)
   par(mfrow=c(2,2), mar=c(4,5,3,1))
@@ -205,7 +185,7 @@ for (m in 1:length(Mod.list)) {  #m<-1
   dev.off()
   
   N.subd<-N; Years.cont<-Years
-  plot_spm(post, Mod.title=Mod.list[m], filename=filename)
+  plot_spm(post, Mod.title=strsplit(Mod.list[m],"/")[[1]][3], filename=filename)
 
 }}}}
 

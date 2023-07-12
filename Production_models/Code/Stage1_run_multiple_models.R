@@ -15,10 +15,8 @@
   library(jagsUI)
   library(ggmcmc)
   
-  source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/DATAPREP_SPM_1980.R")
-  source("Code/2022_DSR_SAFE_models/Phase1/PLOT_SPM80.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
 }
 
 #Mod0<-"PT_2i_pe02_T1e_r0405_d1_nofishing"
@@ -58,14 +56,14 @@ Mod24<-"PT_2i_pe01_T1e_rbeta_uni"
 }
 #============================================================
 #Organize which models to run, set derby if needed
-Mod23<-"PT_2i_pe01_T1e_rbeta"
+Mod23<-"Production_models/Models/v22.3_Stage1"
 
 Mod.list<-c(#Mod14,Mod17, Mod18,
             Mod23)
 
 
-Derby.list<-c(0,0.3,-0.3)
-DEsdlist<-c(0.1,0.1,0.1)
+Derby.list<-0 #c(0,0.3,-0.3)
+DEsdlist<-0.1 #c(0.1,0.1,0.1)
 
 #Blist from r prior developed such that
 #1) uninformative beta(1,1)
@@ -75,13 +73,13 @@ DEsdlist<-c(0.1,0.1,0.1)
 B1list<-c(1) #c(1,1.483,1.247,1.241,1.374)
 B2list<-c(1) #c(1,22.908,31.478,53.481,106.057)
 
-upvarlist<- c(-3,-5)
+upvarlist<- -5 #c(-3,-5)
 
 #===================================================================
 #FLAG: good idea to run list on tiny chains (2K) to check for bugs in model code! 
 #beta500k not fully converged, 3.5 hours
-niter<-1400000 #300000 #350000
-burnin<-500000
+niter<-1500 #1400000 #300000 #350000
+burnin<-500 #500000
 #500K, 4 hours; mostly converged.  Further trimming of etas...
 #800K 6 hours almost there.  etas converged with trunc, some r and k not quite there
 #1m ~ 8.4 hours; pretty well converged.  A tad off on NSEO K - run 1.20m for final
@@ -91,7 +89,7 @@ set.seed(1234)
 
 #!!!: FLAG: adjust initial values and data in loop for specific models!!! 
 #m<-1; d<-1; b<-1
-for (v in 1:length(upvarlist)){
+for (v in 1:length(upvarlist)){   #v=1
 for (m in 1:length(Mod.list)) {  #m<-1
   for (d in 1:length(Derby.list)){ #d<-1
      for (b in 1:length(B1list)) { #b<-1
@@ -100,7 +98,7 @@ for (m in 1:length(Mod.list)) {  #m<-1
   Fu<-1
   #Derby.Eff<-Derby.list[d]
   
-  Data<-load.data(YEAR=2022,
+  Data<-load.data(YEAR=Year,
                   Derby.Eff = Derby.list[d],
                   DEsd=0.1,  #this is CV for derby
                   B1=B1list[b],
@@ -130,28 +128,29 @@ for (m in 1:length(Mod.list)) {  #m<-1
                        n.burnin=burnin, n.thin=(niter-burnin)/1000)  # can mess with n.adapt=
   print(Sys.time() - tstart)
   
-  filename<-paste(Mod.list[m],"_B1-",round(B1list[b],2),
+  filename<-paste(strsplit(Mod.list[m],"/")[[1]][3],
+                  "_B1-",round(B1list[b],2),
                   "_B2-",round(B2list[b]),"_",
                   "upv",round(upvarlist[v]),"_",
                   "derb_",Derby.list[d],"_",
                   niter/1000,"k",sep="")
-  
+  #filename="testing"
   #load(file=paste("D:/Groundfish Biometrics/MCMC_backups/",Mod23,".Rdata", sep=""))
   #b<-1; d<-1; m<-1; niter<-1000000
   
-  dir.create(paste("Model Output/",filename,sep=""))
-  save(post,file=paste("Model Output/", filename,"/post.Rdata", sep=""))
+  dir.create(paste("Production_models/Output/",filename,sep=""))
+  save(post,file=paste("Production_models/Output/", filename,"/post.Rdata", sep=""))
   #save(post,file=paste("Model Output/", Mod.list[m],"_",niter/1000000,"m/post.Rdata", sep=""))
-  save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", filename,"k.Rdata", sep=""))
-  dir.create(paste("Figures/",filename,sep=""))
+  #save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", filename,"k.Rdata", sep=""))
+  dir.create(paste("Production_models/Figures/",filename,sep=""))
   MCMCtrace(post, params=c("R.hyp" ,"r","Kseo","K","phi",#"qfCPUE","qsCPUE",
                            "Tau1","Tau2","Tau3", "sigma","eta", "rB1","rB2"),
             ISB=TRUE, pdf=TRUE, Rhat=TRUE, 
-            file=paste("Figures/",filename,"/Param_trace.pdf",sep=""))
-  ggmcmc(ggs(post$samples),family="r",file=paste("Model Output/",filename,"/DIAG_r.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="K",file=paste("Model Output/",filename,"/DIAG_K.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="phi",file=paste("Model Output/",filename,"/DIAG_phi.pdf", sep=""))
-  ggmcmc(ggs(post$samples),family="sigma",file=paste("Model Output/",filename,"/DIAG_sigma.pdf", sep=""))
+            file=paste("Production_models/Figures/",filename,"/Param_trace.pdf",sep=""))
+  ggmcmc(ggs(post$samples),family="r",file=paste("Production_models/Output/",filename,"/DIAG_r.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="K",file=paste("Production_models/Output/",filename,"/DIAG_K.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="phi",file=paste("Production_models/Output/",filename,"/DIAG_phi.pdf", sep=""))
+  ggmcmc(ggs(post$samples),family="sigma",file=paste("Production_models/Output/",filename,"/DIAG_sigma.pdf", sep=""))
   #ggmcmc(ggs(post$samples),family="Tau1",file=paste("Model Output/",Mod.list[i],"_",niter/1000000,"m/DIAG_tau1.pdf", sep=""))
   #ggmcmc(ggs(post$samples),family="Tau3",file=paste("Model Output/",Mod.list[i],"_",niter/1000000,"m/DIAG_tau3.pdf", sep=""))
   print(Sys.time() - tstart)
@@ -173,7 +172,7 @@ for (m in 1:length(Mod.list)) {  #m<-1
   colch<-c("blue","red","purple","orange","forestgreen")
   vars<-list(B.ey,B.ns,B.cs,B.ss)
   
-  png(paste("Figures/",filename,"/Biomass_fit_FIX.png",sep=""),
+  png(paste("Production_models/Figures/",filename,"/Biomass_fit_FIX.png",sep=""),
       width=7,height=6,#width=9.5,height=8.5,
       units="in",res=1200)
   par(mfrow=c(2,2), mar=c(4,5,3,1))
@@ -193,13 +192,13 @@ for (m in 1:length(Mod.list)) {  #m<-1
   dev.off()
   
   N.subd<-N; Years.cont<-Years
-  plot_spm(post, Mod.title=Mod.list[m], filename=filename)
+  plot_spm(post, Mod.title=strsplit(Mod.list[m],"/")[[1]][3], filename=filename)
 
 }}}}
 
   dev.off()
 
-inits[[1]]$Tau1
+
 
 
 

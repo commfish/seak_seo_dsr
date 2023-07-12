@@ -18,20 +18,26 @@ library(MASS)
 library(R2OpenBUGS)
 library(jagsUI)
 library(ggmcmc)
-
-source("Code/2022_DSR_SAFE_models/Phase1/DATALOAD_SEO_YE_SPM_Func.R")
-Data<-load.data()
-list2env(Data,.GlobalEnv)
 }
+
+  
+Year <-2023
+source("Production_models/Code/SPM_helper.R")
+Data<-load.data(YEAR=Year, 
+                Derby.Eff = 0, #this is bias of expBy versus true bycatch ... risk analysis
+                DEsd=0.1,  #this is extra CV for derby
+                B1=1,B2=1)  #prior for r 
+list2env(Data,.GlobalEnv)
+
 ###########################################################################################################
 #Set future management strategy
 OFLABC<-0.00  #0.02 (ABC) 0.032 (OFL). 0=nofishing
 HarvStrat<-0 #2.58 #1.96 #1.68 #0, 1.15
 Fu<-25
-Derby.Eff<-1 #Derby effect, less than one means less bycatch in derby relative to IFQ
+#Derby.Eff<-1 #Derby effect, less than one means less bycatch in derby relative to IFQ
 #=========================================================================================
 #name the model
-Mod.title<-"PT_2i_pe01_T1e_rbeta"
+Mod.title<-"Production_models/Models/testing"
 #=========================================================================================
 cat('model { 
 
@@ -249,8 +255,10 @@ rB2<-(1-R.hyp)*eta
 # prep model setting with data, initial values
 
 {
-N<-N.subd
-data<-list(N=N.subd,Subd=Subd,
+#N<-N.subd
+  N<-Subd
+data<-list(#N=N.subd,
+           Subd=Subd,
            KnC.obs=KnC.obs, cv.KnC=cv.KnC,
            ExpByc = ExpByc, cv.ExpByc = cv.ExpByc,
            Lnd.By=Lnd.By, 

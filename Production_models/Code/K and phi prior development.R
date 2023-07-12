@@ -16,7 +16,10 @@
   library(IDPmisc)
   library(scales)}
 
-source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
+Year <-2023
+source("Production_models/Code/SPM_helper.R")
+
+#source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
 
 {phase2.3d0<-"PT2i_fullcatch_B1-1_B2-1_upv-3_derb_0_1600k"
   phase2.3dundest<-"PT2i_fullcatch_B1-1_B2-1_upv-3_derb_0.3_1600k"
@@ -26,22 +29,22 @@ source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
   phase2.5dundest<-"PT2i_fullcatch_B1-1_B2-1_upv-5_derb_0.3_1600k"
   phase2.5dovest<-"PT2i_fullcatch_B1-1_B2-1_upv-5_derb_-0.3_1600k"}
 
-{load(file=paste("Model Output/",phase2.3d0,"/post.Rdata", sep=""))
+{load(file=paste("Production_models/Output/",phase2.3d0,"/post.Rdata", sep=""))
 lv3_derb0<-post
 
-load(file=paste("Model Output/",phase2.3dundest,"/post.Rdata", sep=""))
+load(file=paste("Production_models/Output/",phase2.3dundest,"/post.Rdata", sep=""))
 lv3_derb3p<-post
 
-load(file=paste("Model Output/",phase2.3dovest,"/post.Rdata", sep=""))
+load(file=paste("Production_models/Output/",phase2.3dovest,"/post.Rdata", sep=""))
 lv3_derb3o<-post
 
-load(file=paste("Model Output/",phase2.5d0,"/post.Rdata", sep=""))
+load(file=paste("Production_models/Output/",phase2.5d0,"/post.Rdata", sep=""))
 lv5_derb0<-post
 
-load(file=paste("Model Output/",phase2.5dundest,"/post.Rdata", sep=""))
+load(file=paste("Production_models/Output/",phase2.5dundest,"/post.Rdata", sep=""))
 lv5_derb3p<-post
 
-load(file=paste("Model Output/",phase2.5dovest,"/post.Rdata", sep=""))
+load(file=paste("Production_models/Output/",phase2.5dovest,"/post.Rdata", sep=""))
 lv5_derb3o<-post}
 
 ModList.st2<-list(
@@ -93,7 +96,7 @@ K.d3o<-MCMCchains(  object=lv3_derb3o,  params = "K",  excl = NULL,
 logK.d3o<-log(K.d3o)
 #--------------------------------------------------------------------
 # plot and save posteriors for phi and logK for 4x4
-png(paste("Figures/B1980_K_prior.png",sep=""),
+png(paste("Production_models/Figures/B1980_K_prior.png",sep=""),
     width=7,height=6,#width=9.5,height=8.5,
     units="in",res=1200)
 

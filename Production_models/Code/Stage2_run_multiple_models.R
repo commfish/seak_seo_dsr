@@ -14,16 +14,15 @@
   library(R2OpenBUGS)
   library(jagsUI)
   library(ggmcmc)
-  
-  source("Code/2022_DSR_SAFE_models/Phase2/DATALOAD_SEO_YE_SPM_Func_1888.R")
-  source("Code/2022_DSR_SAFE_models/Phase2/DATAPREP_SPM_SEO1888.R")
-  source("Code/2022_DSR_SAFE_models/Phase2/PLOT_SPM1888.R")
-  source("Code/Posterior_Plotting/YE_SPM_posterior_exams_Func.R")
 }
+
+  Year <-2023
+  source("Production_models/Code/SPM_helper.R")
+
 
 #Mod0<-"PT_2i_pe02_T1e_r0405_d1_nofishing"
 {
-Mod1<-"PT2i_fullcatch"
+Mod1<-"Production_models/Models/v22.3_Stage2"
 biomassmod1 <-"PT_2i_pe01_T1e_rbeta_B1-1_B2-1_upv-3_derb_0_1400k"
 biomassmod2 <-"PT_2i_pe01_T1e_rbeta_B1-1_B2-1_upv-3_derb_0.3_1400k"
 biomassmod3 <-"PT_2i_pe01_T1e_rbeta_B1-1_B2-1_upv-3_derb_-0.3_1400k"
@@ -41,10 +40,10 @@ biomassmod6 <-"PT_2i_pe01_T1e_rbeta_B1-1_B2-1_upv-5_derb_-0.3_1400k"
 
 Mod.list<-c(Mod1)
 
-biomass.list<-c(biomassmod6,biomassmod5,biomassmod4) #,biomassmod4, biomassmod5, biomassmod6)
+biomass.list<-"testing" #c(biomassmod6,biomassmod5,biomassmod4) #,biomassmod4, biomassmod5, biomassmod6)
 
-Derby.list<-c(-0.3,0.3,0)
-DEsdlist<-c(0.1)
+Derby.list<-0 #c(0,0.3,-0.3)
+DEsdlist<-0.1 #c(0.1,0.1,0.1)
 
 #Blist from r prior developed such that
 B1list<-c(1) #c(1,1.483,1.247,1.241,1.374)
@@ -54,7 +53,7 @@ upvarlist<-c(-5)
 #===================================================================
 #FLAG: good idea to run list on tiny chains (2K) to check for bugs in model code! 
 #beta500k not fully converged, 3.5 hours
-niter<-1600000 #300000 #350000
+niter<-5000 #1600000 #300000 #350000
 burnin<-0.4*niter
 #50K = 56 minits ; not converged
 #150K = 2.65 hours; not converged
@@ -67,7 +66,7 @@ set.seed(1234)
 
 #!!!: FLAG: adjust initial values and data in loop for specific models!!! 
 #m<-1; d<-1; b<-1
-for (v in 1:length(upvarlist)){
+for (v in 1:length(upvarlist)){ #v<-1
 for (m in 1:length(biomass.list)) {  #m<-1
   for (d in 1:length(Derby.list)){ #d<-1
      for (b in 1:length(B1list)) { #b<-1
@@ -76,9 +75,9 @@ for (m in 1:length(biomass.list)) {  #m<-1
   Fu<-1
   #Derby.Eff<-Derby.list[d]
   
-  Data<-load.data.1888(YEAR=2022,
+  Data<-load.data.1888(YEAR=Year,
                   biomassmod = biomass.list[m],
-                       bioY1 = 1994, bioYe = 2021,
+                       bioY1 = 1994, bioYe = 2022,
                   Derby.Eff = Derby.list[d],
                   DEsd=0.1,
                   B1=B1list[b],
@@ -108,26 +107,24 @@ for (m in 1:length(biomass.list)) {  #m<-1
   print(Sys.time() - tstart)
   #5K = 5.6 minutes
   
-  filename<-paste(Mod.list[1],"_B1-",round(B1list[b],2),
+  filename<-paste(strsplit(Mod.list[m],"/")[[1]][3],
+                  "_B1-",round(B1list[b],2),
                   "_B2-",round(B2list[b]),"_",
                   "upv",upvarlist[v],"_",
                   "derb_",Derby.list[d],"_",
                   niter/1000,"k",sep="")
+  #filename="testing2"
   
-  dir.create(paste("Model Output/",filename,sep=""))
-  save(post,file=paste("Model Output/", Mod.list[m],"_B1-",round(B1list[b],2),
-                       "_B2-",round(B2list[b]),"_",
-                       "upv",upvarlist[v],"_",
-                       "derb_",Derby.list[d],"_",
-                       
-                       niter/1000,"k/post.Rdata", sep=""))
+  dir.create(paste("Production_models/Output/",filename,sep=""))
+  save(post,file=paste("Production_models/Output/", filename,
+                       "/post.Rdata", sep=""))
   #save(post,file=paste("Model Output/", Mod.list[m],"_",niter/1000000,"m/post.Rdata", sep=""))
-  save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", Mod.list[m],"_B1-",
-                       round(B1list[b],2),
-                       "_B2-",round(B2list[b]),"_",
-                       "upv",upvarlist[v],"_",
-                       "derb_",Derby.list[d],"_",
-                       niter/1000,"k.Rdata", sep=""))
+  #save(post,file=paste("D:/Groundfish Biometrics/MCMC_backups/", Mod.list[m],"_B1-",
+  #                     round(B1list[b],2),
+  #                     "_B2-",round(B2list[b]),"_",
+  #                     "upv",upvarlist[v],"_",
+  #                     "derb_",Derby.list[d],"_",
+  #                     niter/1000,"k.Rdata", sep=""))
   
   #ggmcmc(ggs(post$samples),family="r",file=paste("Model Output/",Mod.list[i],"_",niter/1000000,"m/DIAG_r.pdf", sep=""))
   #ggmcmc(ggs(post$samples),family="K",file=paste("Model Output/",Mod.list[i],"_",niter/1000000,"m/DIAG_K.pdf", sep=""))
@@ -138,24 +135,24 @@ for (m in 1:length(biomass.list)) {  #m<-1
   print(Sys.time() - tstart)
   
     #load(file=paste("Model Output/",Mod1,"_",niter/1000000,"m/post.Rdata", sep=""))
-  dir.create(paste("Figures/",filename,sep=""))
+  dir.create(paste("Production_models/Figures/",filename,sep=""))
   MCMCtrace(post, params=c("r","K",#"qfCPUE","qsCPUE",
                            "Tau1","sigma"),
             ISB=TRUE, pdf=TRUE, Rhat=TRUE, 
-            file=paste("Figures/",filename,"/Param_trace.pdf",sep=""))
+            file=paste("Production_models/Figures/",filename,"/Param_trace.pdf",sep=""))
   #Function for making plots...
-    #fix broken fucking plots in function that I cant figure out why they are fucking up the scale!!
+    
   #1) Biomass observed versus modeled 
   
   All.years<-seq(min(Years),max(Years)+Fu,by=1)
   FuYear<-Years+Fu
   
-  plot_spm1888(post, Mod.title=Mod.list[m], filename=filename)
+  plot_spm1888(post, Mod.title=strsplit(Mod.list[m],"/")[[1]][3], filename=filename)
   Y<-seq(1888,(1888+N-1),1)
   colch<-c("forestgreen","black")
   Surplus<-MCMCchains(post,"Surplus")
   Tot.Catch<-MCMCchains(post,"C")
-  png(paste("Figures/", filename,"/Surplus3.png",sep=""),
+  png(paste("Production_models/Figures/", filename,"/Surplus3.png",sep=""),
       width=7,height=6,#width=9.5,height=8.5,
       units="in",res=1200)
   par(mfrow=c(1,1), mar=c(4,5,3,1))

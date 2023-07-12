@@ -9,7 +9,7 @@ library(boot)
 library(ggplot2)
 library(scales)
 
-YEAR<-2022
+YEAR<-2023
 
 #Pre-2021 YE DATA:
 YE.Harv<-read.csv("Data_processing/Data/Harvests/yelloweye_catch_data.csv", header=T)
@@ -101,7 +101,7 @@ ggplot(YE.comm.rem,aes(Year,ye.mt,col = ha.bycatch)) +
 
 max(YE.comm.rem$Year)
 
-write.csv(YE.comm.rem,paste0("Data_processing/Data/SE_YE_comm_removals",min(YE.comm.rem$Year),"-",
+write.csv(YE.comm.rem,paste0("Data_processing/Data/SE_YE_comm_removals_",min(YE.comm.rem$Year),"-",
                              max(YE.comm.rem$Year),".csv"))
 
 ##calculate and plot gear breakdown of harvest... 
@@ -164,7 +164,7 @@ str(YE.Subs)
 range(YE.Subs$Year)
 
 ys<-unique(YE.Subs$Year)
-mgmtas<-unique(YE.removals$Mgt.Area)
+mgmtas<-unique(YE.removals$Mgt.Area)[1:7]
 
 YE.sub<-data.frame()
 i<-1
@@ -238,11 +238,14 @@ YE.removals %>% filter(ha.bycatch == "hal.by") %>%
 ?join
 All.known.YE.removals<-full_join(pt1,pt2)
 
+View(All.known.YE.removals)
+
+All.known.YE.removals<-All.known.YE.removals %>% filter(Mgt.Area != "SEO")
 #******************************************************************************
 #*SAVE REMOVAL DATA for SS-SPM 
 #*
 write.csv(All.known.YE.removals,paste0("Data_processing/Data/SE_YE_known_removals_",min(All.known.YE.removals$Year),"-",
-                                       as.character(Sys.Date()),".csv"))
+                                       max(All.known.YE.removals$Year),".csv"))
 
 #******************************************************************************
 #*REMOVALS from FOREIGN TRAWL FISHERY from SRI
