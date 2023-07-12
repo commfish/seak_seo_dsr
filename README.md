@@ -7,7 +7,7 @@ Resultant assessments associated with this code can be found here:
 
 2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
 
-![alt text](https://github.com/commfish/seak_seo_dsr/blob/master/readme/seomap.png)
+![alt text](https://github.com/commfish/seak_seo_dsr/master/readme/seomap.png)
 
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
