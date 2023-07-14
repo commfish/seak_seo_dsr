@@ -405,6 +405,11 @@ Bio<-Port.rand %>%
 
 str(Bio)
 #------------------------------------------------------------------------------
+# male-female length distributions
+ggplot(Bio) +
+  geom_histogram(aes(x=length, col=Sex, fill=Sex))
+
+#------------------------------------------------------------------------------
 #Length-weight relationship
 
 Bio_lw<-Bio %>% filter(Sex %in% c("Female", "Male") &
@@ -1430,6 +1435,648 @@ library(cowplot)
 plot_grid(byage_plot, byyear_plot, align = c("h"), ncol = 1)
 ggsave(paste0("Figures/sex_ratios_", YEAR, ".png"), dpi=300,  height=6, width=7, units="in")
 
+#---------------------------------------------------------------------------
+# Age compositions ----
+colnames(Bio_lw_noOL)
+#quos() uses stand eval in dplyr, eval cols with nonstand eval using !!!
+unique(Bio_lw_noOL$Project)
+cols <- quos(Source, year, Sex, age) 
+
+bind_rows(Bio_lw_noOL %>% filter(Project == "Commercial Longline Trip") %>%
+            mutate(Source = "LL fishery") %>% select(!!!cols), 
+          Bio_lw_noOL %>% filter(Project == "Atypical Longline Sample") %>%
+            mutate(Source = "LL fishery atyp") %>% select(!!!cols),
+          Bio_lw_noOL %>% filter(Project == "Commercial Halibut Longline") %>%
+            mutate(Source = "Hal LL fishery") %>% select(!!!cols),
+          Bio_lw_noOL %>% filter(Project == "Commercial Jig Trip") %>%
+            mutate(Source = "Jig") %>% select(!!!cols)) %>%
+  filter(Sex %in% c('Female', 'Male') & !is.na(age)) %>% 
+  droplevels() %>% 
+  mutate(age = ifelse(age >= plus_group, plus_group, age)) %>% 
+  filter(age >= 10) -> all_bio  # Plus group
+view(all_bio)
+
+# Age comps (sex-specific)
+all_bio %>% 
+  count(Source, Sex, year, age) %>%
+  group_by(Source, Sex, year) %>% 
+  mutate(proportion = round( n / sum(n), 5),
+         tot_samps = sum(n)) %>% 
+  bind_rows(all_bio %>% # Age comps (sexes combined)
+              count(Source, year, age) %>%
+              group_by(Source, year) %>% 
+              mutate(proportion = round( n / sum(n), 5),
+                     Sex = "Sex combined",
+                     tot_samps = sum(n))) -> agecomps  
+
+agecomps %>% group_by(year, Source, Sex) %>%
+  mutate(tot_samps2 = n()) %>% ungroup() -> agecomps2
+
+range(agecomps$proportion)
+range(agecomps$age)
+range(agecomps$tot_samps)
+agecomps %>% filter(Sex == "Sex combined")
+
+eg<-agecomps2 %>% filter(Source == "Jig" & Sex == "Female" & 
+                          year == 2002)
+sum(eg$proportion)
+
+# Years with pot bio data
+# potsrv_bio %>% 
+#   filter(!is.na(age) & !is.na(Sex)) %>% 
+#   distinct(year) -> pot_yrs
+
+# complete() was behaving weirdly. Expand to grid to include all age combos
+library(padr)
+expand.grid(year = unique(agecomps$year), 
+            Source = unique(agecomps$Source),
+            Sex = unique(agecomps$Sex),
+            age = seq(10, plus_group, 1))  %>% 
+  data.frame()  %>% 
+  full_join(agecomps) %>%
+  fill_by_value(n, proportion, value = 0) %>% 
+  #fill_by_value(tot_samps) %>%
+  group_by(year,Source,Sex) %>%
+  mutate(tot_samps = ifelse(!is.na(tot_samps),tot_samps,
+                            ifelse(length(unique(tot_samps)) > 1,
+                                   tot_samps[!is.na(tot_samps)],0))) %>% ungroup() %>%
+  mutate(Age = factor(age),
+         proportion = round(proportion, 5)) -> agecomps #%>%
+  # Keep only relevant years for each Source
+  #filter(c(Source == "LL fishery" & year >= 2002) |
+  #         c(Source == "LL survey" & year >= 1997) |
+  #         c(Source == "Pot fishery" & year >= 2022)) -> agecomps
+
+# Check that they sum to 1
+agecomps %>% 
+  group_by(Source, Sex, year) %>% 
+  summarise(sum(proportion)) %>% 
+  print(n = Inf)
+
+# Sample sizes by source/year/sex
+agecomps %>% 
+  group_by(Source, year, Sex) %>% 
+  dplyr::summarize(n = sum(n)) %>% 
+  arrange(year) %>% 
+  pivot_wider(names_from = year, values_from = n, values_fill = list(n = 0)) %>% 
+  write_csv(paste0("Output/n_agecomps_plsgrp", plus_group, "_", YEAR, ".csv"))
+
+# Age comp matrix
+agecomps %>% write_csv(paste0("Output/agecomps_plsgrp", plus_group, "_", YEAR, ".csv"))
+
+# Bargraph for presentation
+agecomps %>% 
+  filter(#year == YEAR & 
+           tot_samps > 50,
+           Source == "LL fishery" &
+           Sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(age, proportion, fill = Sex, col=Sex), alpha = 0.5) +
+  geom_bar(stat = "identity",
+           position = "dodge") +
+  facet_wrap(~year) +
+  # position = position_dodge(preserve = "single")) +
+  # scale_fill_grey(start = 0.3, end = 0.8) +
+  scale_x_continuous(breaks = seq(min(agecomps$age), max(agecomps$age), 10), 
+                     labels =  seq(min(agecomps$age), max(agecomps$age), 10)) +
+  labs(x = "\nAge", y = "Proportion\n") +
+  theme(legend.position = c(0.9, 0.1)) +
+  ggtitle(paste0("Longline fishery"))
+
+ggsave(paste0("Figures/agecomp_bargraph_ll_fsh_", YEAR, ".png"), 
+       dpi=300, height=3, width=9, units="in")
+
+agecomps %>% 
+  filter(#year == YEAR & 
+    tot_samps > 50,
+    Source == "Hal LL fishery" &
+      Sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(age, proportion, fill = Sex, col=Sex), alpha = 0.5) +
+  geom_bar(stat = "identity",
+           position = "dodge") +
+  facet_wrap(~year) +
+  # position = position_dodge(preserve = "single")) +
+  # scale_fill_grey(start = 0.3, end = 0.8) +
+  scale_x_continuous(breaks = seq(min(agecomps$age), max(agecomps$age), 10), 
+                     labels =  seq(min(agecomps$age), max(agecomps$age), 10)) +
+  labs(x = "\nAge", y = "Proportion\n") +
+  theme(legend.position = c(0.9, 0.1)) +
+  ggtitle(paste0("Halibut longline fishery"))
+
+ggsave(paste0("Figures/agecomp_bargraph_hal_fsh_", YEAR, ".png"), 
+       dpi=300, height=3, width=9, units="in")
+
+# All years smoothed by source
+agecomps %>% 
+  filter(age < plus_group & Sex == "Sex combined" & tot_samps > 50) %>% 
+  ggplot(aes(x = age, y = proportion, colour = Source, linetype = Source)) +
+  geom_point(size = 1, alpha = 0.1) +
+  stat_smooth(size = 1, se = FALSE) +
+  scale_colour_grey() +
+  # scale_colour_manual(values = c("#66c2a5", "#fc8d62", "#8da0cb")) +
+  scale_y_continuous(limits = c(0, 0.1),
+                     breaks = round(seq(min(agecomps$proportion), 0.1, 0.02), 2), 
+                     labels =  round(seq(min(agecomps$proportion), 0.1, 0.02), 2)) +
+  xlab('\nAge') +
+  ylab('Proportion\n') +
+  theme(legend.position = c(0.8, 0.8))
+
+ggsave(paste0("Figures/agecomp_bydatasource.png"), 
+       dpi=300, height=5, width=5, units="in")
+
+## LL fishery and Halibut longline fishery are very similar.  Jig fishery data is VERY limited
+## Not sure what the deal is with the atypical longline fishery.. but limited data and very different
+## length distributions seen
+## If I was running an ASA now I would combine the long line data and ditch the
+## Jig and atypical fishery... 
+
+bind_rows(Bio_lw_noOL %>% filter(Project == "Commercial Longline Trip") %>%
+            mutate(Source = "LL fishery") %>% select(!!!cols), 
+          Bio_lw_noOL %>% filter(Project == "Commercial Halibut Longline") %>%
+            mutate(Source = "LL fishery") %>% select(!!!cols)) %>%
+  filter(Sex %in% c('Female', 'Male') & !is.na(age)) %>% 
+  droplevels() %>% 
+  mutate(age = ifelse(age >= plus_group, plus_group, age)) %>% 
+  filter(age >= 10) -> ll_bio  # Plus group
+#view(all_bio)
+unique(ll_bio$Source)
+
+# Age comps (sex-specific)
+ll_bio %>% 
+  count(Source, Sex, year, age) %>%
+  group_by(Source, Sex, year) %>% 
+  mutate(proportion = round( n / sum(n), 5),
+         tot_samps = sum(n)) %>% 
+  bind_rows(ll_bio %>% # Age comps (sexes combined)
+              count(Source, year, age) %>%
+              group_by(Source, year) %>% 
+              mutate(proportion = round( n / sum(n), 5),
+                     Sex = "Sex combined",
+                     tot_samps = sum(n))) -> agecomps_ll  
+
+expand.grid(year = unique(agecomps_ll$year), 
+            Source = unique(agecomps_ll$Source),
+            Sex = unique(agecomps_ll$Sex),
+            age = seq(10, plus_group, 1))  %>% 
+  data.frame()  %>% 
+  full_join(agecomps_ll) %>%
+  fill_by_value(n, proportion, value = 0) %>% 
+  #fill_by_value(tot_samps) %>%
+  group_by(year,Source,Sex) %>%
+  mutate(tot_samps = ifelse(!is.na(tot_samps),tot_samps,
+                            ifelse(length(unique(tot_samps)) > 1,
+                                   tot_samps[!is.na(tot_samps)],0))) %>% ungroup() %>%
+  mutate(Age = factor(age),
+         proportion = round(proportion, 5)) -> agecomps_ll
+
+agecomps_ll %>% 
+  group_by(Source, year, Sex) %>% 
+  dplyr::summarize(n = sum(n)) %>% 
+  arrange(year) %>% 
+  pivot_wider(names_from = year, values_from = n, values_fill = list(n = 0)) %>% 
+  write_csv(paste0("Output/combll_n_agecomps_plsgrp", plus_group, "_", YEAR, ".csv"))
+
+# Age comp matrix
+agecomps_ll %>% write_csv(paste0("Output/combll_agecomps_plsgrp", plus_group, "_", YEAR, ".csv"))
+
+agecomps_ll %>% 
+  filter(#year == YEAR & 
+    tot_samps > 50,
+    #Source == "LL fishery" &
+      Sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(age, proportion, fill = Sex, col=Sex), alpha = 0.5) +
+  geom_bar(stat = "identity",
+           position = "dodge") +
+  facet_wrap(~year) +
+  # position = position_dodge(preserve = "single")) +
+  # scale_fill_grey(start = 0.3, end = 0.8) +
+  scale_x_continuous(breaks = seq(min(agecomps$age), max(agecomps$age), 10), 
+                     labels =  seq(min(agecomps$age), max(agecomps$age), 10)) +
+  labs(x = "\nAge", y = "Proportion\n") +
+  theme(legend.position = c(0.9, 0.1)) +
+  ggtitle(paste0("Halibut and general longline fishery"))
+
+ggsave(paste0("Figures/agecomp_bargraph_combll_fsh_", YEAR, ".png"), 
+       dpi=300, height=3, width=9, units="in")
+
+# bubble plots filled circles
+
+ggplot(data = agecomps_ll %>% filter(tot_samps > 50),
+       aes(x = year, y = age, size = proportion)) + #*FLAG* could swap size with proportion_scaled
+  geom_point(shape = 21, fill = "black", colour = "black") +
+  scale_size(range = c(0, 4)) +
+  facet_wrap(~ Sex) +
+  labs(x = "\nYear", y = "Observed age\n") +
+  guides(size = FALSE)# +
+# scale_x_continuous(breaks = axisx$breaks, labels = axisx$labels) +
+# scale_y_continuous(breaks = axisy$breaks, labels = axisy$labels)
+
+ggsave(paste0("Figures/bubble_combll_agecomp_byyear.png"), dpi=300, height=5, width=7.5, units="in")
+
+#---------------------------------------------------------------------------
+# Length compositions
+Bio_lw_noOL
+
+histogram(Bio_lw_noOL$length)
+range(Bio_lw_noOL$length)
+
+bind_rows(Bio_lw_noOL %>% filter(Project == "Commercial Longline Trip") %>%
+            mutate(Source = "LL fishery"), 
+          Bio_lw_noOL %>% filter(Project == "Atypical Longline Sample") %>%
+            mutate(Source = "LL fishery atyp"),
+          Bio_lw_noOL %>% filter(Project == "Commercial Halibut Longline") %>%
+            mutate(Source = "Hal LL fishery"),
+          Bio_lw_noOL %>% filter(Project == "Commercial Jig Trip") %>%
+            mutate(Source = "Jig")) %>% 
+  filter(#year >= 1997 &
+    Sex %in% c("Female", "Male") &
+      !is.na(length),
+  ) %>% 
+  select(year, Sex, length, Source) %>%
+#  filter(!c(length < 40)) %>% 
+  mutate(length2 = ifelse(length < 300, 300,
+                          ifelse(length > 860, 860, length)),
+         length_bin = cut(length2, breaks = seq(299.9, 859.9, 20),
+                          labels = paste(seq(310, 860, 20)))) %>% 
+  select(-length2) -> lendat2
+
+lendat2 %>% 
+  # Length comps by Source, year, and Sex 
+  count(Source, Sex, year, length_bin) %>%
+  group_by(Source, Sex, year) %>% 
+  #  mutate(proportion = round( n / sum(n), 4)) %>% 
+  mutate(proportion = n / sum(n),
+         tot_samps = sum(n)) %>%
+  bind_rows(lendat2 %>% # Sexes combined
+              count(Source, year, length_bin) %>%
+              group_by(Source, year) %>% 
+              mutate(proportion = round( n / sum(n), 4),
+                     Sex = "Sex combined",
+                     tot_samps = sum(n))) -> lencomps
+
+# complete() was behaving weirdly. Expand to grid to include all length combos
+expand.grid(year = unique(lencomps$year), 
+            Source = unique(lencomps$Source),
+            Sex = unique(lencomps$Sex),
+            length_bin = sort(unique(lendat$length_bin)))  %>% 
+  data.frame()  %>% 
+  full_join(lencomps) %>%
+  fill_by_value(n, proportion, value = 0) %>% 
+  group_by(year,Source,Sex) %>%
+  mutate(tot_samps = ifelse(!is.na(tot_samps),tot_samps,
+                            ifelse(length(unique(tot_samps)) > 1,
+                                   tot_samps[!is.na(tot_samps)],0))) %>% ungroup() %>%
+  mutate(#length_bin = factor(length_bin),
+    proportion = round(proportion, 6)) -> lencomps # %>%
+  # Keep only relevant years for each Source
+  #filter(c(Source == "LL fishery" & year >= 2002) |
+  #         c(Source == "LL survey" & year >= 1997) |
+  #         c(Source == "Pot fishery" & year >= 2022) #|
+         # c(Source == "Pot survey" & year %in% pot_yrs$year)
+  #) -> lencomps
+
+# Check that they sum to 1
+lencomps %>% 
+  group_by(Source, Sex, year) %>% 
+  summarise(sum(proportion)) %>% View()
+
+write_csv(lencomps, paste0("Output/lengthcomps_", YEAR, ".csv"))
+
+str(lendat)
+lendat2 %>% 
+  # Mean length comp for comparison
+  count(Source, Sex, length_bin) %>%
+  group_by(Source, Sex) %>% 
+  mutate(proportion = round( n / sum(n), 4)) %>% 
+  arrange(Source, Sex, length_bin)  %>% 
+  data.frame() %>%  
+  complete(Source, length_bin,
+           fill = list(n = 0, proportion = 0)) %>% 
+  bind_rows(lendat2 %>% # Sexes combined
+              count(Source, length_bin) %>%
+              group_by(Source) %>% 
+              mutate(proportion = round( n / sum(n), 4),
+                     Sex = "Sex combined")) -> mu_lencomps
+
+mu_lencomps %>% 
+  group_by(Source, Sex) %>% 
+  summarise(sum(proportion))
+
+ll_lencomps <- lencomps %>% 
+  filter(Source == "LL fishery")
+
+hal_lencomps <- lencomps %>% 
+  filter(Source == "Hal_LL fishery")
+
+# ggridge plots
+
+lendat2 %>% 
+  #filter(Source != "Pot survey") %>% 
+  #mutate(Source = derivedFactor("Survey" = Source == "LL survey",
+  #                              "LL Fishery" = Source == "LL fishery",
+  #                              "Pot Fishery" = Source == "Pot fishery",
+  #                              .ordered = TRUE)) %>% 
+  ggplot(aes(length, year, group = year, fill = year)) + 
+  geom_density_ridges(aes(point_fill = year, point_color = year),
+                      alpha = 0.3) +
+  geom_vline(xintercept = 63, linetype = 4) +
+  xlim(300, 900) + 
+  xlab("\nLength (cm)") + 
+  ylab(NULL) +
+  # scale_y_reverse() +
+  theme(legend.position = "none") + 
+  facet_wrap(~ Source)
+
+ggsave(paste0("Figures/lengthcomp_ggridges_", YEAR, ".png"), 
+       dpi=300, height=8, width=10, units="in")
+
+# ggride plot for len dat by sex (for TMB inputs)
+
+lendat2 %>% 
+  #filter(! c(Source %in% c("Pot survey", "LL fishery", "Pot fishery"))) %>% 
+  #mutate(Source = derivedFactor("Survey" = Source == "LL survey")) %>% 
+  ggplot(aes(length, year, group = year, fill = year)) + 
+  geom_density_ridges(aes(point_fill = year, point_color = year), alpha = 0.3) +
+  #geom_vline(xintercept = 61, linetype = 4) + # L50
+  xlim(300, 900) + 
+  labs(x = "\nLength (cm)", y = "Year\n") +
+  # scale_y_reverse() +
+  theme(legend.position = "none") + 
+  facet_wrap(~ Sex) +
+  ggtitle("Fishery")
+
+ggsave(paste0(YEAR+1,"/figures/tmb/lencomp_fsh_",YEAR,".png"), 
+       dpi=300, height=8, width=10, units="in")
+
+# All years smoothed by source
+ggplot() +
+  geom_point(data = lencomps %>% 
+               filter(Sex == "Sex combined"),
+             aes(x = length_bin, y = proportion, 
+                 colour = Source),
+             size = 1, alpha = 0.2) +
+  # stat_smooth(size = 1.5, se = FALSE) +
+  geom_line(data = mu_lencomps %>% 
+              filter(Sex == "Sex combined"),
+            aes(x = length_bin, y = proportion, colour = Source, 
+                group = Source, linetype = Source), size = 1) +
+  scale_x_discrete(breaks = seq(300, 900, 20),
+                   labels = seq(300, 900, 20)) +
+  #scale_colour_grey() +
+  scale_colour_viridis_d(option = "A", begin=0, end=0.75) +
+  xlab('\nFork length (mm)') +
+  ylab('Proportion\n') +
+  theme(legend.position = c(0.8, 0.8))
+
+ggsave(YEAR+1,"/figures/lengthcomp_bydatasource.png", 
+       dpi=300, height=4.5, width=5, units="in")
+
+# length comp figs, requested by AJ Lindley 2018-09-07
+lencomps %>% 
+  group_by(year, Source, Sex) %>% 
+  dplyr::summarize(N = sum(n),
+                   label = paste0("n = ", prettyNum(N, big.mark = ","))) %>% 
+  ungroup() %>% 
+  mutate(length_bin = "91", proportion = 0.18) -> labels 
+
+# For fishery
+
+ggplot(data = lencomps %>% 
+         # Last 10 years of data
+         filter(year >= YEAR - 10 & 
+                  Sex != "Sex combined" &
+                  Source == "LL fishery"), 
+       aes(x = length_bin, y = proportion)) + 
+  geom_bar(stat = "identity", colour = "lightgrey", fill = "lightgrey", width = 0.8) +
+  geom_line(data = lencomps %>% 
+              # Compare all past years to this year
+              filter(year == YEAR & 
+                       Sex != "Sex combined" &
+                      Source == "LL fishery") %>% 
+              select(-year),
+            aes(x = length_bin, y = proportion, group = 1),
+            colour = "black") +
+  geom_text(data = labels %>% 
+              filter(year >= YEAR - 10 & 
+                       Sex != "Sex combined" &
+                       Source == "LL fishery"),
+            aes(x = length_bin, y = proportion, label = label),
+            size = 3, family = "Times") +
+  scale_y_continuous(limits = c(0, 0.25),
+                     breaks = round(seq(0, 0.2, 0.1), 2),
+                     labels =  round(seq(0, 0.2, 0.1), 2)) +
+  scale_x_discrete(breaks = seq(41, 99, 6),
+                   labels = seq(41, 99, 6)) +
+  facet_grid(year ~ Sex) +
+  labs(x = "\nFork length (cm)", y = "Proportion-at-length (longline fishery)\n") +
+  theme(strip.placement = "outside") 
+
+ggsave(paste0(YEAR+1,"/figures/llfsh_lencomps_", YEAR-10, "_", YEAR, ".png"), 
+       dpi=300, height=8, width=6.5, units="in")
+
+# Summary stats output for length comps (requested by AJ Linsley 20180907)
+lendat2 %>% 
+  #filter(Source %in% c("LL survey", "LL fishery","Pot fishery")) %>% 
+  group_by(Source, Sex, year) %>% 
+  dplyr::summarize(mean = mean(length),
+                   min = min(length),
+                   max = max(length)) %>% 
+  mutate(variable = "Fork length") -> lensum
+
+# axis <- tickr(lensum, year, 5)
+
+lensum %>% 
+  ggplot(aes(x = year, y = mean, colour = Source)) +
+  geom_point() +
+  geom_line() +
+  scale_colour_grey(guide = FALSE) +
+  facet_wrap(~ Sex) +
+  # scale_x_continuous(breaks = axis$breaks, labels = axis$labels) +
+  labs(x = NULL, y = "Mean\nfork\nlength\n(cm)") +
+  theme(axis.title.y = element_text(angle=0)) -> l
+
+#quos() uses stand eval in dplyr, eval cols with nonstand eval using !!!
+cols <- quos(Source, year, Sex, age) 
+
+# leaving off here on 7-14 
+bind_rows(Bio_lw_noOL %>% filter(Project == "Commercial Longline Trip") %>%
+            mutate(Source = "LL fishery")%>% select(!!!cols), 
+          Bio_lw_noOL %>% filter(Project == "Atypical Longline Sample") %>%
+            mutate(Source = "LL fishery atyp")%>% select(!!!cols),
+          Bio_lw_noOL %>% filter(Project == "Commercial Halibut Longline") %>%
+            mutate(Source = "Hal LL fishery")%>% select(!!!cols),
+          Bio_lw_noOL %>% filter(Project == "Commercial Jig Trip") %>%
+            mutate(Source = "Jig") %>% select(!!!cols)) %>%
+#bind_rows(
+#  fsh_bio %>% filter(Gear == "Longline") %>% 
+#    mutate(Source = "LL fishery") %>% select(!!!cols), 
+#  fsh_bio %>% filter(Gear == "Pot") %>% 
+#    mutate(Source = "Pot fishery") %>% select(!!!cols)) %>% 
+#  bind_rows(srv_bio %>% mutate(Source = "LL survey") %>% select(!!!cols)) %>% 
+  filter(Sex %in% c('Female', 'Male') & !is.na(age)) %>% 
+  group_by(Source, Sex, year) %>% 
+  dplyr::summarize(mean = mean(age),
+                   min = min(age),
+                   max = max(age)) %>% 
+  mutate(variable = "Age") -> agesum
+
+agesum %>% 
+  mutate(age = round(mean, 0)) -> agesum1
+
+# axisy <- tickr(agesum1, age, 3)
+
+agesum %>% 
+  ggplot(aes(x = year, y = mean, colour = Source)) +
+  geom_point() +
+  geom_line() +
+  scale_colour_grey() +
+  facet_wrap(~ Sex) +
+  # scale_x_continuous(breaks = axis$breaks, labels = axis$labels) +
+  # scale_y_continuous(breaks = axisy$breaks, labels = axisy$labels) +
+  labs(x = NULL, y = "Mean\nage\n(yrs)") +
+  theme(legend.position = "bottom",
+        axis.title.y = element_text(angle=0)) -> a
+
+cowplot::plot_grid(l, a, axis = "lrtb", align = "hv", ncol = 1) -> compare_comp_sums
+compare_comp_sums
+ggsave(paste0("Figures/compare_comp_summaries.png"),
+       plot = compare_comp_sums,
+       # dpi=300, height=5.5, width=6.5, units="in")
+       dpi=300, height=7, width=7, units="in")
+
+bind_rows(agesum, lensum) %>% 
+  write_csv(paste0("Output/comps_summary.csv"))
+
+# survey length comps by stat area, requested by A Olson 2021-02-18
+unique(Bio_lw_noOL$Stat)
+
+Bio_lw_noOL %>% 
+  filter(#year >= 1997 &
+           Sex %in% c("Female", "Male") &
+           !is.na(length)) %>% 
+  select(year, Stat, length) %>% 
+ # filter(!c(length < 40)) %>% 
+  mutate(length2 = ifelse(length < 300, 300,
+                          ifelse(length > 860, 860, length)),
+         length_bin = cut(length2, breaks = seq(299.9, 859.9, 20),
+                          labels = paste(seq(310, 860, 20)))) %>% 
+  select(-length2) -> statlen #%>% 
+#  mutate(Stat = derivedFactor("345731" = Stat == "345731",
+#                              "345701" = Stat == "345701",
+#                              "345631" = Stat == "345631",
+#                              "345603" = Stat == "345603",
+#                              .ordered = TRUE)) -> statlen
+
+statlen %>% 
+  # Length comps by Source, year, and Sex 
+  count(Stat, year, length_bin) %>%
+  group_by(Stat, year) %>% 
+  mutate(proportion = round( n / sum(n), 4)) -> statcomps
+
+# complete() was behaving weirdly. Expand to grid to include all length combos
+expand.grid(year = unique(statcomps$year), 
+            Stat = unique(statcomps$Stat),
+            length_bin = sort(unique(statlen$length_bin)))  %>% 
+  data.frame()  %>% 
+  full_join(statcomps) %>%
+  fill_by_value(n, proportion, value = 0) %>% 
+  mutate(proportion = round(proportion, 4)) -> statcomps
+
+# Check that they sum to 1
+statcomps %>% 
+  group_by(Stat, year) %>% 
+  summarise(sum(proportion)) %>% view
+
+statcomps %>% 
+  group_by(year, Stat) %>% 
+  dplyr::summarize(N = sum(n),
+                   label = paste0("n = ", prettyNum(N, big.mark = ","))) %>% 
+  ungroup() %>% 
+  mutate(length_bin = "91", proportion = 0.18) -> labels 
+
+# For survey
+ggplot(data = statcomps %>% 
+         # Last 10 years of data
+         filter(year >= YEAR - 10), 
+       aes(x = length_bin, y = proportion)) + 
+  geom_bar(stat = "identity", colour = "lightgrey", fill = "lightgrey", width = 0.8) +
+  geom_line(data = statcomps %>% 
+              # Compare all past years to this year
+              filter(year == YEAR) %>% 
+              select(-year),
+            aes(x = length_bin, y = proportion, group = 1),
+            colour = "black") +
+  geom_text(data = labels %>% 
+              filter(year >= YEAR - 10),
+            aes(x = length_bin, y = proportion, label = label),
+            size = 3, family = "Times") +
+  scale_y_continuous(limits = c(0, 0.25),
+                     breaks = round(seq(0, 0.2, 0.1), 2),
+                     labels =  round(seq(0, 0.2, 0.1), 2)) +
+  scale_x_discrete(breaks = seq(310, 860, 20),
+                   labels = seq(310, 860, 20)) +
+  facet_grid(year ~ Stat) +
+  labs(x = "\nFork length (mm)", y = "Proportion-at-length (commercial fisheries)\n") +
+  theme(strip.placement = "outside") 
+
+# ggridge plots
+
+statlen %>% 
+  filter(year >= YEAR - 5) %>% 
+  ggplot(aes(length, year, group = year, fill = year)) + 
+  geom_density_ridges(aes(point_fill = year, point_color = year),
+                      alpha = 0.3) +
+  xlim(300, 900) + 
+  xlab("\nLength (mm)") + 
+  ylab(NULL) +
+  # scale_y_reverse() +
+  theme(legend.position = "none") + 
+  facet_wrap(~ Stat, ncol = 1)
+
+statlen %>%
+  filter(year >= YEAR - 10 & between(length, 40, 99)) %>%
+  ggplot(aes(x = length, y = factor(year), group = interaction(year, Stat),
+             fill = Stat)) + #, col = Stat)) +
+  geom_density_ridges(alpha = 0.5, size = 0.5, col = "white") +
+  # scale_fill_manual(values = c("grey30", "#00BFC4", "#da2055", "#daa520" )) +
+  # scale_colour_manual(values = c("grey30", "#00BFC4", "#daa520", "#da2055")) +
+  labs(x = "Length (cm)", y = NULL, fill = NULL, col = NULL) + #, title = "Dusky rockfish") +
+  theme_light() +
+  scale_x_continuous(limits = c(300, 900)) +
+  theme(legend.position = "top")
+
+ggsave(paste0("Figures/lengthcomp_statarea_", YEAR, ".png"), 
+       dpi=300, height=8, width=10, units="in")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------------------------------------------
+## END END END END
+
+############################################################################
+
 ############################################################################
 ############################################################################
 ## Plotting Scrap
@@ -1911,7 +2558,7 @@ ggsave("figures/compare_comp_summaries.png",
        dpi=300, height=7, width=7, units="in")
 
 bind_rows(agesum, lensum) %>% 
-  write_csv("output/comps_summary.csv")
+  write_csv("Output/comps_summary.csv")
 
 # survey length comps by stat area, requested by A Olson 2021-02-18
 srv_bio %>% 
