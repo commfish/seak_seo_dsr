@@ -15,9 +15,12 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 1. **Data processing:** This folder contains script and raw data files for putting together data for use in the analysis contained in the folders below.  This includes catch data and biological data.
 2. **Density estimation:**  Script and data for estimating yelloweye rockfish density using distance sampling methods and transect data from ROV surveys.
-3. **Unreported discard estimation:**  Script and data for estimating unreported discards of yelloweye rockfish in the halibut fishery
+3. **Unreported discard estimation:**  VOID! Script and data for estimating unreported discards of yelloweye rockfish in the halibut fishery.  This is currently being handled in the Data processing folder and the scripts with IPHC labels.  This folder will go away. 
 4. **REMA analysis:** This folder contains the scripts for running the random effects model that is the current model used in the federal assessment.
 5. **Production models:** This folder contains scripts for developing and running the bayesian state-space surplus production model (SS-SPM).
+6. **Output:** This folder will contain output files from various analysis.
+7. **Figures:** This folder will contain figures associated with the assessment.
+8. **r_helper:** This folder contains functions built specific to the assessment. 
 
 ## Code path and data sources for the assessment:
 
@@ -35,9 +38,9 @@ This repository will hold data, files and r script for the SEO DSR assessment th
    
     3. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
 
-3. **Compile harvest data**: [`Data_processing/Code/YE Harvest reconstruction.R`]: Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
+3. **Compile harvest data**: [`Data_processing/Code/YE Harvest reconstruction.R`] Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
 
-4. **Biological**: Examine and make graphics of biological data for yelloweye rockfish [`IN DEVELOPMENT`]
+4. **Biological analysis**: [`Data_processing/Code/biological.R`] Examine and make graphics of biological data (age, sex, length, weight and maturity) for yelloweye rockfish using portside samples. The data is fomratted for the use in an age structured assessment if one is developed.  Biological trends can be incorporated into the assessment regardless of the assessment model being used.  
 
 5. **Estimate yelloweye density for new ROV surveys**: If new areas have been sampled since the last assessment, estimate density and then biomass.
    
