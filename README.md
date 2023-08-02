@@ -10,9 +10,11 @@ of Fish and Game groundfish management areas used for managing the demersal shel
 East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and 
 Southern Southeast Outside (SSEO) Sections.*
 
-The most recent assessments associated with this code can be found here:
+The assessments associated with this code can be found here:
 
-2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
+* [2022 SAFE report](https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict)
+
+### Repo directory: 
 
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
@@ -30,17 +32,17 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
-    1. *Portside sampling for biological data* is available here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data
+    1. [*Portside sampling for biological data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
    
     2. *Yelloweye harvest data* is available here:
 
-        1. *Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
+        1. [*Groundfish fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current)
 
-        2. *Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
+        2. [*Salmon fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current)
       
-        3. *CAS bycatch in halibut fishery (NOAA observer estimates)*: Prepared report currently title *Joy - Yelloweye Bycatch* from AKFIN database https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard.  This data contains confidential information and is not stored on the publicly available repository.  
+        3. [*CAS bycatch in halibut fishery (NOAA observer estimates)*](https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard): Prepared report currently title *Joy - Yelloweye Bycatch* from AKFIN database.  This data contains confidential information and is not stored on the publicly available repository.  
    
-    3. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
+    3. [*Halibut harvest data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022). This is necessary for estimating yelloweye bycatch. 
 
 3. **Compile harvest data**: [`Data_processing/Code/YE Harvest reconstruction.R`] Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
 
@@ -58,11 +60,11 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 6. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
 
-    1. https://www.iphc.int/data/fiss-data-query: This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
+    1. [FISS data query](https://www.iphc.int/data/fiss-data-query): This page will allow you to download the NPUE data for non-halibut and save it to the [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
     
-    2. Get the hook adjustment factor data to correct CPUE estimators for hook saturation. This data is not posted regularly and may require a data request to get (https://www.iphc.int/form/data-request).  If someone has already reaquested the most recent data it may be posted at https://www.iphc.int/data/fiss-data-query: Document IPHC-YEAR-FISS-HADJ.  The online data is a large, heavily formated excel sheet that will need some work to convert to csv file.      
+    2. Get the hook adjustment factor data to correct CPUE estimators for hook saturation. This data is not posted regularly and may require a [data request](https://www.iphc.int/form/data-request).  If someone has already requested the most recent data it may be posted at [IPHC hook adjustments](https://www.iphc.int/data/fiss-data-query), Document IPHC-YEAR-FISS-HADJ.  The online data is a large, heavily formated excel sheet that will need some work to convert to csv file.      
 
-    3. https://www.iphc.int/datatest/fiss-pacific-halibut-data: As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
+    3. [FISS Halibut data](https://www.iphc.int/datatest/fiss-pacific-halibut-data): As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
 
     4. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
    
