@@ -102,21 +102,22 @@ This repository will hold data, files and r script for the SEO DSR assessment th
       
         4. [`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims/`] and [`Production_models/Code/Figures/Sims/`].
 
-    9. *Outstanding issues with SS-SPMs*: 
+    9. ***Outstanding issues with the SS-SPMs***: *for CIE reviewers*
 
-        1. *Model underestimates r:* I think this may be due to misspecification in the r hyper-prior, or issues with constraints on process error.  Will try a simpler model with a single r parameter shared by the four management areas.  Will also explore loosing bounds on the process error.
+        1. *Model underestimates r:* Assuming that the simulations are set up correctly, the simulations indicate that the model is underestimating the r parameter in the production model and hence underestimating overall productivity of the stock.  My hunch is that this may be due to misspecification in the r hyper-prior, or issues with constraints on process error.  My thoughts are to try a simpler model with a single r parameter shared by the four management areas and to explore loosing bounds on the process error. *I am very eager to work with CIE reviewers on this issue!*
 
-        2. *Long run times:* One Stage of the model can take over 12 hours to converge.  Will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Stan may also allow faster processing as well.  
+        2. *Long run times:* One Stage of the model can take over 12 hours to converge.  I will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Switching from JAGS to STAN may also allow faster processing as well.  
       
-        3. *3 stage approach:* Is this legit???
+        3. *3 stage approach:* I know this part seems like it could be controversial and raises eyebrows.  My thoughts are that stage 1 and 2 are done to produce some vaguelly informative priors so it's OK.  That being said, I am very eager to work with the CIE reviewers on this.
       
-        4. *IPHC data:* After a couple of meetings with IPHC staff there are some modifications that need to be made to those calculations that include:
+        4. *IPHC data:* I have met with IPHC staff to discuss how I am using the survey data in this assessment and they were, by and large, very supportive of what is presented above.  They had several recomendations for fine tuning the approach:
       
-            1. Filtering out ineffective stations (I wasn't aware of this before).
+            1. Filtering out "ineffective" stations. I wasn't aware of this before, but this is a very simple task.
           
-            2. Correcting CPUE/NPUE/WCPUE for hook saturation.  Should be easy once I get the correction factor.
+            2. Correcting CPUE/NPUE/WCPUE for hook saturation effects.  I have gotten the requested data on correcting for hook saturation and will be incorporating this into the analysis.
           
-            3. Filtering stations for only those that are in yelloweye habitat.  The station locations can very by up to 3 nm per year, so a given station may drift in and out of yelloweye habitat.  This may be best accomplished with a habitat map... likely using the one's defined for the ROV survey.  The State Rockfish Initiative (SRI) has assigned various people to reworking the habitat maps but has yet to be completed.  
+            3. Filtering stations for only those that are in yelloweye habitat.  The station locations can very by up to 3 nm per year, so a given station may drift in and out of yelloweye habitat.  This may be best accomplished with a habitat map... likely using the one defined for the ROV survey.  The State Rockfish Initiative (SRI) has assigned various people to rework the habitat maps but a timeline for completing that task is not available. I think the best approach for now is to filter for the stations that are within the habitat polygons used in the ROV survey and will look to adopt that approach going forward.  I have also considered an alternative approach whereby I used stations that encounted yelloweye at least X% of the time for the cpue index.  *I am very eager to work with CIE reviewers on this issue!*
+ 
     
 
    
