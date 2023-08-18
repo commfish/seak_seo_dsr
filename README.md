@@ -40,7 +40,7 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
         2. [*Salmon fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current)
       
-        3. [*CAS bycatch in halibut fishery (NOAA observer estimates)*](https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard): This is a prepared report currently title *Joy - Yelloweye Bycatch* from AKFIN database currently in development by Jean Lee (jean.lee@noaa.gov).  This data contains confidential information and is not stored on the publicly available repository.  
+        3. [*CAS bycatch in halibut fishery (NOAA observer estimates)*](https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard): This is a prepared report currently titled *Joy - Yelloweye Bycatch* from AKFIN database.  This report is currently in development by Jean Lee (jean.lee@noaa.gov) with anticipated completion by September 2023.  This data contains confidential information and will not be stored on the publicly available repository.  
    
     3. [*Halibut harvest data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022). This is necessary for estimating yelloweye bycatch. 
 
