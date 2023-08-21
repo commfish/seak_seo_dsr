@@ -32,13 +32,13 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
-    1. [*Portside sampling for biological data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
+    1. [*OceanAK Portside sampling for biological data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
    
     2. *Yelloweye harvest data* is available here:
 
-        1. [*Groundfish fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current)
+        1. [*OceanAK Groundfish fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current)
 
-        2. [*Salmon fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current)
+        2. [*OceanAK Salmon fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current)
       
         3. [*CAS bycatch in halibut fishery (NOAA observer estimates)*](https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard): This is a prepared report currently titled *Joy - Yelloweye Bycatch* from AKFIN database.  This report is currently in development by Jean Lee (jean.lee@noaa.gov) with anticipated completion by September 2023.  This data contains confidential information and will not be stored on the publicly available repository.  
    
