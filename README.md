@@ -104,13 +104,17 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
     9. ***Outstanding issues with the SS-SPMs***: *for CIE reviewers*
 
-        1. *Model underestimates r:* Assuming that the simulations are set up correctly, the simulations indicate that the model is underestimating the r parameter in the production model and hence underestimating overall productivity of the stock.  My hunch is that this may be due to misspecification in the r hyper-prior, or issues with constraints on process error.  My thoughts are to try a simpler model with a single r parameter shared by the four management areas and to explore loosing bounds on the process error. *I am very eager to work with CIE reviewers on this issue!*
+        1. *Model underestimates r:* Assuming that the simulations are set up correctly, the simulations indicate that the model is underestimating the r parameter in the production model and hence underestimating overall productivity of the stock.  My hunch is that this may be due to misspecification in the r hyper-prior, or issues with constraints on process error. ***I am very eager to work with CIE reviewers on this issue!*** My thoughts going forward are:
+           
+            2. Try a single r parameter shared by the four management areas.  But the stage 2 model is a simple, unstratifed production model and it appears to underestimate r as well?
+            3. Loosening bounds on the process error. Generally, the looser the process error bounds, the higher the estimate of r.  Left unbounded the model will try to "connect the dots" of the biomass point estimates, so there is a balance to this approach and process error *should* be small for such a long-lived species.
+            4. Apply the process error to only the biological portion of the model and exclude the catch part of the equation.  The model is currently set up according to Ono et al. (2012) with process error applied to the entire equation (biological production minus catch).  But I also model a lot of error into the catch portion of the model because of uncertainty coming from the bycatch estimates in the haibut fishery.  Given how much uncertainty is applied to the catch part of the equation, perhaps this is conflating the model's ability to estimate r?  
 
-        2. *Long run times:* One Stage of the model can take over 12 hours to converge.  I will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Switching from JAGS to STAN may also allow faster processing as well.  
+        3. *Long run times:* One Stage of the model can take over 12 hours to converge.  I will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Switching from JAGS to STAN may also allow faster processing as well.  
       
-        3. *3 stage approach:* I know this part seems like it could be controversial and raises eyebrows.  My thoughts are that stage 1 and 2 are done to produce some vaguelly informative priors so it's OK.  That being said, I am very eager to work with the CIE reviewers on this.
+        4. *3 stage approach:* I know this part seems like it could be controversial and raises eyebrows.  My thoughts are that stage 1 and 2 are done to produce some vaguelly informative priors so it's OK.  At the very least, I think labelling this as a 3-stage approach is misleading and there should just be a section on how the *K* and $\phi_{80}$ priors are developed.  That being said, I am very eager to work with the CIE reviewers on this.
       
-        4. *IPHC data:* I have met with IPHC staff to discuss how I am using the survey data in this assessment and they were, by and large, very supportive of what is presented above.  They had several recomendations for fine tuning the approach:
+        5. *IPHC data:* I have met with IPHC staff to discuss how I am using the survey data in this assessment and they were, by and large, very supportive of what is presented above.  They had several recomendations for fine tuning the approach:
       
             1. Filtering out "ineffective" stations. I wasn't aware of this before, but this is a very simple task.
           
