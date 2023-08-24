@@ -10,9 +10,11 @@ of Fish and Game groundfish management areas used for managing the demersal shel
 East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and 
 Southern Southeast Outside (SSEO) Sections.*
 
-The most recent assessments associated with this code can be found here:
+The assessments associated with this code can be found here:
 
-2022 assessment: https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict
+* [2022 SAFE report](https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict)
+
+### Repo directory: 
 
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
@@ -30,17 +32,17 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
-    1. *Portside sampling for biological data* is available here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data
+    1. [*OceanAK Portside sampling for biological data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
    
     2. *Yelloweye harvest data* is available here:
 
-        1. *Groundfish fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current
+        1. [*OceanAK Groundfish fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20groundfish%20fish%20ticket%20data%202015-current)
 
-        2. *Salmon fish tickets:* https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current
+        2. [*OceanAK Salmon fish tickets*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FYelloweye%20harvest%20SEO%20in%20salmon%20fish%20ticket%20data%202015-current)
       
-        3. *CAS bycatch in halibut fishery (NOAA observer estimates)*: Prepared report currently title *Joy - Yelloweye Bycatch* from AKFIN database https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard.  This data contains confidential information and is not stored on the publicly available repository.  
+        3. [*CAS bycatch in halibut fishery (NOAA observer estimates)*](https://akfinbi.psmfc.org/analytics/saw.dll?Dashboard): This is a prepared report currently titled *Joy - Yelloweye Bycatch* from AKFIN database.  This report is currently in development by Jean Lee (jean.lee@noaa.gov) with anticipated completion by September 2023.  This data contains confidential information and will not be stored on the publicly available repository.  
    
-    3. *Halibut harvest data* is available here.  (This is necessary for estimating yelloweye bycatch.) https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022 
+    3. [*Halibut harvest data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022). This is necessary for estimating yelloweye bycatch. 
 
 3. **Compile harvest data**: [`Data_processing/Code/YE Harvest reconstruction.R`] Code for compiling fish ticket data, sport fish data and subsistence data to create a catch history for use in assessment.
 
@@ -58,11 +60,11 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 6. **Calculate yelloweye cpue in the IPHC longline survey (FISS)**: This will be a moving target as the IPHC website is undergoing continues revisions. In addition, these methods are currently underoing some revisions with the help of IPHC staff to better align with best practices.  Specifically, cpue estimates need to be adjusted for hook saturation.  To update the data, go to
 
-    1. https://www.iphc.int/data/fiss-data-query: This page will allow you to download the NPUE data for non-halibut and save it to [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
+    1. [FISS data query](https://www.iphc.int/data/fiss-data-query): This page will allow you to download the NPUE data for non-halibut and save it to the [`Data_processing/Data/IPHC_raw/`] folder. Follow the filters to select IPHC regulatory areas 3A and 2C and yelloweye rockfish in the "Select Non-Pacific halibut species" tab. Just above the "tableau" bar, there is the download button.  Press it, select "Crosstab" and then "CSV" and *Non-Pacific halibut data* and then download *Set and Pacific halibut data*.  Make sure you label this file with the year when saved to the proper folder.  In 2023 I had problem downloading and importing the csv files and had to download the excel file and then save as a csv file.  
     
-    2. Get the hook adjustment factor data to correct CPUE estimators for hook saturation. This data is not posted regularly and may require a data request to get (https://www.iphc.int/form/data-request).  If someone has already reaquested the most recent data it may be posted at https://www.iphc.int/data/fiss-data-query: Document IPHC-YEAR-FISS-HADJ.  The online data is a large, heavily formated excel sheet that will need some work to convert to csv file.      
+    2. Get the hook adjustment factor data to correct CPUE estimators for hook saturation. This data is not posted regularly and may require a [data request](https://www.iphc.int/form/data-request).  If someone has already requested the most recent data it may be posted at [IPHC hook adjustments](https://www.iphc.int/data/fiss-data-query), Document IPHC-YEAR-FISS-HADJ.  The online data is a large, heavily formated excel sheet that will need some work to convert to csv file.      
 
-    3. https://www.iphc.int/datatest/fiss-pacific-halibut-data: As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
+    3. [FISS Halibut data](https://www.iphc.int/datatest/fiss-pacific-halibut-data): As of 2023 all the data you need is described above, but halibut data is also available here so I'm including it in case things change again.  In this arrangement of the data base you have to download the set data and halibut data separately and then merge them in the code.  
 
     4. [`Data_processing/Code/IPHC_Survey_CPUE_index.R`]: Code for calculating IPHC CPUE index of abundance for use in the REMA model and the SS-SPM.  Going into the 2023 CIE review I am debating what stations to include in the CPUE calculations.  Right now I have only been using stations that encounter yelloweye 40% of the time, but will discuss at review...
    
@@ -100,21 +102,26 @@ This repository will hold data, files and r script for the SEO DSR assessment th
       
         4. [`Production_models/Code/Simulations/Sim_exam.R`]: Examine the results of the simulations to see how well the model predicted parameter values.  Results stored in [`Production_models/Code/Output/Sims/`] and [`Production_models/Code/Figures/Sims/`].
 
-    9. *Outstanding issues with SS-SPMs*: 
+    9. ***Outstanding issues with the SS-SPMs***: *for CIE reviewers*
 
-        1. *Model underestimates r:* I think this may be due to misspecification in the r hyper-prior, or issues with constraints on process error.  Will try a simpler model with a single r parameter shared by the four management areas.  Will also explore loosing bounds on the process error.
+        1. *Model underestimates r:* Assuming that the simulations are set up correctly, the simulations indicate that the model is underestimating the r parameter in the production model and hence underestimating overall productivity of the stock.  My hunch is that this may be due to misspecification in the r hyper-prior, or issues with constraints on process error. ***I am very eager to work with CIE reviewers on this issue!*** My thoughts going forward are:
+           
+            1. Try a single r parameter shared by the four management areas.  But the stage 2 model is a simple, unstratifed production model and it appears to underestimate r as well?
+            2. Loosening bounds on the process error. Generally, the looser the process error bounds, the higher the estimate of r.  Left unbounded the model will try to "connect the dots" of the biomass point estimates, so there is a balance to this approach and process error *should* be small for such a long-lived species.
+            3. Apply the process error to only the biological portion of the model and exclude the catch part of the equation.  The model is currently set up according to Ono et al. (2012) with process error applied to the entire equation (biological production minus catch).  But I also model a lot of error into the catch portion of the model because of uncertainty coming from the bycatch estimates in the haibut fishery.  Given how much uncertainty is applied to the catch part of the equation, perhaps this is conflating the model's ability to estimate r?  
 
-        2. *Long run times:* One Stage of the model can take over 12 hours to converge.  Will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Stan may also allow faster processing as well.  
+        3. *Long run times:* One Stage of the model can take over 12 hours to converge.  I will try reformulating the model such that $B_t$ = $\phi_t$ * *K*.  Supposedly the algorythm has an easier time finding $\phi$ than it does *B*.  Switching from JAGS to STAN may also allow faster processing as well.  
       
-        3. *3 stage approach:* Is this legit???
+        4. *3 stage approach:* I know this part seems like it could be controversial and raises eyebrows.  My thoughts are that stage 1 and 2 are done to produce some vaguelly informative priors so it's OK.  At the very least, I think labelling this as a 3-stage approach is misleading and there should just be a section on how the *K* and $\phi_{80}$ priors are developed.  That being said, I am very eager to work with the CIE reviewers on this.
       
-        4. *IPHC data:* After a couple of meetings with IPHC staff there are some modifications that need to be made to those calculations that include:
+        5. *IPHC data:* I have met with IPHC staff to discuss how I am using the survey data in this assessment and they were, by and large, very supportive of what is presented above.  They had several recomendations for fine tuning the approach:
       
-            1. Filtering out ineffective stations (I wasn't aware of this before).
+            1. Filtering out "ineffective" stations. I wasn't aware of this before, but this is a very simple task.
           
-            2. Correcting CPUE/NPUE/WCPUE for hook saturation.  Should be easy once I get the correction factor.
+            2. Correcting CPUE/NPUE/WCPUE for hook saturation effects.  I have gotten the requested data on correcting for hook saturation and will be incorporating this into the analysis.
           
-            3. Filtering stations for only those that are in yelloweye habitat.  The station locations can very by up to 3 nm per year, so a given station may drift in and out of yelloweye habitat.  This may be best accomplished with a habitat map... likely using the one's defined for the ROV survey.  The State Rockfish Initiative (SRI) has assigned various people to reworking the habitat maps but has yet to be completed.  
+            3. Filtering stations for only those that are in yelloweye habitat.  The station locations can vary by up to 3 nm per year, so a given station may drift in and out of yelloweye habitat.  This may be best accomplished with a habitat map... likely using the one defined for the ROV survey.  The ADF&G State Rockfish Initiative (SRI) has assigned various people to rework the habitat maps but a timeline for completing that task is not available. I think the best approach for now is to filter for the stations that are within the habitat polygons used in the ROV survey and will look to adopt that approach going forward.  I have also considered an alternative approach whereby I use stations that encounted yelloweye at least X% of the time for the cpue index and have played with values from 10-40% for selecting stations.  *I am very eager to work with CIE reviewers on this issue!*
+ 
     
 
    
