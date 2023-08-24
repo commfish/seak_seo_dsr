@@ -10,6 +10,7 @@ library(RColorBrewer)
 library(sf)
 library(readr)
 library(vroom)
+library(scales)
 }
 #wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
 #setwd(wd)
@@ -108,6 +109,19 @@ source("r_helper/Port_bio_function.R")
   Survey$U32.Pacific.halibut.weight<-as.numeric(Survey$U32.Pacific.halibut.weight)
   
   Survey<-unique(Survey %>% select(-c(Row.number.x,Row.number.y)))
+  #str(Survey)
+  #Bring in and join hook adjustment factor to control for hook saturation when 
+  # calculating CPUE
+  
+  hadj<-read.csv(paste0("Data_processing/Data/IPHC_raw/iphc_",YEAR,"_fiss_hadj.csv"), check.names = TRUE) %>% 
+  #hadj<-hadj %>% 
+    filter(IPHC.Reg.Area == "3A " | IPHC.Reg.Area == "2C ") %>%
+    select(Stlkey = stlkey,Year,Station,h.adj)
+    str(hadj)
+    
+    
+  Survey <- left_join(Survey,hadj,by=c("Year","Stlkey","Station"))  
+  #str(Survey)
 }
 
 {y<-sample(unique(Survey$Year),1)
@@ -124,7 +138,7 @@ mean(Survey$AvgDepth.fm)
 write.csv(Survey,paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
 
 #================================================================================
-# Look at some depth stuff... 
+# Look at some depth stuff and identify stations that have seen yelloweye...
 hist(Survey$BeginDepth..fm.)
 hist(Survey$EndDepth..fm.)
 hist(Survey$AvgDepth.fm)
@@ -174,7 +188,7 @@ plot_stations<-st_as_sf(Station.sum,coords = c("Lon","Lat"))
 
 plot_stations<-st_set_crs(plot_stations,crs=4326)
 
-use_stations<-YE.stations_40p
+use_stations<-YE.stations
 
 ggplot(plot_stations %>% filter(Station %in% c(use_stations))) + 
   geom_sf(aes(color = mean.YE, size = mean.YE)) +
@@ -262,8 +276,11 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
   j<-1
   for (y in Years) {  #y<-Years[1]
     for (s in Subs){  #s<-Subs[1]
-      Dat<-Survey[Survey$Year == y & Survey[,col.ref] == s &
-                    Survey$AvgDepth.fm > Shallow & Survey$AvgDepth.fm < Deep,]
+      Dat<-Survey[Survey$Year == y & 
+                    Survey[,col.ref] == s &
+                    Survey$AvgDepth.fm > Shallow & 
+                    Survey$AvgDepth.fm < Deep &
+                    Survey$Eff == "Y",]
       if (nrow(Dat)>0){
         Stations<-unique(Dat$Station)
         #WCPUEi.32<-vector()
@@ -275,6 +292,9 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
           #debug
           #if (nrow(Stat.Dat) > 1){aaa} else {}
           CPUE<-mean(Stat.Dat$YE.obs/Stat.Dat$HooksObserved)
+          #hook adjustment factor
+          CPUE<-CPUE*unique(Stat.Dat$h.adj)
+          
           if (CPUE == 0){
             C<-0
           } else {
@@ -368,7 +388,6 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
 colnames(Survey)
 
 #Decision: which stations to use to calculate CPUE??? 
-
 Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
 Survey_non0<-Survey %>% filter(Station %in% c(YE.stations))
 
@@ -381,8 +400,87 @@ str(SE.subdistricts); unique(SE.subdistricts$mngmt.area)
 
 IPHC.index<-SE.subdistricts[SE.subdistricts$mngmt.area != "NSEI" & 
                               SE.subdistricts$mngmt.area != "SSEI",]
+str(IPHC.index)
+
+ggplot(IPHC.index, aes(x=Year)) +
+  geom_point(aes(y=CPUE.mean),size=2) +
+  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci),
+                col="black", alpha=0.5) +
+  facet_wrap(~mngmt.area) +
+  xlab("\nYear") +
+  ylab("Yelloweye CPUE n/hook") +
+  #ylab("Density (yelloweye rockfish/kmsq)") +
+  scale_y_continuous(label=comma) +
+  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+         panel.grid.minor = element_blank()) +
+  ggtitle("Yelloweye cpue in IPHC FISS, stations that encountered yelloweye at least once")
+
+ggsave(paste0("Figures/YE_IPHC_cpue_non0_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+
 write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 
-IPHC.index_40p<-SE.subdistricts[SE.subdistricts_40p$mngmt.area != "NSEI" & 
+IPHC.index_40p<-SE.subdistricts_40p[SE.subdistricts_40p$mngmt.area != "NSEI" & 
                               SE.subdistricts_40p$mngmt.area != "SSEI",]
+
+ggplot(IPHC.index_40p, aes(x=Year)) +
+  geom_point(aes(y=CPUE.mean),size=2) +
+  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci),
+                col="black", alpha=0.5) +
+  facet_wrap(~mngmt.area) +
+  xlab("\nYear") +
+  ylab("Yelloweye CPUE n/hook") +
+  #ylab("Density (yelloweye rockfish/kmsq)") +
+  scale_y_continuous(label=comma) +
+  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+         panel.grid.minor = element_blank()) +
+  ggtitle("Yelloweye cpue in IPHC FISS, stations that encountered yelloweye at least 40% of years")
+
+ggsave(paste0("Figures/YE_IPHC_cpue_min40percentYE_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+
 write.csv(IPHC.index_40p,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
+
+comp<-rbind(IPHC.index %>% mutate(yelloweye_presence = "at least once"),
+            IPHC.index_40p %>% mutate(yelloweye_presence = "40% of years"))
+
+ggplot(comp, aes(x=Year)) +
+  geom_point(aes(y=CPUE.mean, col = yelloweye_presence),
+             size=2, position = position_dodge(width=0.25)) +
+  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci, col=yelloweye_presence),
+                alpha=0.5,
+                position = position_dodge(width=0.25)) +
+  facet_wrap(~mngmt.area) +
+  xlab("\nYear") +
+  ylab("Yelloweye CPUE n/hook") +
+  #ylab("Density (yelloweye rockfish/kmsq)") +
+  scale_y_continuous(label=comma) +
+  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+         panel.grid.minor = element_blank(),
+         legend.position = "top") +
+  ggtitle("Yelloweye cpue in IPHC FISS")
+
+ggsave(paste0("Figures/YE_IPHC_cpue_method_comparison_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

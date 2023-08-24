@@ -256,7 +256,34 @@ ggplot(Dens, aes(x=Year)) +
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
          panel.grid.minor = element_blank())
 ggsave(paste0("Figures/YE_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+
+#plot biomass and density in same plot...
+# work in progress... difficulty with secondary axis that is not worth the time right now... 
+ggplot(Dens, aes(x=Year)) +
+  geom_point(aes(y=Biomass.mt),size=2, col="red") +
+  geom_point(aes(y=Density),size=2, col="blue") +
+  geom_errorbar(aes(ymin = Biomass.mt-1.95*Biomass.cv*Biomass.mt, 
+                    ymax= Biomass.mt+1.95*Biomass.cv*Biomass.mt),
+                col="red", alpha=0.5) +
+  geom_errorbar(aes(ymin = Density-1.95*sqrt(var.Dens), ymax= Density+1.95*sqrt(var.Dens)),
+                col="blue", alpha=0.5) +
+  facet_wrap(~Subdistrict) +
+  xlab("\nYear") +
+  ylab("yelloweye rockfish biomass (mt)") +
+  #ylab("Density (yelloweye rockfish/kmsq)") +
+  scale_y_continuous(label=comma,
+                     sec.axis=sec_axis(~.*0.25, name="Density (fish/km^2)", label=comma)) +
+  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+         axis.text.y = element_text(color = "black"),
+         axis.text.y.right = element_text(color = "black"),
+         panel.grid.minor = element_blank())
+
+ggsave(paste0("Figures/YE_Density_&_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+
 #************************************************************************************
+#*
+#*
 # Get "Status-quo" biomass estimates and lower 90% CI
 
 Years2<-unique(Dens$Year)
