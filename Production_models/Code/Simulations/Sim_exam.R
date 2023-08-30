@@ -42,8 +42,12 @@ str(Sim.params)
 
 ##Load simulation results... 
 
-a<-read.csv(paste0("Production_models/Output/Sims/",strsplit(res.to.sim,"/")[[1]][3],"/results_sims_1-3.csv"))
+a<-read.csv(paste0("Production_models/Output/Sims/",strsplit(res.to.sim,"/")[[1]][3],"/results_sims_1-51.csv"))
 b<-read.csv(paste0("Model Output/",res.to.sim,"/simulations/results_sims_51-100.csv"))
+
+a<-read.csv(paste0("Production_models/Output/Sims/results_sims_1-50.csv"))
+b<-read.csv(paste0("Production_models/Output/Sims/results_sims_51-100.csv"))
+
 sims<-rbind(a,b)
 str(sims)
 ##Questions to answer: did model correctly estimate the parameters?!

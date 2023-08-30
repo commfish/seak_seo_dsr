@@ -10,6 +10,8 @@ library(ggplot2)
 library(fishmethods)
 library(broom)
 library(mosaic)
+library(ggpubr)
+library(cowplot)
 source("r_helper/Port_bio_function.R")
 
 YEAR<-2022
@@ -99,7 +101,7 @@ YEAR<-2022
   Port.hal<-Port[Port$Project=="Commercial Halibut Longline",]; nrow(Port.hal)
 }
 
-Port<-port.bio(Year)
+Port<-port.bio(YEAR)
 Port.rand<-Port[Port$Sample.Type=="Random",]
 
 agecomps<-Port[!is.na(Port$Sex) & !is.na(Port$Age),]
@@ -235,8 +237,12 @@ unique(tst$GFMU)
 
 ###########################################################################
 plus_group<-100
+###########################################################################
+## age and length compositions for the SEO as a whole
+
+
 ###############################################################################
-## Base plots of age and length compositions: 
+## Base plots of age and length compositions for management areas: 
 
 unique(Port$GFMU)
 gmus<-unique(Port$GFMU)[-5]
@@ -317,10 +323,49 @@ for (i in gmus){  #i<-gmus[1]
 }
 
 #SEO composite plots
+str(agecomps)
+unique(agecomps$Sample.Type)
+
+agecomps %>% group_by(Year, Sex) %>%
+  summarize(samples = n(),
+            landings = length(unique(Trip.Number))) -> age_smpl_size
+
+str(age_smpl_size)
+
+ggplot(age_smpl_size,aes(Year,samples)) +
+  geom_col(aes(col=Sex, fill=Sex),alpha=0.5, position = position_dodge(width = 0.2)) +
+  ylab("Number of age samples") +
+  theme_bw()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = c(0.2,0.7)) +
+  scale_x_continuous(breaks=seq(1984,2022,2)) ->raw_ss_plot
+
+ggplot(agecomps %>% group_by(Year) %>%
+         summarize(samples = n(),
+                   landings = length(unique(Trip.Number))),
+       aes(Year,landings)) +
+  geom_col(aes(),alpha=0.5, position = position_dodge(width = 0.2)) +
+  ylab("Number of landings sampled") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_x_continuous(breaks=seq(1984,2022,2))-> lnds_ss_plot
+
+ggarrange(raw_ss_plot, lnds_ss_plot, nrow=2)
+
+ps<-align_plots(raw_ss_plot,lnds_ss_plot, align = "hv")
+
+ggdraw() + draw_grob(ps[[1]], 0,0.45,1,0.5) +   #grob, x, y, width, height, scale, clip, hjust, vjust, halign, valign
+  draw_grob(ps[[2]], 0,0,1,0.5)
+
+ggsave(paste0("Figures/age_ss_byyear_", YEAR, ".png"), dpi=300,  height=5, width=7, units="in")
+  
+  
 ggplot(data = agecomps,
        aes(x = Year, y = Age, size = count)) + #*FLAG* could swap size with proportion_scaled
   geom_point(shape = 21, fill = "black", colour = "black") +
-  scale_size(range = c(0, 2)) +
+  scale_size(range = c(0, 1)) +
   facet_wrap(~ Sex ) +
   labs(x = "Year", y = "Observed Age") +	#"\nYear", y = "Observed Age\n") +
   guides(size = "none")	+	#FALSE)# +

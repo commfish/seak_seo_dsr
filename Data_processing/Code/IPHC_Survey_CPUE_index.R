@@ -11,6 +11,7 @@ library(sf)
 library(readr)
 library(vroom)
 library(scales)
+library(ggpubr)
 }
 #wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
 #setwd(wd)
@@ -168,7 +169,34 @@ Survey %>% group_by(Station) %>%
                    ) -> Station.sum
 nrow(Station.sum)
 
-hist(Station.sum$mean.YE, breaks=25); nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum)
+hist(Station.sum$mean.YE, breaks=50); 1-(nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum))
+
+ye_caught_prop<-percent(1-(nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum)))
+
+ggplot(Station.sum) +
+  geom_histogram(aes(mean.YE), binwidth=0.25, color="grey", fill="darkgrey") +
+  annotate("text", y=40, # 
+           x=12.5, color="darkorange",
+           label=c(paste0("Yelloweye caught at least once at ",ye_caught_prop," of stations"))) +
+  annotate("text", y=90, 
+           x=12.5, color="black",fontface =2, 
+           label=c(paste0("All SEO FISS stations"))) +
+  ylab("Number of FISS stations") +
+  xlab("") + theme_bw() -> all_staions_hist
+
+ggplot(Station.sum %>% filter(mean.YE > 0)) +
+  geom_histogram(aes(mean.YE), binwidth=0.25, color="grey", fill="darkgrey") +
+  annotate("text", y=15, 
+           x=12.5, color="black",fontface =2,
+           label=c(paste0("SEO FISS stations that encountered yelloweye at least once"))) +
+  ylab("Number of FISS stations") +
+  xlab("mean number of yelloweye encountered per year") + theme_bw() -> non0_stations_hist
+
+ggarrange(all_staions_hist, non0_stations_hist,
+          nrow=2)
+
+ggsave(paste0("Figures/FISS_YE_histograms_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+
 hist(Station.sum$mean.YEcpue, breaks=25); nrow(Station.sum[Station.sum$mean.YEcpue == 0,])/nrow(Station.sum)
 hist(Station.sum$noYE.count, breaks=25)
 hist(Station.sum$prop.0, breaks=25)
@@ -414,11 +442,17 @@ ggplot(IPHC.index, aes(x=Year)) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
          panel.grid.minor = element_blank()) +
-  ggtitle("Yelloweye cpue in IPHC FISS, stations that encountered yelloweye at least once")
+  labs(title =~ atop("Yelloweye cpue in IPHC FISS",scriptstyle("stations that encountered yelloweye at least once")))
 
 ggsave(paste0("Figures/YE_IPHC_cpue_non0_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
+
+#get average number of stations in each area 
+IPHC.index %>% group_by(mngmt.area) %>%
+  summarize(mean_no_stations = mean(no.stations),
+            min_no_stations = min(no.stations),
+            max_no_stations = max(no.stations))
 
 IPHC.index_40p<-SE.subdistricts_40p[SE.subdistricts_40p$mngmt.area != "NSEI" & 
                               SE.subdistricts_40p$mngmt.area != "SSEI",]

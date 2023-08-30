@@ -88,7 +88,8 @@ Tau3<-ests$mean[grepl("Tau3",ests$parameter)==T]
 pi<-ests$mean[grepl("pi",ests$parameter)==T]
 phi<-ests$mean[grep(c("phi\\["),ests$parameter)]
 logKseo<-log(ests$X50[ests$parameter=="Kseo"])
-logvar<-log(ests$mean[ests$parameter=="sigma"])
+#FLAG!!! logvar<-log(ests$mean[ests$parameter=="sigma"])   #ERROR in January simulations!!!! should be...
+logvar<-log(ests$mean[ests$parameter=="sigma"]^2) 
 #bigKsigma<-c(0.269)   #c(0.269)
 
 #=====================================================================
