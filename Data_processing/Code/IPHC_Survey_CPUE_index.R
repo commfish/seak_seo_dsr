@@ -171,6 +171,23 @@ nrow(Station.sum)
 
 hist(Station.sum$mean.YE, breaks=50); 1-(nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum))
 
+ggplot(Station.sum,aes(Depth, mean.YE)) +
+  geom_point() + geom_smooth(size = 1.5, se = FALSE, linetype=1, alpha=0.75) +
+  ylab("Mean number of yelloweye encountered at FISS stations") +
+  xlab("Depth (fathoms)") + theme_bw() +
+  scale_x_continuous(breaks=seq(0,350,25)) 
+  
+ggsave(paste0("Figures/FISS_YE_x_depth_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in") 
+
+ggplot(Station.sum %>% filter(mean.YE > 0),
+       aes(Depth, mean.YE)) +
+  geom_point() + geom_smooth(size = 1.5, se = FALSE, linetype=1, alpha=0.75) +
+  ylab("Mean number of yelloweye encountered at FISS stations") +
+  xlab("Depth (fathoms)") + theme_bw() +
+  scale_x_continuous(breaks=seq(0,350,25))
+
+ggsave(paste0("Figures/FISS_YE_x_depth_non0_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in") 
+
 ye_caught_prop<-percent(1-(nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum)))
 
 ggplot(Station.sum) +
@@ -418,6 +435,8 @@ colnames(Survey)
 #Decision: which stations to use to calculate CPUE??? 
 Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
 Survey_non0<-Survey %>% filter(Station %in% c(YE.stations))
+
+
 
 #IPHC.reg.area<- YEHA.fxn(Area="IPHC.Reg.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 #IPHC.stat.area<- YEHA.fxn(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
