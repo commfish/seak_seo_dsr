@@ -7,6 +7,20 @@
 # install.packages("devtools")
 devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vignettes = TRUE)
 
+#From Jane Sullivan 9-1-2023:
+#If you estimate additional observation errors in your model, good news! You can now visualize how the additional estimated observation error relates to the assumed observation error based on the design-based estimator.   
+
+#Documentation:
+#  >The original issue is here: https://github.com/afsc-assessments/rema/issues/14
+#>A reproducible example is in this section of the "Fitting to an additional CPUE survey" vignette: https://afsc-assessments.github.io/rema/articles/ex2_cpue.html#model-2-estimating-additional-observation-error-in-the-two-surveys
+#>The new functions are "tidy_extra_cv()" and "plot_extra_cv()"
+
+#Important notes:
+#  >If you want access to this new functionality, you have to update rema! 
+#  devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vignettes = TRUE) **add force=TRUE if that doesn't work.
+#>This will not affect any other functionality of the rema package. Don't worry about your existing code breaking.
+
+
 # Example R scripts are downloaded when `rema` is installed. Locate them on your computer by running the following commands:
 (rema_path <- find.package('rema'))
 (rema_examples <- file.path(rema_path, 'example_scripts'))
