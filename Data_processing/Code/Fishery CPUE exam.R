@@ -12,9 +12,10 @@ library(mgcv)
 
 # 1) Load the Data
 
-LB<-read.csv("Data/DSR Logbooks for Phil.csv")
+LB<-read.csv("Data_processing/Data/Harvests/DSR Logbooks for Phil.csv") %>%
+  mutate(ticket_class<-as.factor(substr(CFEC.Permit.Number, 1, 1)))  #M pcod+rockfish, Y = rockfish targetted
 
-Fishtix<-read.csv("Data/Longline Hooks and Ticket Pounds.csv")
+Fishtix<-read.csv("Data_processing/Data/Harvests/Longline Hooks and Ticket Pounds.csv")
 Fishtix %>% mutate(Trip_Date = parse_date_time(DATE_LEFT_PORT, c("%m/%d/%Y %H:%M")),
                    Sell_Date = parse_date_time(SELL_DATE, c("%m/%d/%Y %H:%M")))->Fishtix
 
@@ -22,7 +23,9 @@ Fishtix %>% mutate(Trip_Date = parse_date_time(DATE_LEFT_PORT, c("%m/%d/%Y %H:%M
 
 str(LB); nrow(LB)
 unique(LB$Trip.Primary.Target.Species.Code)   #Species Code 145 = YE
-unique(LB$Year)
+unique(LB$Effort.Secondary.Target.Species.Code)
+unique(LB$ticket_class)
+table(LB$ticket_class,LB$Year)
 
 str(Fishtix); nrow(Fishtix)
 unique(Fishtix$TARGET_SPECIES_CODE)
@@ -31,12 +34,14 @@ unique(Fishtix$YEAR)
 # Get Data from trips marked as targetting YE...
 
 LB_YE<-LB[LB$Trip.Primary.Target.Species.Code == 145,]; nrow(LB_YE)
+table(LB_YE$ticket_class,LB_YE$Year)
+
 FT_YE<-Fishtix[Fishtix$TARGET_SPECIES_CODE ==145 & 
                       Fishtix$G_MANAGEMENT_AREA_CODE != "IBS",]; nrow(FT_YE)
 #Fishtix_YE$YEAR <-as.factor(Fishtix_YE$YEAR)
-
+str(FT_YE)
 #=================================================================================
-# Examine and clean Fish tiecket Data
+# Examine and clean Fish ticket Data
 # Calculate YE/Hook
 FT_YE$YE_per_hook <- FT_YE$YELLOWEYE_ROCKFISH/FT_YE$HOOKS
 FT_YE$Jdate<-as.numeric(format(FT_YE$Trip_Date,"%j"))
