@@ -221,7 +221,7 @@ ggplot(for_rem) +
            x=1980, color="blue",
            label=c(paste0("mean annual removals = ",round(mean(for_rem$YERF_SEAK_harv),0)," (t)"))) +
   #geom_point(data=harvest,aes(Year,YERF_harvest_GOA*mean(prop_SE_YERF[,1])), col="red") +
-  labs(x = "Year", y = "Estimated yelloweye rockfish removals by the foreign trawl fleet (t)",
+  labs(x = "Year", y = "Yelloweye rockfish removals by the foreign trawl fleet (t)",
        title = "Calculated from best available data by year") +
   scale_x_continuous(breaks=seq(1960,1990,5)) + 
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
@@ -246,7 +246,7 @@ ggplot(for_rem) +
            x=1980, color="aquamarine4",
            label=c(paste0("mean annual removals = ",round(mean(for_rem$YERF_SEAK_harv_full),0)," (t)"))) +
   #geom_point(data=harvest,aes(Year,YERF_harvest_GOA*mean(prop_SE_YERF[,1])), col="red") +
-  labs(x = "Year", y = "Estimated yelloweye rockfish removals by the foreign trawl fleet (t)",
+  labs(x = "Year", y = "Yelloweye rockfish removals by the foreign trawl fleet (t)",
        title = "Calculated from all rockfish estimates in GOA") +
   scale_x_continuous(breaks=seq(1960,1990,5)) + 
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
@@ -264,6 +264,7 @@ ggsave(paste0("Figures/foreigh_trawl_removals_1960-1987.png"), dpi=300, height=8
 for_rem_SPM<-for_rem %>% select(Year, Estimate = YERF_SEAK_harv_full, cv=cv_full)
 
 write.csv(for_rem,"Data_processing/Data/Harvests/Foreign_YERF_SEAK_ests.csv")
+
 write.csv(for_rem_SPM,"Data_processing/Data/Harvests/Foreign_YERF_SEAK.csv")
 #write.csv(for_rem, "C:\\Users\\dearthur\\Documents\\YERF_SEAK_foreign.csv",row.names=FALSE)
 
