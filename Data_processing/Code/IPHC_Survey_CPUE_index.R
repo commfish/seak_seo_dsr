@@ -1,6 +1,13 @@
 ################################################################################
 ## This code is used to process, cull and organize the IPHC survey data for use
 ## as a secondary index of yelloweye rockfish abundance in the SEO
+#
+# Methods include the original bootstrap methods used in the 2022 assessment
+# and the new Tweedie estimator developed after the 2023 CIE review
+# Phil Joy
+# Oct. 2023
+#
+################################################################################
 YEAR<-2023
 
 {library(dplyr)
@@ -12,6 +19,13 @@ library(readr)
 library(vroom)
 library(scales)
 library(ggpubr)
+library(mgcv)
+library(MuMIn)
+library(GGally)
+library(mgcViz)
+library(wesanderson)
+library(RColorBrewer)
+library(tweedie)
 }
 #wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
 #setwd(wd)
@@ -21,10 +35,10 @@ source("r_helper/Port_bio_function.R")
 
 #*******************************************************************************
 ### NEED TO DO!!!!!!!! 7-12-23
-# 1) Add in hook saturation correction factor for both cpue and bycatch 
-# 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it
+# 1) Add in hook saturation correction factor for both cpue and bycatch CHECK
+# 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it CHECK
 # 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
-#    Station locations move by 3nm year to year, so may be in and out of actual habitat
+#    Station locations move by 3nm year to year, so may be in and out of actual habitat #going with Tweedie estimator
 #*******************************************************************************
 
 #IPHCfunction<-function(){
@@ -254,12 +268,6 @@ ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) +
 ## Load the port samples that were downloaded from oceansAK; 
 # Need Yelloweye weights to get wcpue estimates
 {
-  #Port1<-read.csv("Data/port_sampling_bio_data.csv")
-  #Port2<-read.csv("Data/port_sampling_bio_data2.csv")
-  #Port3<-read.csv("Data/port sampling bio data 2021-2022 071522.csv")
-  
-  #Port<-rbind(Port1,Port2,Port3)
-  
   Port<-port.bio(2022)
   str(Port)
   Port$Year<-as.integer(Port[,1])
@@ -308,6 +316,12 @@ ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) +
 }
 Survey$mean.YE.kg
 
+Survey %>% group_by(SEdist,Year) %>%
+  dplyr::summarise(mean_wt = mean(mean.YE.kg)) %>%
+  ggplot() + 
+  geom_point(aes(Year,mean_wt,col=SEdist)) +
+  geom_line(aes(Year,mean_wt,col=SEdist))
+
 #=============================================================================
 # FUNCTION for generating cpue estimates from IPHC surveys for different management areas
 
@@ -326,11 +340,13 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
                     Survey$AvgDepth.fm > Shallow & 
                     Survey$AvgDepth.fm < Deep &
                     Survey$Eff == "Y",]
+      YE_w <-unique(Dat$mean.YE.kg)
       if (nrow(Dat)>0){
         Stations<-unique(Dat$Station)
         #WCPUEi.32<-vector()
         #WCPUEi.all<-vector()
         CPUEi<-vector()
+        WCPUEi<-vector()
         i<-1
         for (st in Stations){    #st<-Stations[1]   length(Stations)  st<-1
           Stat.Dat<-Dat[Dat$Station == st,] #; Stat.Dat
@@ -339,6 +355,7 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
           CPUE<-mean(Stat.Dat$YE.obs/Stat.Dat$HooksObserved)
           #hook adjustment factor
           CPUE<-CPUE*unique(Stat.Dat$h.adj)
+          WCPUE<-CPUE*YE_w
           
           if (CPUE == 0){
             C<-0
@@ -347,6 +364,7 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
           }
           
           CPUEi[i]<-CPUE
+          WCPUEi[i]<-WCPUE
           i<-i+1
         }
         
@@ -356,6 +374,9 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
           Resamp3<-sample(CPUEi,length(CPUEi),replace=T)
           Out[ii,"CPUE"]<-mean(Resamp3, na.rm=T)
           Out[ii,"CPUE.var"]<-var(Resamp3, na.rm=T)
+          Resamp4<-sample(WCPUEi,length(WCPUEi),replace=T)
+          Out[ii,"WCPUE"]<-mean(Resamp4, na.rm=T)
+          Out[ii,"WCPUE.var"]<-var(Resamp4, na.rm=T)
         }
         
         #hist(Out$KgHa, breaks = 25)
@@ -373,7 +394,13 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
         IPHC.cpue[j,"CPUE.var"]<-var(Out$CPUE)
         IPHC.cpue[j,"CPUE.cv"]<-sd(Out$CPUE)/mean(Out$CPUE)
         #    IPHC.wcpue[j,"WCPUE32.cv"]<-sqrt(var(WCPUEi.32))/mean(WCPUEi.32)
-       
+        IPHC.cpue[j,"WCPUE.mean"]<-mean(WCPUEi)
+        IPHC.cpue[j,"WCPUE.bootmean"]<-unname(quantile(Out$WCPUE,c(0.5)))  #mean WCPUE from Tribuzio
+        IPHC.cpue[j,"WCPUE.lo95ci"]<-unname(quantile(Out$WCPUE,c(0.025)))
+        IPHC.cpue[j,"WCPUE.hi95ci"]<-unname(quantile(Out$WCPUE,c(0.975)))
+        IPHC.cpue[j,"WCPUE.var"]<-var(Out$WCPUE)
+        IPHC.cpue[j,"WCPUE.cv"]<-sd(Out$WCPUE)/mean(Out$WCPUE)
+
         j<-j+1
       } else {}
     }
@@ -433,15 +460,16 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
 colnames(Survey)
 
 #Decision: which stations to use to calculate CPUE??? 
-Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
-Survey_non0<-Survey %>% filter(Station %in% c(YE.stations))
 
-
+# Note Oct 2023: Port function not set up for inside waters yet so just do outside for now: 
+#Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
+Survey_non0<-Survey %>% filter(Station %in% c(YE.stations) &
+                                 SEdist %in% c("EYKT","NSEO","CSEO","SSEO"))
 
 #IPHC.reg.area<- YEHA.fxn(Area="IPHC.Reg.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 #IPHC.stat.area<- YEHA.fxn(Area="IPHC.Stat.Area",Deep=max(Survey$AvgDepth.fm), Shallow=0, nboot=1000) 
 SE.subdistricts<- YEHA.fxn(Survey=Survey_non0, Area="SEdist",Deep=250, Shallow=0, nboot=1000)
-SE.subdistricts_40p<- YEHA.fxn(Survey=Survey_40p, Area="SEdist",Deep=250, Shallow=0, nboot=1000)
+#SE.subdistricts_40p<- YEHA.fxn(Survey=Survey_40p, Area="SEdist",Deep=250, Shallow=0, nboot=1000)
 
 str(SE.subdistricts); unique(SE.subdistricts$mngmt.area)
 
@@ -451,11 +479,14 @@ str(IPHC.index)
 
 ggplot(IPHC.index, aes(x=Year)) +
   geom_point(aes(y=CPUE.mean),size=2) +
+  geom_point(aes(y=WCPUE.mean),size=2,col="blue") +
   geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci),
                 col="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = WCPUE.lo95ci, ymax= WCPUE.hi95ci),
+                col="blue", alpha=0.5) +
   facet_wrap(~mngmt.area) +
   xlab("\nYear") +
-  ylab("Yelloweye CPUE n/hook") +
+  ylab("Yelloweye CPUE / WCPUE n/hook") +
   #ylab("Density (yelloweye rockfish/kmsq)") +
   scale_y_continuous(label=comma) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
@@ -463,7 +494,7 @@ ggplot(IPHC.index, aes(x=Year)) +
          panel.grid.minor = element_blank()) +
   labs(title =~ atop("Yelloweye cpue in IPHC FISS",scriptstyle("stations that encountered yelloweye at least once")))
 
-ggsave(paste0("Figures/YE_IPHC_cpue_non0_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+ggsave(paste0("Figures/YE_IPHC_cpue_non0_boot_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 
@@ -517,23 +548,284 @@ ggplot(comp, aes(x=Year)) +
 ggsave(paste0("Figures/YE_IPHC_cpue_method_comparison_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 
+################################################################################
+## Model based CPUE estimate using Tweedie model
+##
+################################################################################
+# We will still restrict stations to those that have encountered YE at least once
+# in the time series and not consider stations below 250 fathoms
+IPHC_tweed <- Survey_non0 %>% filter(AvgDepth.fm <= 250) %>% 
+  group_by(Year,Station) %>%
+  mutate(CPUE = h.adj*YE.obs/HooksObserved,
+         WCPUE = CPUE*mean.YE.kg) %>%
+  select(Year,Station,SEdist,IPHC.Reg.Area, IPHC.Stat.Area, IPHC.Charter.Region,        
+         Purpose.Code, Date, Eff, 
+         Lat = BeginLat, Lon = BeginLon, Depth = AvgDepth.fm, 
+         Soak = Soak.time..min.., Temp.C, Pres = Max.Pressure..db., 
+         pH, Sal = Salinity.PSU, O2_1 = Oxygen_ml,
+         O2_2 = Oxygen_umol, Oxygen_sat,
+         CPUE, WCPUE) %>% 
+  mutate(Year = as.factor(Year),
+         SEdist = as.factor(SEdist),
+         Soak = as.numeric(Soak),
+         Temp.C = as.numeric(Temp.C),
+         Sal = as.numeric(Sal),
+         O2_1 = as.numeric(O2_1),
+         O2_2 = as.numeric(O2_2),
+         Oxygen_sat = as.numeric(Oxygen_sat)) %>%
+  unique() %>% data.frame()
 
+head(data.frame(IPHC_tweed),30)
+colnames(IPHC_tweed)
 
+str(IPHC_tweed)
 
+IPHC_tweed %>% filter(Year == 2021 & Station == 3211)
 
+nrow(IPHC_tweed %>% filter(is.na(Soak)))
+nrow(IPHC_tweed %>% filter(is.na(Depth)))
+nrow(IPHC_tweed %>% filter(is.na(Temp.C)))
+nrow(IPHC_tweed %>% filter(is.na(Pres)))
+nrow(IPHC_tweed %>% filter(is.na(pH)))
+nrow(IPHC_tweed %>% filter(is.na(Sal)))
+nrow(IPHC_tweed %>% filter(is.na(O2_1)))
+nrow(IPHC_tweed %>% filter(is.na(Lat)))
+nrow(IPHC_tweed %>% filter(is.na(Lon)))
 
+################################################################################
+## Visually see how wcpue is related to variables:
 
+# Depth
+ggplot(IPHC_tweed, aes(Depth, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Soak
+ggplot(IPHC_tweed, aes(Soak, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Temp
+hist(IPHC_tweed$Temp.C)
+ggplot(IPHC_tweed, aes(Temp.C, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Pressure
+ggplot(IPHC_tweed, aes(Pres, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# pH
+ggplot(IPHC_tweed, aes(pH, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Salinity
+ggplot(IPHC_tweed, aes(Sal, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Oxygen 1
+ggplot(IPHC_tweed, aes(O2_1, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Oxygen 2
+ggplot(IPHC_tweed, aes(O2_2, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# Oxygen saturation
+ggplot(IPHC_tweed, aes(Oxygen_sat, WCPUE)) + geom_point(shape = 20) + 
+  geom_smooth(size = 2, se = FALSE)
 
+# LatLon
+ggplot(IPHC_tweed, aes(Lat, WCPUE)) +
+  geom_smooth(method = 'loess', span = 1, se = FALSE)
 
+ggplot(IPHC_tweed, aes(Lon, WCPUE)) +
+  geom_smooth(method = 'loess', span = 1, se = FALSE)
 
+################################################################################
+## Check for colinearity
 
+IPHC_tweed %>% 
+  select(Depth, Soak, Lat, Lon) %>% 
+  GGally::ggpairs() 
 
+#some strong correlations here...
+# almost everything correlated with depth! 
+# Temp, Pres pH and Salinity all correlated with each other... :( 
+
+# probably best to just consider latlon, depth, and soak  colnames(IPHC_tweed)
+IPHC_tweed <- IPHC_tweed %>% 
+  select(Year,Station,SEdist,IPHC.Reg.Area, IPHC.Stat.Area, IPHC.Charter.Region,        
+         Purpose.Code, Date, Eff, 
+         Lat, Lon, Depth, 
+         Soak, 
+         CPUE, WCPUE)
+
+# Look at distribution of CPUE data
+ggplot(IPHC_tweed, aes(WCPUE)) + geom_density(alpha = 0.4, fill = 4)
+ggplot(IPHC_tweed, aes(log(WCPUE+0.01))) + geom_density(alpha = 0.4, fill = 4)
+ggplot(IPHC_tweed, aes(log(WCPUE+0.1*mean(IPHC_tweed$WCPUE,na.rm=T)))) + geom_density(alpha = 0.4, fill = 4)
+
+#need complete data sets for running models: 
+nrow(IPHC_tweed)
+nrow(IPHC_tweed[complete.cases(IPHC_tweed),])
+
+#only use complete cases... 
+fulldat<-IPHC_tweed[complete.cases(IPHC_tweed),]
+
+m0 <- gam(WCPUE ~ Year * SEdist, data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.depth <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4), data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.soak <- gam(WCPUE ~ Year * SEdist + s(Soak, k=4), data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.ll <- gam(WCPUE ~ Year * SEdist + te(Lon, Lat), data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.depth_soak <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4) + s(Soak, k=4), 
+                    data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.depth_ll <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4) + te(Lon, Lat), 
+                  data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.soak_ll <- gam(WCPUE ~ Year * SEdist + s(Soak, k=4) + te(Lon, Lat) ,
+                 data=fulldat, gamma=1.4, family=tw(), method = "REML")
+m.global <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4) + s(Soak, k=4) + te(Lon, Lat) , 
+                data=fulldat, gamma=1.4, family=tw(), method = "REML")
+
+model.list<-list(m0,#m0.trip,
+                 m.depth,m.soak,m.ll,
+                 m.depth_soak,m.depth_ll,m.soak_ll,m.global
+                 )
+names(model.list)<-c("m0",#"trip",
+                     "depth","soak","latlon","depth+soak","depth+latlon",
+                     "soak+latlon","global")
+modsum0<-data.frame(); j<-1
+for (i in model.list) {
+  #mod<-i
+  modsum0[j,"model"]<-names(model.list[j])
+  modsum0[j,"aic"]<-AIC(i)
+  modsum0[j,"bic"]<-BIC(i)
+  modsum0[j,"qaic"]<-QAIC(i, chat= 1/(1-summary(i)$r.sq))
+  modsum0[j,"dev"]<-summary(i)$dev.expl
+  modsum0[j,"rsq"]<-summary(i)$r.sq
+  modsum0[j,"dev_exp"]<-summary(i)$dev.expl-summary(m0)$dev.expl
+  j<-j+1
+}
+
+modsum0 %>% arrange(aic)
+modsum0 %>% arrange(qaic)
+modsum0 %>% arrange(bic)
+modsum0 %>% arrange(-dev)  
+modsum0 %>% arrange(-rsq) 
+
+plot(m.global, page = 1, shade = TRUE, resid = TRUE, all = TRUE)
+summary(m.global)
+
+# No residual patterns, but may be some outliers
+plot(fitted(m.global), resid(m.global))
+abline(h = 0, col = "red", lty = 2)
+
+# Check for outliers
+which(fitted(m.global) < -1.5)   
+
+mod_std_tweed <- m.global
+
+################################################################################
+## get predicted values:
+
+# Cant have interaction between 
+
+#cpue_dat<-cpue_nom %>% select(-c(Gear,Drifts,Stat, Depth))
+cpue_dat<-IPHC_tweed[complete.cases(IPHC_tweed),]
+cpue_dat <- as.data.frame(IPHC_tweed)
+
+# Predictions ----
+
+# Data set of average variables to predict CPUE from:
+std_dat_tweed <- expand.grid(Year = as.factor(unique(cpue_dat$Year)),
+                             SEdist = as.factor(unique(cpue_dat$SEdist)), #table(cpue_dat$Gear)
+                             Depth = mean(cpue_dat$Depth),
+                             Soak = mean(cpue_dat$Soak, na.rm=T), 
+                             #Lat = mean(cpue_dat$Lat),
+                             #Lon = mean(cpue_dat$Lon),
+                             dum = 1,
+                             dumstat = 1) %>%
+  mutate(Lat = case_when(SEdist == "EYKT" ~ mean(cpue_dat$Lat[cpue_dat$SEdist == "EYKT"]),
+                         SEdist == "NSEO" ~ mean(cpue_dat$Lat[cpue_dat$SEdist == "NSEO"]),
+                         SEdist == "CSEO" ~ mean(cpue_dat$Lat[cpue_dat$SEdist == "CSEO"]),
+                         SEdist == "SSEO" ~ mean(cpue_dat$Lat[cpue_dat$SEdist == "SSEO"])),
+         Lon = case_when(SEdist == "EYKT" ~ mean(cpue_dat$Lon[cpue_dat$SEdist == "EYKT"]),
+                         SEdist == "NSEO" ~ mean(cpue_dat$Lon[cpue_dat$SEdist == "NSEO"]),
+                         SEdist == "CSEO" ~ mean(cpue_dat$Lon[cpue_dat$SEdist == "CSEO"]),
+                         SEdist == "SSEO" ~ mean(cpue_dat$Lon[cpue_dat$SEdist == "SSEO"])))
+
+# Predict CPUE
+pred_cpue <- predict(mod_std_tweed, std_dat_tweed, type = "link", se = TRUE)
+#checking my code with Jane's... checks out :)
+preds<-predict.gam(mod_std_tweed, type="response", std_dat_tweed, se = TRUE)
+pred_cpue;preds
+
+#Put the standardized CPUE and SE into the data frame and convert to
+#backtransformed (bt) CPUE
+std_dat_tweed %>% 
+  mutate(fit = pred_cpue$fit,
+         se = pred_cpue$se.fit,
+         upper = fit + (2 * se),
+         lower = fit - (2 * se),
+         bt_cpue = exp(fit),
+         bt_upper = exp(upper),
+         bt_lower = exp(lower),
+         bt_se = (bt_upper - bt_cpue) / 2  ,
+         bt_cv = bt_se/bt_cpue
+  ) -> std_dat_tweed
+
+# Nominal CPUE for comparison ----
+
+IPHC_tweed %>%
+  group_by(Year,SEdist) %>%
+  do(data.frame(rbind(Hmisc::smean.cl.boot(.$WCPUE)))) %>%
+  mutate(calc = "set lvl kg/hook",
+         fsh_cpue = Mean,
+         upper = Upper,
+         lower = Lower,
+         cv = (upper-lower)/1.96) -> fsh_sum_boot
+
+boot_index <- IPHC.index %>% 
+  mutate(SEdist = mngmt.area, fsh_cpue = WCPUE.mean, upper = WCPUE.hi95ci,
+         lower = WCPUE.lo95ci, cv = (upper-lower)/1.96) %>%
+  select(Year, SEdist, fsh_cpue, lower, upper, cv)
+
+# Compare predicted cpue from gam to nominal cpue
+names(wes_palettes)
+
+boot_index %>%
+  select(Year, cpue = fsh_cpue, upper, lower, SEdist) %>% 
+  mutate(CPUE = "Bootstrap index",
+         Year = as.factor(Year)) %>% 
+  bind_rows(std_dat_tweed %>% 
+              select(Year, cpue = bt_cpue, upper = bt_upper, lower = bt_lower, SEdist) %>% 
+              mutate(CPUE = "Tweedie index")) %>% 
+  mutate(Year = as.numeric(as.character(Year))) %>%
+  ggplot() +
+  geom_ribbon(aes(Year, ymin = lower, ymax = upper, fill = CPUE), 
+              colour = NA, alpha = 0.3) +
+  geom_point(aes(Year, cpue, colour = CPUE, shape = CPUE), size = 2, show.legend = F) +
+  geom_line(aes(Year, cpue, colour = CPUE, group = CPUE), size = 1) +
+  facet_wrap(~ SEdist, scales = "free") +
+  scale_colour_manual(values =  wes_palette("Darjeeling1")[c(5,4)],
+                      aesthetics = c("colour","fill"), name = "IPHC CPUE") +
+  labs(x = "Year", y = "FISS CPUE (round kg / hook)\n") +
+  theme(legend.position = "bottom") + #c(0.85, 0.9)) +
+  expand_limits(y = 0)
+
+ggsave(paste0("Figures/IPHC_cpue_tweedie_boot_comp_",YEAR,".png"), dpi=300, height=6, width=6, units="in")
+
+# Save these values to combine with other indices we'll generate: 
+boot_index %>%
+  select(Year, SEdist, cpue = fsh_cpue, upper, lower, cv) %>% 
+  mutate(CPUE = "Bootstrap index",
+         Year = as.factor(Year)) %>% 
+  bind_rows(std_dat_tweed %>% 
+              select(Year, SEdist, cpue = bt_cpue, 
+                     upper = bt_upper, lower = bt_lower, cv = bt_cv) %>% 
+              mutate(CPUE = "Tweedie index")) %>% 
+  #mutate(Year = as.numeric(as.character(Year)))) %>% 
+  data.frame() -> IPHC_cpue_indices
+
+IPHC_cpue_indices<-left_join(IPHC_cpue_indices,IPHC.index %>% mutate(Year = as.factor(Year)) %>%
+                select(Year,SEdist = mngmt.area,no.stations),by=c("Year","SEdist"))
+
+# SAVE all the indices for used in assessment models
+write.csv(IPHC_cpue_indices,paste0("Data_processing/Data/IPHC.cpue.SEO_tweed_boot_",YEAR,".csv"))
 

@@ -1,0 +1,251 @@
+model { 
+
+#Bycatch Model and Discard Calculations =========================================
+for (i in 1:Subd){
+for (t in 1:15) {   #Derby years pre-1995
+  logBy[i,t] ~ dunif(-10,10)
+  tau.log.By[i,t] <- 1 / log(cv.ExpByc[i,t]*cv.ExpByc[i,t] + 1)
+  ExpByc[i,t] ~ dlnorm(logBy[i,t],tau.log.By[i,t]) #T(0.01,)  #(50,)
+  By[i,t]<-exp(logBy[i,t])
+  #logD[i,t]<-log(max(1,By[i,t]*DE-Lnd.By[i,t]))
+  logD[i,t]<-log(max(1,(By[i,t]*exp(derb.err[t]))-Lnd.By[i,t]))
+  D[i,t]<-exp(logD[i,t])  
+}
+for (t in 16:N) {   #IFQ years 1995 on
+  logBy[i,t] ~ dunif(-10,10) 
+  tau.log.By[i,t] <- 1 / log(cv.ExpByc[i,t]*cv.ExpByc[i,t] + 1)
+  ExpByc[i,t] ~ dlnorm(logBy[i,t],tau.log.By[i,t])T(0.01,)  #(50,)
+  By[i,t]<-exp(logBy[i,t])
+  logD[i,t]<-log(max(1,By[i,t]-Lnd.By[i,t]))
+  D[i,t]<-exp(logD[i,t]) 
+}
+}
+
+tau.log.derb<-1/(DEsd*DEsd+1)
+for (t in 1:N){
+  derb.err[t] <- depsilon[t]-(DEsd*DEsd/2)
+  depsilon[t] ~ dnorm(Derby.Eff,tau.log.derb)T(Derby.Eff-0.3,Derby.Eff+0.3)
+}
+
+#Known Catches
+for (i in 1:Subd){
+for (t in 1:N){
+  logKnC[i,t] ~ dunif(-10,10)
+  KnC.obs[i,t] ~ dlnorm(logKnC[i,t], tau.log.KnC[i,t])  
+  tau.log.KnC[i,t]<-1/log(cv.KnC[i,t]*cv.KnC[i,t]+1)  
+  KnC[i,t]<-exp(logKnC[i,t])
+
+#Total catches
+  logC[i,t]<-log(D[i,t]+KnC[i,t])
+  C[i,t]<-exp(logC[i,t])
+}
+}
+
+## POPULATION MODEL...=====================================
+#Process error 
+logvar ~ dunif(-10,upvar) #dunif(-10,0.5)   #log variance prior = very restrictive to keep it small
+sigma <- sqrt(exp(logvar)) 
+tau.log.pe<-1/log(sigma*sigma+1)
+for (t in 1:(N+Fu)) {
+  PE[t]<-epsilon[t]-(sigma*sigma/2)
+  epsilon[t] ~ dnorm(0,tau.log.pe)T(-0.1,0.1) #epsilon truncation = +/- 10%  
+}
+
+#Year 1  # can get rid of this now that
+#for (i in 1:Subd){
+#  #K[i]<-exp(logK[i])
+#  logB[i,1] <-log(phi[i]*K[i]) 
+#  B[i,1]<-exp(logB[i,1])
+#  S[i,1]<-0
+#}
+
+#Year 2 through N
+for (i in 1:Subd){
+for( t in 1:N )   #PT with Biomass starting in year 1 now that phi is carried through...
+  { 
+    #logB[i,t]<-log(max(B[i,t-1]+(r[i]/p)*B[i,t-1]*(1-(B[i,t-1]/K[i])^p)-C[i,t-1],1)*exp(PE[t-1]))
+    #B[i,t]<-exp(logB[i,t])
+    #S[i,t]<-B[i,t-1]-B[i,t]+C[i,t]
+ 
+ #reparameterize biomass as phi*K to speed up search algorythm
+    logphiK[i,t]<-log(max(phi[i,t-1]/K[i]+(r/p)*phi[i,t-1]/K[i]*(1-(phi[i,t-1]/K[i]/K[i])^p)-C[i,t-1],1)*exp(PE[t-1]))
+    # or process error applied to biological part of equation and allow catch variance to go elsewhere... 
+    #logphiK[i,t]<-log(max((phi[i,t-1]/K[i]+(r/p)*phi[i,t-1]/K[i]*(1-(phi[i,t-1]/K[i]/K[i])^p))*exp(PE[t-1])-C[i,t-1],1))
+
+    #phiK[i,t] <- exp(logphiK[i,t])
+    phi[i,t] <- exp(logphiK[i,t])/K[i]
+    B[i,t]<-phi[i,t]*K[i]   #exp(logB[i,t])
+    S[i,t]<-B[i,t-1]-B[i,t]+C[i,t]
+  }
+}
+
+#surplus production 
+for (i in 1:Subd){
+for (t in 1:N){
+    Surplus[i,t]<-(r[i]/p)*B[i,t]*(1-(B[i,t]/K[i])^p) 
+}
+}
+
+#Biomass likelihoods...============================================
+for (i in 1:Subd){
+for (t in 1:30) {          #Submersible surveys
+    use.cv1[i,t]<-sqrt(cv.B[i,t]*cv.B[i,t]+Tau1*Tau1)
+    tau.log.B1[i,t] <- 1 / log(use.cv1[i,t]*use.cv1[i,t] + 1)
+    B.obs[i,t] ~ dlnorm(logB[i,t],tau.log.B1[i,t])
+    
+    #PP.check.log
+    subB.new[i,t] ~ dnorm(logB[i,t], tau.log.B1[i,t])  #draw from posterior
+    subres.new[i,t] <- subB.new[i,t] - logB[i,t]
+}
+
+for (t in 31:N) {        #ROV surveys
+    use.cv2[i,t]<-sqrt(cv.B[i,t]*cv.B[i,t]+Tau2*Tau2)
+    tau.log.B2[i,t] <- 1 / log(use.cv2[i,t]*use.cv2[i,t] + 1)
+    B.obs[i,t] ~ dlnorm(logB[i,t],tau.log.B2[i,t])
+    
+    #PP.check.log
+    subB.new[i,t] ~ dnorm(logB[i,t], tau.log.B2[i,t])  #draw from posterior
+    subres.new[i,t] <- subB.new[i,t] - logB[i,t]
+}
+
+for (t in 1:N){         #IPHC CPUE 
+    use.cv3[i,t]<-sqrt(cv.sCPUE[i,t]*cv.sCPUE[i,t]+Tau3*Tau3)
+    log.qsCPUEsubmean[i,t] <- log(qsCPUE[i] * B[i,t])
+    tau.log.sCPUE[i,t] <- 1 / log(use.cv3[i,t]*use.cv3[i,t] + 1)
+    sCPUE[i,t] ~ dlnorm(log.qsCPUEsubmean[i,t],tau.log.sCPUE[i,t])
+    
+    #PP.check.log
+    res[i,t] <- log(B.obs[i,t]) - logB[i,t]  #observed - predicted
+    iphcB.new[i,t] ~ dnorm(logB[i,t], tau.log.sCPUE[i,t])  #draw from posterior
+    iphcres.new[i,t] <- iphcB.new[i,t] - logB[i,t]
+}
+}
+
+#derived parameters for PP.check
+for (i in 1:Subd) {
+  fit[i] <- sum(res[i,])       #maintain subdisrict stratification
+  subfit.new [i]<- sum(subres.new[i,])
+  iphcfit.new [i]<- sum(iphcres.new[i,])
+}
+
+#PROJECTIONS:================================================================
+#future catches and biomass...
+
+#1) future error based on miscalculating biomass and inaccuracy of fishing
+logvarF ~ dunif(-10,-4) #dunif(-10,0.5)   #log variance prior = very restrictive to keep it small
+sigmaF <- sqrt(exp(logvar)) 
+tau.log.fe<-1/log(sigmaF*sigmaF+1)
+for (t in (N+1):(N+Fu)) {
+  FE[t]<-F.eps[t]-(sigmaF*sigmaF/2)
+  F.eps[t] ~ dnorm(0,tau.log.fe)T(-0.1,0.1) #epsilon truncation = +/- 10%  
+}
+
+  for (i in 1:Subd){
+  for (t in (N+1):(N+Fu)){                              #this might not work because need the cv for B?
+    #logFC[i,t]<-log(B[i,t-1]*exp(FE[t])*OFLABC[i])
+    logFC[i,t]<-log(OFLABC[i]*exp(FE[t]))
+    FC[i,t]<-exp(logFC[i,t])
+  }
+  }
+  
+  #gap year to deal with offset catches and biomass...
+  for (i in 1:Subd){
+    logB[i,N+1]<-log(max(B[i,N]+(r[i]/p)*B[i,N]*(1-(B[i,N]/K[i])^p)-C[i,N],1)*exp(PE[N]))
+    B[i,N+1]<-exp(logB[i,N+1])
+  }
+  
+  #rest of projection
+  for (i in 1:Subd){
+  for( t in (N+2):(N+Fu)){ 
+    logB[i,t]<-log(max(B[i,t-1]+(r[i]/p)*B[i,t-1]*(1-(B[i,t-1]/K[i])^p)-FC[i,t-1],1)*exp(PE[t-1]))
+    B[i,t]<-exp(logB[i,t])
+  }
+  }
+
+#Subdistrict metrics==============================================================
+for (i in 1:Subd){
+    CBtoK[i]<-B[i,N]/K[i]
+    FBtoK[i]<-B[i,N+Fu]/K[i]
+    FBtoCB[i] <-  B[i,N+Fu]/B[i,N]
+    MSY[i]<-r*K[i]/((p+1)^((p+1)/p)) #r*K/4 for Schaefer
+    Bmsy[i]<-0.4*K[i]  #0.5 for Schaefer
+    Fmsy[i]<-MSY[i]/Bmsy[i]
+    Hmsy[i]<-r[i]/(1+p) 
+    Stock.Status[i]<-B[i,N]/(0.4*K[i])
+    
+    for (t in 1:N){
+    CtoB[i,t]<-C[i,t]/B[i,t]
+    }
+}
+
+#SEO calculations and summations
+for (t in 1:(N+Fu)){
+   Bseo[t]<-sum(B[,t])
+}
+
+for (t in 1:N){
+  Cseo[t]<-sum(C[,t])
+  KnCseo[t]<-sum(KnC[,t])
+  Byseo[t]<-sum(By[,t])
+  Dseo[t]<-sum(D[,t])
+  S.seo[t]<-sum(S[,t])
+  Surplus.seo[t]<-sum(Surplus[,t])
+}
+
+Stock.Status.SEO<-Bseo[N]/(0.4*Kseo)  
+#Kseo<-sum(K)
+Bmsyseo<-sum(Bmsy)
+Fmsyseo<-sum(MSY)/Bmsyseo
+Fmsyseo2<-(Fmsy[1]*Bmsy[1]+Fmsy[2]*Bmsy[2]+Fmsy[3]*Bmsy[3]+Fmsy[4]*Bmsy[4])/Bmsyseo
+FBtoKseo<-Bseo[N+Fu]/Kseo
+CBtoKseo<-Bseo[N]/Kseo
+
+Proj1_biomass<-Bseo[N+1]
+
+#subdistrict level priors =================================================
+for (i in 1:Subd){
+  logqs[i] ~ dunif(-10,5) #dunif(2,20)
+  qsCPUE[i]<-exp(logqs[i])
+  
+  #K[i] as a proportion of Kseo
+  K[i] <- Kseo*pi[i] #exp(logK[i])
+  
+  # Figure out what to do with first year phi so that we can try different priors... 
+  # specify mean and sd for phi prior
+  phicv <- phisig/phimu   #phisig and phimu entered as data... stick with norm distribution with big CV?  Maybe unif better?
+  phitau1 <- 1/(log(phicv*phicv+1))
+
+  phi1[i,1] ~ dnorm(phimu,phitau1) T(0,1)
+  phi2[i,1] ~ dunif(0.01,1)
+  phichoice1 <- ifelse(phichoice > 0,1,0)  #if phichoice is 1 then prescribed normal prior
+  phichoice2 <- ifelse(phichoice = 0,1,0)  #if phichoice is 0 then uniform prior
+  phi[i,1] <- (phi1[i,1] * phichoice1) + (phi2[i,1] * phichoice2)
+
+  for (t in 2:N){
+    phi[i,t] ~ dunif(0.00000001,0.999999999) #T(0.01,1.15)
+  }
+  }
+
+#priors/hyper priors ======================================================
+p <- 0.18815 #0.18815 = Bmsy =0.4K; 1=Schaefer; 1e-08 ~ modfied fox
+Tau1 ~ dunif(0.01,1)
+Tau2 <- 0 #~ dunif(0.01,1)  #ROV years with no extra variance
+Tau3 ~ dunif(0.01,1)
+
+# one r prior to rue them all... 
+r ~ dbeta(B1,B2)T(0.0001,0.2)
+
+#Keep this construction, toggle for controlling Kseo prior... 
+bigKcv <- exp(bigKsigma)/exp(bigKmu)
+bigKtau <- 1/(log(bigKcv*bigKcv+1))
+
+logKseo1 ~ dnorm(bigKmu,bigKtau)
+logKseo2 ~ dunif(7,12)  #capped at 165K, minimum based on ROV surveys
+Kchoice1 <- ifelse(Kchoice > 0,1,0)  #if phichoice is 1 then prescribed normal prior
+Kchoice2 <- ifelse(Kchoice = 0,1,0)  #if phichoice is 0 then uniform prior
+logKseo <- (logKseo1 * Kchoice1) + (logKseo2 * Kchoice2)
+Kseo <- exp(logKseo)
+alpha <- c(1,1,1,1)
+pi[1:Subd] ~ ddirch(alpha)
+
+}

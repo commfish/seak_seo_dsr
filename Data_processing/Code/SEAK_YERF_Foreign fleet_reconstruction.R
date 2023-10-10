@@ -261,12 +261,11 @@ ggarrange(for_removals_A, for_removals_B,
 
 ggsave(paste0("Figures/foreigh_trawl_removals_1960-1987.png"), dpi=300, height=8, width=7, units="in")
 
-for_rem_SPM<-for_rem %>% select(Year, Estimate = YERF_SEAK_harv_full, cv=cv_full)
-
 write.csv(for_rem,"Data_processing/Data/Harvests/Foreign_YERF_SEAK_ests.csv")
 
+# save data formatted for SPM analysis:
+for_rem_SPM<-for_rem %>% select(Year, Estimate = YERF_SEAK_harv_full, cv=cv_full)
 write.csv(for_rem_SPM,"Data_processing/Data/Harvests/Foreign_YERF_SEAK.csv")
-#write.csv(for_rem, "C:\\Users\\dearthur\\Documents\\YERF_SEAK_foreign.csv",row.names=FALSE)
 
 
 ################################################################################
