@@ -716,6 +716,8 @@ summary(m.global)
 plot(fitted(m.global), resid(m.global))
 abline(h = 0, col = "red", lty = 2)
 
+plot(m.depth_soak)
+plot(fitted(m.depth_soak), resid(m.depth_soak))
 # Check for outliers
 which(fitted(m.global) < -1.5)   
 
