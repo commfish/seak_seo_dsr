@@ -1,8 +1,18 @@
 ################################################################################
-# More SPM development in Stan!
-# Now that we have a stratified spm model that handles missing data lets add in
-# some process error.  We will create some autocorrelated process error and 
-# then see if we can estimate that with original PE formulation from jags model (Ono et al.)
+# State-space surplus production model simulations and model exams
+# This code relies on a number of functions in the stan_helper.R script. This script
+# provides a simulated data set of biomass estimates and cpue indices of a hypothetical
+# fish population.  
+# The code then provides functions for formatting the data, bundling initial values
+# and prescribing prior values and specifing what data is available (the simulation
+# and models provide options for 1 biomass estimate and up to 2 cpue indices). The simulations
+# and models also provide for specifying more than one strata to consider. 
+# The user may specify the nature of the productivity curve such that Bmsy may occur
+# at any value relative to K. 
+# The operating and estimation models are Pella-Tomlinson surplus production models
+# that allows for estimating process error.  
+# Author: Phil Joy
+# Created: 1/1/24
 ################################################################################
 {library("rstan")
   rstan_options(auto_write = TRUE)
@@ -19,15 +29,12 @@
   library(zoo)
   library("wesanderson")}
 
-# if needed : closeAllConnections()
-#util <- new.env()
 source("Production_models_STAN/code/stan_helper.R")
 
-#setwd("code/")
 set.seed(3480)
 #--------------------------------------------------------------------------------
 # Decide on the Pella tomlinson curve:
-# Where does Pmsy occur?
+# Where does Pmsy occur relative to virgin biomass/K?
 pmsy <- 0.46
 
 pt <- pella_toml(0.46)
@@ -36,17 +43,31 @@ pte_p <- pt$pte_p
 pte_m <- pt$pte_m
 
 #-------------------------------------------------------------------------------
-# simulate some data
-# use previous simulation:
-#oldsim<-readRDS("last_sim.rds")
-#names(oldsim)<-c("years", "strata", "r", "K", "pi", "q1", "q2", "q3",
-#                 "q_err", "d_err","b_err", "s_err", "pesd", "rho", "pe",
-#                 "bio","bio_est","prop", "cpue", "surv", "C","D", "pte_m","pte_p")
-#list2env(oldsim,.GlobalEnv)
+# Load previous simulation: 
+ oldsim<-readRDS("Production_models_STAN/output/TEST.rds")
+ list2env(oldsim,.GlobalEnv)
+ plot_sim(oldsim)
 
-# ... or Simulate a new rockfish data set... : ------------------------------------------------
+# ... or SIMULATE a new rockfish data set... : ------------------------------------------------
+# Outline of simulation: The simulation is set up with a prescribed F that increases 
+# in the early part of the time series to a peak, after which it declines to a stable level.
+# The F values are conditioned on r so that r can be varied.The discard schedule is set up 
+# with a separate F also linked to the r value and is high and variable early in the
+# time series and then decreases to nothing as the fishery becomes full-retention in the last
+# portion of the time series. The ratio of discards to catches can be modified with 
+# by_to_C so that the fishery could be dominated by bycatch if desired. 
+# The simulation is set up for variable numbers of years and strata.
+# (increasing the number of strata really slows down model convergence).
+# The simulations are set up so that extra uncertainty in biomass estimates and 
+# index estimates can be applied. The simulation is also set up to start the population
+# at levels below K (depletion) if desired.  Lastly the simulations are set up to 
+# apply process error with autocorrelation (rho).  The level of process error is 
+# linked to the r value so that greater r produces greater process error.
+# The second stage of the simulation (simulate2) allows the user to use only a subset of the 
+# simulated biomass and index data to be more in line with what a real data set would
+# look like. 
 
-#N years
+# years and strata
 years <- 45
 strata <- 3
 
@@ -92,18 +113,18 @@ data <- simulate2(sim = sim,
 list2env(data,.GlobalEnv)  
 
 #-------------------------------------------------------------------------------
-# Bundle the data! OK if you have extra data relative to the model you want to run
-# stan will ignore the extraneous stuff... 
+# Bundle the data! 
 
-# NOTE: you can change PRIOR values in this list!!
+# NOTE: you can change PRIOR values in this list.
 
-# NOTE: this function is set up to accept matrices of year * strata and vectorize
-#       them for modelling in Stan... 
+# NOTE: this function is set up to accept matrices of abundance set up by year and
+# strata with NA's and the prep_data function will vectorize that data for use in 
+# Stan.
 
 stan_dat <- prep_data(data = data, # set up to accept data from simulation set up
                       bio_switch = 1, #1 for biomass data, 0 for no biomass data
                       ind1_switch = 1, #1 for cpue index data, 0 for no cpue data
-                      ind2_switch = 0, #1 for 2nd cpue index, 0 for none
+                      ind2_switch = 0, #1 for 2nd cpue index (survey in simulations), 0 for none
                       bio_xV_lastY = 1, #last year that has extra variance.  Only set up for extra variance in one time period that starts in year 0 and goes to this year
                       cpue_xV_lastY = 1,
                       srv_xV_lastY = 1,
@@ -123,20 +144,19 @@ stan_dat <- prep_data(data = data, # set up to accept data from simulation set u
 
 #-------------------------------------------------------------------------------
 # Establish initial values: 
-#one chain for starters... 
 
-i1tau2 = list(rep(20,stan_dat$S),
+i1tau2 = list(rep(20,stan_dat$S), # For marginalized catchability models
               c(30,50,30,15),
               rep(30,strata),
               rep(30,strata)) #c(20,40,40,40),
-i2tau2 = list(rep(20,stan_dat$S),
+i2tau2 = list(rep(20,stan_dat$S), # For marginalized catchability models
               rep(30,strata),
               rep(15,strata),
               rep(30,strata)) 
-isigma2=c(100,140,80,90)
-logvar=c(-6,-7,-5,-9) 
-fsigma2=c(100,100,100,100)
-medP1 = c(1,1,1) #1 for each chain
+isigma2=c(100,140,80,90) # uncertainty around P (proportion of K) estimates
+logvar=c(-6,-7,-5,-9) # maximum process error
+fsigma2=c(100,100,100,100) # F sigma for F models (not available yet)
+medP1 = c(1,1,1,1) # P in year 1.  Value between 0 and 1.
 
 #true_inits <- list(r=r*1.1, K=K*0.9, 
 #                   iq1=c(1/q1[1],1/q1[2],1/q1[3],1/q1[4]), 
@@ -144,6 +164,8 @@ medP1 = c(1,1,1) #1 for each chain
 #                   isigma2=50, logvar=-5, eps = rep(0,years),
 #                   P=P1, C = C+0.000001, pi = c(0.25,0.25,0.25,0.25))
 
+# Bundle initial values.  This function will also produce crude in itial values
+# for the P, pi and q parameters
 inits <- new_inits(stan_dat = stan_dat,
                   raw_dat = data,
                   chains = 3,
@@ -156,11 +178,10 @@ inits <- new_inits(stan_dat = stan_dat,
                   logvar = logvar,
                   fsigma2 = fsigma2)
 
-inits[[1]]
 #-------------------------------------------------------------------------------
 # Run the model!! 
 
-#model options
+# Model options
 # C = centered models
 # NC = non-centered model
 # margQ = marginalized catchability
@@ -197,11 +218,7 @@ model = 'PT_NC_xV_D' #'PT_C_margQ_xV.stan' # PT_NC_xV.stan' # PT_NC_margQ_xV.sta
                        # 'PT_C_margQ_xV_D.stan' # 'PT_NC_margQ_xV_D.stan'
 
 
-#play with sigma to work on divergences...
-fish_dat2$isig2_mu = 7  #prior mu for fit of P
-fish_dat2$isig2_sig = 0.102
-
-# set iterations and initial values and number of chains to run
+# set iterations and hmc specifics
 iters <- 50000
 chains <- 3
 inits <- inits #, inits3) #, inits3)
@@ -225,7 +242,7 @@ runtime <- Sys.time() - tstart; runtime
 saveRDS(fit, paste0("Production_models_STAN/output/",model,"_",iters/1000,"K.rds"))
 readRDS(paste0("Production_models_STAN/output/",model,"_",iters/1000,"K.rds"))
 
-#closeAllConnections() #this command is if console stops displaying error messages... 
+# closeAllConnections() #this command is if console stops displaying error messages... 
 
 # quick and dirty diagnostics
 check_energy(fit)
@@ -250,6 +267,7 @@ tuned_inits<-readRDS("Production_models_STAN/output/inits.rds")
 # check if you have the right number of chains
 str(inits)
 
+# rerun with the new initial values... 
 tstart <- Sys.time()
 fit2 <- stan(file = paste0("Production_models_STAN/Models/",model,".stan"), data = stan_dat, 
             iter = iters, chains = chains, cores=chains,
@@ -269,8 +287,9 @@ get_bfmi(fit)
 get_low_bfmi_chains(fit)
 
 launch_shinystan(fit)
+
 # ------------------------------------------------------------------------------
-# Save results: 
+# RESULTS:  
 fit <- fit2
 
 samples <- rstan::extract(fit, permuted = TRUE)
@@ -278,7 +297,8 @@ N<-years
 
 results <- data.frame()
 i <- 1
-#model specifics
+# model performance: This is set up this way to enable looping over many simulations
+# and recording the results... 
 {
 results[i,"model"] <- model
 results[i,"run_date"] <- format(Sys.time(), "%m/%d/%y")
@@ -296,13 +316,13 @@ results[i,"rp2"] <- stan_dat$rp2
 results[i,"k1"] <- stan_dat$k1
 results[i,"k2"] <- stan_dat$k2
 
-#comparison in catches and discards:
+# comparison in catches and discards:
 results[i,"disc_catch_ratio"] <- median(stan_dat$D_obs)/median(stan_dat$C_obs)
 
-#autocorrelation setting
+# autocorrelation setting
 results[i,"true_rho"] <- sim$rho
 
-#model diagnostics
+# model diagnostics
 for (j in 1:data$strata) {
   results[i,paste0("energy",j)] <- get_bfmi(fit)[j]
 }
@@ -414,14 +434,12 @@ for (j in 1:data$strata) { #j <- 1
   }
 }
 
-# process error comps
+# process error comparisons
 if (stan_dat$pe_switch == 1) {
   results[i, "process_error"] <- "Estimated"
   quants4<-array(dim=c(3,years))
   for (k in 1:years){
-    #for (s in 1:strata){
     quants4[,k] <- quantile(samples$eps[,k],probs=,c(0.05,0.5,0.95))
-    #}
   }
   quants4<-t(quants4)
   quants4<-cbind(quants4,seq(1,years))
@@ -444,20 +462,8 @@ if (stan_dat$pe_switch == 1) {
 
 results
 #-------------------------------------------------------------------------------
-# Diagnostics and results: 
-check_energy(fit)
-check_treedepth(fit)
-check_divergences(fit)
+# PLOT results
 
-get_num_divergent(fit)
-get_divergent_iterations(fit)
-get_num_max_treedepth(fit) 
-get_bfmi(fit) 
-get_low_bfmi_chains(fit)
-
-launch_shinystan(fit)
-
-# BIOMASS estimates versus TRUE -----
 mod_name <- paste0(model,"_",i)
   
 plot_biomass(fit=fit,years=years,strata=strata,
@@ -513,7 +519,7 @@ plot_discards(fit=fit,years=years,strata=strata,
 plot_pe(fit = fit, sim_pe = pe, sim=TRUE, save=TRUE, mod_name=mod_name, year1 = 1980)
   
 # POSTERIOR PREDICTIVE CHECKS: ------------------------------------------------- 
-# Biomass
+
 ppc_dens_overlay(stan_dat$B_obs, samples$Bio_new)
 ppc_ecdf_overlay(stan_dat$B_obs, samples$Bio_new)
 ppc_intervals(stan_dat$B_obs, samples$Bio_new)
