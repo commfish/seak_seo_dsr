@@ -106,7 +106,7 @@ data <- simulate2(sim = sim,
                       bio_srv_frq = 3, # how frequent are biomass surveys? 3 = every third year. 
                   #                      Biomass surveys are staggered so only one strata sampled per year
                       bio_srv_start = 10, # 1st year that biomass survey occurs relative to catch history 
-                      cpue_frq = 1, cpue_start = 14, #not staggered... cpue index all strata for each year that is happens... 
+                      cpue_frq = 1, cpue_start = 10, #not staggered... cpue index all strata for each year that is happens... 
                       srv_frq = 1, srv_start = 20,
                       c_cv = 0.05)
 
@@ -122,7 +122,7 @@ list2env(data,.GlobalEnv)
 # Stan.
 
 stan_dat <- prep_data(data = data, # set up to accept data from simulation set up
-                      bio_switch = 1, #1 for biomass data, 0 for no biomass data
+                      bio_switch = 0, #1 for biomass data, 0 for no biomass data
                       ind1_switch = 1, #1 for cpue index data, 0 for no cpue data
                       ind2_switch = 0, #1 for 2nd cpue index (survey in simulations), 0 for none
                       bio_xV_lastY = 1, #last year that has extra variance.  Only set up for extra variance in one time period that starts in year 0 and goes to this year
@@ -130,7 +130,7 @@ stan_dat <- prep_data(data = data, # set up to accept data from simulation set u
                       srv_xV_lastY = 1,
                       parameterization = "NC", #"C" for centered parameterization, "NC" for non-centered model
                       pmsy = 0.46, #peak of productivity curve
-                      pe_switch = 1, #0 = no process error, 1 = est. process error
+                      pe_switch = 0, #0 = no process error, 1 = est. process error
                       r_prior_switch = 0, #0=beta, 1=gamma, 2=lognormal
                       rp1 = 1, #1st parameter for r prior
                       rp2 = 1,# 2nd parameter for r prior
@@ -169,7 +169,7 @@ medP1 = c(1,1,1,1) # P in year 1.  Value between 0 and 1.
 inits <- new_inits(stan_dat = stan_dat,
                   raw_dat = data,
                   chains = 3,
-                  r_guess = 0.04,
+                  r_guess = 0.035,
                   K_guess = 5000,
                   i1tau2 = i1tau2,
                   i2tau2 = i2tau2,
@@ -219,7 +219,7 @@ model = 'PT_NC_xV_D' #'PT_C_margQ_xV.stan' # PT_NC_xV.stan' # PT_NC_margQ_xV.sta
 
 
 # set iterations and hmc specifics
-iters <- 50000
+iters <- 1000000
 chains <- 3
 inits <- inits #, inits3) #, inits3)
 burnin <- 0.4 #proportion of chain length used as warmup/burnin
@@ -232,7 +232,7 @@ stepsize_jitter <- 0
 tstart <- Sys.time()
 fit <- stan(file = paste0("Production_models_STAN/Models/",model,".stan"), data = stan_dat, 
             iter = iters, chains = chains, cores=chains,
-            init=inits, warmup=burnin*iters, verbose=F, thin=(iters-burnin*iters)/1000,
+            init=inits, warmup=burnin*iters, verbose=F, thin=(iters-burnin*iters)/500,
           control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
                          max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter)) #stepsize_jitter default(0), values between 0 and 1
                                 #metric (string, one of "unit_e", "diag_e", "dense_e", defaults to "diag_e")
@@ -260,18 +260,19 @@ launch_shinystan(fit)
 
 #-------------------------------------------------------------------------------
 # Save initial values for future runs...
-save_inits <- save_inits(fit = fit, parameterization = "NC", margQ = TRUE)
+save_inits <- save_inits(fit = fit, parameterization = "NC", margQ = FALSE)
 saveRDS(save_inits,paste0("Production_models_STAN/output/inits.rds"))
 
-tuned_inits<-readRDS("Production_models_STAN/output/inits.rds")
+tuned_inits<-save_inits #readRDS("Production_models_STAN/output/inits.rds")
 # check if you have the right number of chains
 str(inits)
 
+iters <- 1000000
 # rerun with the new initial values... 
 tstart <- Sys.time()
 fit2 <- stan(file = paste0("Production_models_STAN/Models/",model,".stan"), data = stan_dat, 
             iter = iters, chains = chains, cores=chains,
-            init=tuned_inits, warmup=burnin*iters, verbose=F, thin=(iters-burnin*iters)/1000,
+            init=tuned_inits, warmup=burnin*iters, verbose=F, thin=(iters-burnin*iters)/500,
             control = list(adapt_delta = 0.9, stepsize = 0.1, max_treedepth = 15, stepsize_jitter = 0))
 runtime <- Sys.time() - tstart; runtime
 
@@ -319,6 +320,20 @@ results[i,"k2"] <- stan_dat$k2
 # comparison in catches and discards:
 results[i,"disc_catch_ratio"] <- median(stan_dat$D_obs)/median(stan_dat$C_obs)
 
+# contrast in biomass/indices
+cons <- vector()
+if (stan_dat$bio_switch == 1) {
+  for (i in 1:stan_dat$S) {
+    cons[i] <- max(data$B_ests[i], na.rm = T) / min(data$B_ests[i], na.rm = T)
+  }
+  results[i,"time_series_contrast"] <- max(cons)
+} else {
+  for (i in 1:stan_dat$S) {
+    cons[i] <- max(data$I1_ests[i], na.rm = T) / min(data$I1_ests[i], na.rm = T)
+  }
+  results[i,"time_series_contrast"] <- max(cons)
+}
+
 # autocorrelation setting
 results[i,"true_rho"] <- sim$rho
 
@@ -328,7 +343,7 @@ for (j in 1:data$strata) {
 }
 
 results[i,"treedepth"] <- get_num_max_treedepth(fit)
-results[i,"prop_divergent"] <- get_num_divergent(fit) / ((1 - burnin) * iters/(((iters-burnin*iters)/1000) / chains))
+results[i,"prop_divergent"] <- get_num_divergent(fit) / ((1 - burnin) * iters/(((iters-burnin*iters)/500) / chains))
 results[i,"run_time"] <- runtime
 results[i,"Rhat_gt_1.1"] <- any(summary(fit)$summary[,"Rhat"] > 1.1, na.rm=T)
 
@@ -467,21 +482,21 @@ results
 mod_name <- paste0(model,"_",i)
   
 plot_biomass(fit=fit,years=years,strata=strata,
-                           save=TRUE, 
+                           save=FALSE, 
                            bio_dat = data$B_ests, bio_cv = data$B_cv,
                            sim=TRUE, 
                            sim_bio = bio, mod_name=mod_name,
              units = "mt", year1=1980)
   
 plot_p(fit=fit,years=years,strata=strata,
-               save=TRUE, 
+               save=FALSE, 
                bio_dat = data$B_ests, bio_cv = data$B_cv,
                sim=TRUE, 
                sim_bio = bio, mod_name=mod_name,
                units = "mt", year1=1980)
 
 plot_index1(fit=fit,years=years,strata=strata,
-            save=TRUE, 
+            save=FALSE, 
             cpue_dat = data$I1_ests, cpue_cv = data$I1_cv,
             sim=TRUE, 
             sim_cpue = cpue, mod_name=mod_name,
@@ -491,7 +506,7 @@ plot_index1(fit=fit,years=years,strata=strata,
             cpue_type = "kgs/box")
 
 plot_index2(fit=fit,years=years,strata=strata,
-            save=TRUE, 
+            save=FALSE, 
             cpue_dat = data$I2_ests, cpue_cv = data$I2_cv,
             sim=TRUE, 
             sim_cpue = cpue, mod_name=mod_name,
@@ -501,7 +516,7 @@ plot_index2(fit=fit,years=years,strata=strata,
             cpue_type = "kgs/box")
 
 plot_catch(fit=fit,years=years,strata=strata,
-                       save=TRUE, 
+                       save=FALSE, 
                        dat = data, 
                        sim=TRUE, 
                        mod_name=mod_name,
@@ -509,14 +524,14 @@ plot_catch(fit=fit,years=years,strata=strata,
                        year1 = 1980) 
 
 plot_discards(fit=fit,years=years,strata=strata,
-           save=TRUE, 
+           save=FALSE, 
            dat = data, 
            sim=TRUE, 
            mod_name=mod_name,
            units = "mt",
            year1 = 1980) 
 
-plot_pe(fit = fit, sim_pe = pe, sim=TRUE, save=TRUE, mod_name=mod_name, year1 = 1980)
+plot_pe(fit = fit, sim_pe = pe, sim=TRUE, save=FALSE, mod_name=mod_name, year1 = 1980)
   
 # POSTERIOR PREDICTIVE CHECKS: ------------------------------------------------- 
 

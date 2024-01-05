@@ -533,9 +533,9 @@ Pinit_guess <- function(bio_dat = bio_est2, strata, P1guess, bio_switch = 1, cpu
       
     }
   } else {
-    for (s in 1:strata) {
+    for (s in 1:strata) { #s <- 1
       low <- min(cpue2[,s], na.rm=T) / max(cpue2[,s] - P1guess, na.rm=T)
-      by <- (P1guess - low) / years
+      by <- (P1guess - low) / (years - 1)
       Pinit[,s] <- seq(P1guess,
                        low,
                        -by)
@@ -563,16 +563,29 @@ Pinit_guess <- function(bio_dat = bio_est2, strata, P1guess, bio_switch = 1, cpu
 #--------------------------------------------------------------------------------
 # get initial pi estimates for running model: 
 
-pi_init_guess <- function(maxbio = 0, bio_dat = bio_est2) {
+pi_init_guess <- function(maxbio = 0, stan_dat = stan_dat, raw_dat = raw_dat) {
   pis <- vector()
-  for (s in 1:strata) {
-    maxbio <- maxbio + max(bio_dat[,s], na.rm=T)
-  }
-  for (s in 1:strata) {
-    if(s == strata) {
-      pis[s] <- 1 - sum(pis)
-    } else {
-      pis[s] <- max(bio_dat[,s], na.rm=T)/maxbio
+  if (stan_dat$bio_switch == 1) {
+    for (s in 1:strata) { #s<-1
+      maxbio <- maxbio + max(raw_dat$B_ests[,s], na.rm=T)
+    }
+    for (s in 1:strata) {
+      if(s == strata) {
+        pis[s] <- 1 - sum(pis)
+      } else {
+        pis[s] <- max(raw_dat$B_ests[,s], na.rm=T)/maxbio
+      }
+    }
+  } else {
+    for (s in 1:strata) { #s<-1
+      maxbio <- maxbio + max(raw_dat$I1_ests[,s], na.rm=T)
+    }
+    for (s in 1:strata) {
+      if(s == strata) {
+        pis[s] <- 1 - sum(pis)
+      } else {
+        pis[s] <- max(raw_dat$I1_ests[,s], na.rm=T)/maxbio
+      }
     }
   }
   return(pis)
@@ -583,25 +596,32 @@ pi_init_guess <- function(maxbio = 0, bio_dat = bio_est2) {
 #-------------------------------------------------------------------------------
 # get initial iq estimatess:
 
-iq_init_guess<-function(bio_dat = bio_est2, bio_switch = 1,
-                        cpue = cpue2,
-                        surv = surv2){
-  bioguess <- c() #guess a rough estimate of biomass to get started.. 
+iq_init_guess<-function(stan_dat = stan_dat, raw_dat = raw_dat, bioguess=bioguess){
+  bioguess <- bioguess #guess a rough estimate of biomass to get started.. 
   iq1 <- vector()
   iq2 <- vector()
-  if (bio_switch == 1) { 
-    for (s in 1:strata) {
-      iq1[s] <- 1 / (mean(cpue[,s], na.rm=T) / mean(bio_dat[,s], na.rm=T))
-      iq2[s] <- 1 / (mean(surv[,s], na.rm=T) / mean(bio_dat[,s], na.rm=T))
+  if (stan_dat$bio_switch == 1 & stan_dat$ind1_switch == 1 & stan_dat$ind2_switch == 1) { 
+    for (s in 1:stan_dat$S) {
+      iq1[s] <- 1 / (mean(raw_dat$I1_ests[,s], na.rm=T) / mean(raw_dat$B_ests[,s], na.rm=T))
+      iq2[s] <- 1 / (mean(raw_dat$I2_ests[,s], na.rm=T) / mean(raw_dat$B_ests[,s], na.rm=T))
     }
-  } else { 
-    for (s in 1:strata) {
-      iq1[s] <- 1 / (mean(cpue[,s], na.rm=T) / mean(bioguess[,s], na.rm=T))
-      iq2[s] <- 1 / (mean(surv[,s], na.rm=T) / mean(bioguess[,s], na.rm=T))
+  } 
+  if (stan_dat$bio_switch == 0 & stan_dat$ind1_switch == 1 & stan_dat$ind2_switch == 1) { 
+    for (s in 1:stan_dat$S) {
+      iq1[s] <- 1 / (mean(raw_dat$I1_ests[,s], na.rm=T) / bioguess[s])
+      iq2[s] <- 1 / (mean(raw_dat$I2_ests[,s], na.rm=T) / bioguess[s])
     }
-    
   }
-  
+  if (stan_dat$ind1_switch == 1 & stan_dat$ind2_switch == 0) {
+    for (s in 1:stan_dat$S) {
+      iq1[s] <- 1 / (mean(raw_dat$I1_ests[,s], na.rm=T) / bioguess[s])
+      iq2[s] <- 200
+    }
+  }
+  if (stan_dat$ind1_switch == 0) {
+    iq1[s] <- 200
+    iq2[s] <- 200
+  }
   return(list(iq1,iq2))
 }
 
@@ -610,14 +630,14 @@ iq_init_guess<-function(bio_dat = bio_est2, bio_switch = 1,
 #-------------------------------------------------------------------------------
 # Get F initial values...
 # only available with biomass estimates right now... 
-Finit_guess <- function(bio_dat = bio_est2, C_dat = C_obs, strata, bio_switch = 1, cpue2 = cpue2) {
-  Finit <-matrix(nrow=years,ncol=strata)
+Finit_guess <- function(stan_dat = stan_dat, raw_dat = raw_dat, bioguess=bioguess, iq1 = iq1) #,
+                        #bio_dat = bio_est2, C_dat = C_obs, strata, bio_switch = 1, cpue2 = cpue2) 
+{
+  Finit <-matrix(nrow=stan_dat$N,ncol=stan_dat$S)
   if (bio_switch == 1) {
-    for (i in 1:strata) { #i <- 1
-      
-      bioests <- bio_dat[,i] #[!is.na(bio_est2[,i])]
-      Cs <- C_obs[,i]
-      #Fs <- na.approx(Cs / bioests)
+    for (i in 1:stan_dat$S) { #i <- 1
+      bioests <- raw_dat$B_ests[,i] #[!is.na(bio_est2[,i])]
+      Cs <- raw_dat$C_obs[,i]
       Fs <- Cs / bioests
       Fs[1] <- mean(Fs, na.rm=T)
       Fs[length(Fs)] <- median(Fs, na.rm=T)
@@ -625,7 +645,15 @@ Finit_guess <- function(bio_dat = bio_est2, C_dat = C_obs, strata, bio_switch = 
       Finit[,i] <- Fs
     }
   } else {
-    for (s in 1:strata) { }
+    for (i in 1:stan_dat$S) {
+      bioests <- raw_dat$I1_ests[,i] * iq1[i]#[!is.na(bio_est2[,i])]
+      Cs <- raw_dat$C_obs[,i]
+      Fs <- Cs / bioests
+      Fs[1] <- mean(Fs, na.rm=T)
+      Fs[length(Fs)] <- median(Fs, na.rm=T)
+      Fs <- na.approx(Fs)
+      Finit[,i] <- Fs
+    }
   }
   
   #names(wes_palettes)
@@ -695,7 +723,7 @@ new_inits <- function(stan_dat = stan_dat,
   
   maxbio <- 0; 
   
-  pi_s<-pi_init_guess(maxbio=0, bio_dat = raw_dat$B_ests)
+  pi_s<-pi_init_guess(maxbio=0, stan_dat = stan_dat, raw_dat = raw_dat)
   pis <- list()
   for (i in 1:chains) {
     if (i == 1) {
@@ -707,14 +735,16 @@ new_inits <- function(stan_dat = stan_dat,
     }
     pis[[i]] <- assign(paste0("pi",i),pig)
   }
+ 
+  bioguess <- vector()
+  for (i in 1:stan_dat$S) {
+    bioguess[i] <- median(raw_dat$C_obs[,i], na.rm=T) / (0.5 * r_guess)
+  }
   
-  iqs <- iq_init_guess(bio_dat = raw_dat$B_ests,bio_switch = stan_dat$bio_switch,
-                       cpue = raw_dat$I1_ests,
-                       surv = raw_dat$I2_ests)
+  iqs <- iq_init_guess(stan_dat = stan_dat, raw_dat = raw_dat, bioguess=bioguess)
   
   #Finit function only available with biomass data at the moment: 
-  Finit <- Finit_guess(bio_dat = raw_dat$B_ests, strata=stan_dat$S, 
-                       bio_switch = stan_dat$bio_switch, cpue2 = raw_dat$I1_ests)
+  Finit <- Finit_guess(stan_dat = stan_dat, raw_dat = raw_dat, bioguess=bioguess, iq1 = iqs[[1]])
   
   for (i in 1:chains) {
     if (i == 1) {
