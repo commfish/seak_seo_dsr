@@ -323,15 +323,15 @@ results[i,"disc_catch_ratio"] <- median(stan_dat$D_obs)/median(stan_dat$C_obs)
 # contrast in biomass/indices
 cons <- vector()
 if (stan_dat$bio_switch == 1) {
-  for (i in 1:stan_dat$S) {
-    cons[i] <- max(data$B_ests[i], na.rm = T) / min(data$B_ests[i], na.rm = T)
+  for (j in 1:stan_dat$S) {
+    cons[j] <- max(data$B_ests[j], na.rm = T) / min(data$B_ests[j], na.rm = T)
   }
-  results[i,"time_series_contrast"] <- max(cons)
+  results[j,"time_series_contrast"] <- max(cons)
 } else {
-  for (i in 1:stan_dat$S) {
-    cons[i] <- max(data$I1_ests[i], na.rm = T) / min(data$I1_ests[i], na.rm = T)
+  for (j in 1:stan_dat$S) {
+    cons[j] <- max(data$I1_ests[j], na.rm = T) / min(data$I1_ests[j], na.rm = T)
   }
-  results[i,"time_series_contrast"] <- max(cons)
+  results[j,"time_series_contrast"] <- max(cons)
 }
 
 # autocorrelation setting
