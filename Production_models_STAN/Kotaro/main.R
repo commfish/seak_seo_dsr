@@ -17,7 +17,7 @@ i = 123
 set.seed(i)
 rs = runif(Narea, 0.04, 0.06)    # variability in rs
 Ks = runif(Narea, 100000, 200000)
-Nyear = 30
+Nyear = 40
 Year_start = 1   # when we have survey/CPUE info from 
 p = 0.18815      # Pella Tom productivity curve exponent
 var_ratio = 1  # ration proc / obs error variance
@@ -187,7 +187,7 @@ if (Narea > 1){
     # PP_init = runif(4, 0.8, 1),
     PP_init = runif(data$S, 0.8, 1),
     # K = 300000 *apply( data$C_obs, 1, mean)/apply( data$C_obs, 1, mean)[1],
-    K = runif(data$S, Ks, Ks),
+    K = runif(data$S, Ks/2, Ks*2),
     # logqs = runif(4, -10, -6),
     # iqs = 1/qs,
     # sigma_proc = runif(1, 0.001, 0.1)
