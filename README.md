@@ -1,5 +1,10 @@
 # seak_seo_dsr
+
+<img align="left" src="https://github.com/commfish/cr_brf/blob/main/figures/SRIlogo.jfif" width="140">
+
 # Southeast Alaska Outside Demersal Shelf Rockfish Assessment
+
+<br clear="left"/>
 
 The Southeast Outside subdistrict (SEO) of the Gulf of Alaska (GOA) demersal shelf rockfish (DSR) complex (yelloweye, quillback, copper, rosethorn, China, canary, and tiger rockfish) is assessed on a biennial cycle, with a full stock assessment conducted every second year. The SEO area is comprised of four management sections: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) (Figure 1). Yelloweye rockfish (*Sebastes ruberrimus*) have been managed as a Tier 4 stock; however, given that the current assessment models do not produce reliable estimates of $F_{35}$ or $F_{40}$, the stock has been determined to be more appropriately in Tier 5, where $F_{OFL}$ = *M* and $maxF_{ABC}$ = *0.75* * *M*. The other species in the complex are managed as Tier 6.   Prior to 2022, the stock assessment was based on biomass estimates of yelloweye rockfish derived from Alaska Department of Fish and Game (ADF&G) submersible and ROV surveys.  Harvest recommendations were established by applying an assumed mortality rate to the lower 90% confidence interval of the estimate as a hedge against uncertainty.  The recommended acceptable biological catch (ABC) and overfishing level (OFL) for the current assessment are based on a random effects models (REMA) applied to the ROV biomass estimates and CPUE estimates of yelloweye rockfish in the International Pacific Halibut Commission (IPHC) longline survey.  A new Bayesian state-space surplus production model (SS-SPM) is in development and schedule for CIE review in September 2023.
 
