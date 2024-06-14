@@ -1,6 +1,6 @@
 # seak_seo_dsr
 
-<img align="left" src="https://github.com/commfish/cr_brf/blob/main/figures/SRIlogo.jfif" width="140">
+<img align="left" src="https://github.com/commfish/cr_brf/blob/main/figures/SRIlogo.jfif" width="100">
 
 # Southeast Alaska Outside Demersal Shelf Rockfish Assessment
 
