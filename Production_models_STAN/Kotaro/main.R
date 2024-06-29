@@ -43,7 +43,7 @@ Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
     if (Catch_type == "MSY") val = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-10), seq(Hmax, 0.5, length.out=10))*MSYs[x], 0.05*MSYs[x]))
     
   ## Catch is dependent of stock size
-    if (Catch_type == "F")  H = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-10), seq(Hmax, 0.5, length.out=10))*HMSYs, 0.1*HMSYs))
+    if (Catch_type == "F")  H = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-10), seq(Hmax, 0.5, length.out=10))*HMSYs[x], 0.1*HMSYs[x]))
 
 # Need to create a time series of process error
   epsilon = mvrnorm(Nyear, -0.5*varE, diag(Narea)*varE)
