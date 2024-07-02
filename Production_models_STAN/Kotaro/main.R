@@ -42,7 +42,7 @@ Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
   ## Catch is independent of stock size 
     if (Catch_type == "MSY") val = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-10), seq(Hmax, 0.5, length.out=10))*MSYs[x], 0.05*MSYs[x]))
     
-  ## Catch is dependent of stock size
+  ## Catch is dependent of stock size: HMSy * scaler describing fishing pressure over time... 0.5HMSY to 3*HMSYs then down again.
     if (Catch_type == "F")  H = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-10), seq(Hmax, 0.5, length.out=10))*HMSYs[x], 0.1*HMSYs[x]))
 
 # Need to create a time series of process error
@@ -251,7 +251,7 @@ check_inits <- function(x, data, type="Biomass") {
 # check_inits(init_ll[[3]], data = data, type="MSY")
 
 tstart <- Sys.time()
-fit <- stan(file = paste0("src/kotaro.stan"), 
+fit <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro.stan"), 
             data = data, init = init_ll, #inits, inits),
             iter = iters, chains = chains, cores=chains, seed=123,
             warmup=burnin*iters, verbose=F, thin=1,

@@ -472,7 +472,7 @@ prep_data <- function(data = sim_dat, # set up to accept data from simulation se
                    I1_pos = I1_pos,
                    S_I1obs = S_I1obs,
                    i1_tau_vec = i1_tau_vec,
-                   i1_tau_no = i1_tau_no,
+                   i1_tau_no = i1_tau_no,)
                    #index 2
                    I2_obs = I2_obs,
                    I2_cv = I2_cv, 
