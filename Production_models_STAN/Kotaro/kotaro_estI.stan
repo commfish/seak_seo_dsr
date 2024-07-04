@@ -5,15 +5,15 @@ data {
   int S; // number of strata 
   real p; // exponent of PT
   real C_obs[S, Npre-1]; // catch
-  real I_obs[S, Npre]; // indices
+//  real I_obs[S, Npre]; // indices
   real ratio; 
 
-  //add in biomass
-  int<lower=0> N_Bobs; //  total number of non-NA values
-  real B_obs[N_Bobs];
-  real B_cv[N_Bobs];
-  int<lower=0> S_Bobs[S]; //number of observations per strata, corresponds to s on 133-134 Stan manual
-  int<lower=0> B_pos[N_Bobs]; // index positions as one vector but relevant to each strata
+  //add index with cvs
+  int<lower=0> N_Iobs; //  total number of non-NA values
+  real I_obs[N_Iobs];
+  real I_cv[N_Iobs];
+  int<lower=0> S_Iobs[S]; //number of observations per strata, corresponds to s on 133-134 Stan manual
+  int<lower=0> I_pos[N_Iobs]; // index positions as one vector but relevant to each strata
 }
 
 transformed data {
@@ -38,11 +38,9 @@ transformed parameters {
   real logqs[S];
   real sigma_proc = 1/sqrt(isigma2);
   // matrix[S, Npre] PP;
-  real sigma_obs = ratio * sigma_proc;
+  // real sigma_obs = ratio * sigma_proc;
 	for (i in 1:S){
 		logqs[i] = log(1/iqs[i]);
-		// PP[i,1] = PP_init[i];
-		// logB[i,1] =  log(PP[i,1]) + log(K[i]);
 		logB[i,1] =  log(PP_init[i]) + log(K[i]);
 		B[i,1] = exp(logB[i,1]);
 	}
@@ -82,27 +80,35 @@ model {
 	
 		
 // Likelihoods observation error
-	for (i in 1:S)
-	{
-		for (t in 1:Npre) 
-		{       
-			I_obs[i,t] ~ lognormal((logqs[i]+logB[i,t]-0.5*sigma_obs*sigma_obs), sigma_obs); 
-		}
-	}
+//	for (i in 1:S)
+//	{
+//		for (t in 1:Npre) 
+//		{       
+//			I_obs[i,t] ~ lognormal((logqs[i]+logB[i,t]-0.5*sigma_obs*sigma_obs), sigma_obs); 
+//		}
+//	}
 
-// Biomass likelihoods: 
-	int pos;
-  pos = 1;
-  real B_sig[N_Bobs];
+// Index likelihoods: 
+	int pos_i;
+  pos_i = 1;
+  real I_sig[N_Iobs];
+  matrix[S, Npre] logI;
+  real qs[S];
 
-  for (i in 1:N_Bobs) {
-    B_sig[i] = log(B_obs[i] + B_obs[i] * B_cv[i]) - log(B_obs[i]);
+  for (s in 1:S) {
+  	qs[s] = exp(logqs[s]);
+    for (t in 1:Npre) {
+      logI[s,t] = log(qs[s] * B[s,t]);
+    }
+  }
+  for (i in 1:N_Iobs) {
+    I_sig[i] = log(I_obs[i] + I_obs[i] * I_cv[i]) - log(I_obs[i]);
   }
   for (s in 1:S){
-  //  segment(B_obs, pos, S_Bobs[s]) ~ lognormal(logB[segment(B_pos, pos, S_Bobs[s]),s], segment(B_sig, pos, S_Bobs[s]));
-    segment(B_obs, pos, S_Bobs[s]) ~ lognormal(logB[s,segment(B_pos, pos, S_Bobs[s])], segment(B_sig, pos, S_Bobs[s]));
-    pos = pos + S_Bobs[s];
+    segment(I_obs, pos_i, S_Iobs[s]) ~ lognormal(logI[s,segment(I_pos, pos_i, S_Iobs[s])], segment(I_sig, pos_i, S_Iobs[s]));
+    pos_i = pos_i + S_Iobs[s];
   }	
+
 } // end model
 
 generated quantities {
