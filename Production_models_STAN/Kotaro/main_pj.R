@@ -4,9 +4,7 @@ gc()
 library(MASS) ## needed for the multivariate normal distribution
 library(dplyr)
 
-Niter = 1000   # number of simulation iterations
 Narea = 3      # number of sub-area
-
 
 Catch_type = "F"    # "MSY", or "F"
 
