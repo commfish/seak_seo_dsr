@@ -4,6 +4,10 @@ gc()
 library(MASS) ## needed for the multivariate normal distribution
 library(dplyr)
 
+<<<<<<< HEAD:Production_models_STAN/Kotaro/main_pj.R
+=======
+#Niter = 1000   # number of simulation iterations
+>>>>>>> 2ea474fa3714a90d59d075db885a61a999327d3a:Production_models_STAN/Kotaro/simulations.R
 Narea = 3      # number of sub-area
 
 Catch_type = "F"    # "MSY", or "F"
@@ -47,23 +51,23 @@ Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
 C_br1 <- 25
 C_br2 <- 40
 # Alt 1 Kotaro's; increasing fishing pressure than gradual decline in fishing pressure 
-H1 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-20), seq(Hmax, 0.5, length.out=20))*HMSYs[x], 0.1*HMSYs[x]))
+H1 = Harv3 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-20), seq(Hmax, 0.5, length.out=20))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H1, type="l", ylim = c(0,max(H1)))
     # Alt 2: increasing fishing pressure, then rapid decline and low levels
-H2 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(Hmax,0.1*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.1, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
+H2 = Harv4 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(Hmax,0.1*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.1, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H2, type="l", ylim = c(0,max(H2)))
     # Alt 3
-H3 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, 0.75* Hmax, length.out=Nyear-C_br1), seq(0.5* Hmax,0.1*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.1, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
+H3 = Harv6 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, 0.75* Hmax, length.out=Nyear-C_br1), seq(0.5* Hmax,0.1*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.1, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
 #H3 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-15), seq(Hmax*0.5, 0.5, length.out=15))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H3, type="l", ylim = c(0,max(H3)))
     # Alt 4: increasing fishing pressure, then rapid decline and minimal fishing
-H4 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(1,0.01*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.01, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
+H4 = Harv5 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(1,0.01*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.01, 0.25, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H4, type="l", ylim = c(0,max(H4)))
 # Alt 5: increasing fishing pressure, then slightly tappering, then rapid decline
-H5 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(Hmax,0.75*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.75, 0.5*Hmax, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
+H5 = Harv1 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.5, Hmax, length.out=Nyear-C_br1), seq(Hmax,0.75*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.75, 0.5*Hmax, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H5, type="l", ylim = c(0,max(H5)))
 # Alt 6.. gradual increase in fishing pressure over entire time
-H6 = sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.1, 0.5*Hmax, length.out=Nyear-C_br1), seq(0.5*Hmax,0.75*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.75, 0.7*Hmax, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
+H6 = Harv2 =sapply(1:Narea, function(x) rnorm(Nyear, c(seq(0.1, 0.5*Hmax, length.out=Nyear-C_br1), seq(0.5*Hmax,0.75*Hmax,length.out=(C_br2-C_br1)), seq(Hmax*0.75, 0.7*Hmax, length.out=Nyear-C_br2))*HMSYs[x], 0.1*HMSYs[x]))
 matplot(1:Nyear, H6, type="l", ylim = c(0,max(H6)))
 
 Hlist <- list(H1,H2,H3,H4,H5, H6)
@@ -81,25 +85,26 @@ for (i in 1:Narea){
 }
 matplot(1:Nyear, Hmix, type="l", ylim = c(0,max(Hmix)))
 
-par(mfrow=c(3,2), mar=c(2,4,1,1))
-matplot(1:Nyear, H6, type="l", ylim = c(0,0.1))
-matplot(1:Nyear, H5, type="l", ylim = c(0,0.1))
-matplot(1:Nyear, H1, type="l", ylim = c(0,0.1))
-matplot(1:Nyear, H2, type="l", ylim = c(0,0.1))
-matplot(1:Nyear, H3, type="l", ylim = c(0,0.1))
-matplot(1:Nyear, H4, type="l", ylim = c(0,0.1))
-
+png(filename = "Production_models_STAN/Kotaro/figures/harvest_histories.png",width = 600, height = 600, units = "px")
+par(mfrow=c(3,2), mar=c(4,4,2,2))
+matplot(1:Nyear, Harv1, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 1")
+matplot(1:Nyear, Harv2, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 2")
+matplot(1:Nyear, Harv3, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 3")
+matplot(1:Nyear, Harv4, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 4")
+matplot(1:Nyear, Harv5, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 5", xlab = "Year")
+matplot(1:Nyear, Harv6, type="l", ylim = c(0,max(rbind(H1,H2,H3,H4,H5,H6))), ylab = c("F"), main="Harvest history 6", xlab = "Year")
+dev.off()
 #------------------------------------------------------------------------------  
 # Lets generate a gazzilion simulations to get a sense of how these are doing
 sim_dat <- list()
 sim_stats <-data.frame()
-nsims <- 50
+nsims <- 200
 #h_hist <- "opt6" #opt2, opt3, opt4, opt5, opt6, opt_mix
 #harv_opts <-c("opt1","opt2","opt3","opt4","opt5","opt6") = c("IncMax_Taper","IncMax_Taper_plat","IncMod_Drop_taper",
 #                                                             "IncMax_shutdown","IncMax_modTaper","IncMod_notaper")
 harv_opts <- c("Harv1","Harv2","Harv3","Harv4","Harv5",'Harv6')
 
-fpres <- c(3,4,5,6)
+fpres <- c(2,4,6,8)
 
 iter <- 1
 
@@ -259,9 +264,6 @@ for (opts in harv_opts) {
   }
 }
 
-str(sim_stats)
-sd(sim_stats$true_tot_cont1)
-
 sim_stats %>% group_by(Hmax, harv_hist) %>%
   dplyr::summarise(true_cont1 = mean(true_tot_cont1),
                    true_cont1_sd = sd(as.numeric(true_tot_cont1),na.rm=T),
@@ -298,121 +300,185 @@ library(ggplot2)
 library(ggpubr)
 library(viridis)
 library(ggnewscale)
+library(wesanderson); names(wes_palettes)
 
+#pal <- wes_palette("AsteroidCity2", type = "discrete")
+pal <- wes_palette("Zissou1Continuous", 10,type = "discrete")
+pal <- pal[c(1,3,5,6,8,10)]
 
-{ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont1, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Contrast in Area 1",
-       x = "Hmax",
-       y = "Biomass contrast") +
+{ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont1, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 1",
+       x = "",
+       y = "True biomass contrast") +
   theme_minimal() -> cont1
 
-ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont2, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Contrast in Area 2",
-       x = "Hmax",
-       y = "Biomass contrast") +
+ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont2, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 2",
+       x = "",
+       y = "") +
   theme_minimal() -> cont2
 
-ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont3, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Contrast in Area 3",
-       x = "Hmax",
-       y = "Biomass contrast") +
+ggplot(sim_stats, aes(x = factor(Hmax), y = true_tot_cont3, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 3",
+       x = "",
+       y = "") +
   theme_minimal() -> cont3
 
-ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont1, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Obs contrast in Area 1",
+ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont1, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 1",
        x = "Hmax",
-       y = "Biomass contrast") +
+       y = "Observed biomass contrast") +
   theme_minimal() -> ocont1
 
-ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont2, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Obs contrast in Area 2",
+ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont2, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 2",
        x = "Hmax",
-       y = "Biomass contrast") +
+       y = "") +
   theme_minimal() -> ocont2
 
-ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont3, fill = harv_hist)) + #, fill = factor(cyl))) +
-  geom_boxplot(notch = TRUE) +
-  labs(title = "Obs contrast in Area 3",
+ggplot(sim_stats, aes(x = factor(Hmax), y = obs_tot_bio_cont3, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+  #geom_boxplot(notch = TRUE) +
+  geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+              draw_quantiles = c(0.5)) +
+  scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+  labs(title = "Area 3",
        x = "Hmax",
-       y = "Biomass contrast") +
+       y = "") +
   theme_minimal() -> ocont3
 
-ggarrange(cont1,cont2,cont3,ocont1,ocont2,ocont3)}
+ggarrange(cont1,cont2,cont3,ocont1,ocont2,ocont3, common.legend = TRUE, legend = "right") -> plot
 
-str(sim_stats)
+annotate_figure(plot, top = text_grob("Biomass contrast: (hi-lo)/lo", 
+                                      color = "darkblue", face = "bold", size = 14))
+}
 
-{ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont1, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Rebound in Area 1",
-         x = "Hmax",
-         y = "Biomass contrast") +
+ggsave("Production_models_STAN/Kotaro/figures/contrast.png",width = 8, height = 6, units = "in")
+
+
+{ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont1, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 1",
+         x = "",
+         y = "True rebound in biomass") +
     theme_minimal() -> reb1
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont2, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Rebound in Area 2",
-         x = "Hmax",
-         y = "Biomass contrast") +
+  ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont2, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 2",
+         x = "",
+         y = "") +
     theme_minimal() -> reb2
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont3, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Rebound in Area 3",
-         x = "Hmax",
-         y = "Biomass contrast") +
+  ggplot(sim_stats, aes(x = factor(Hmax), y = true_reb_cont3, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 3",
+         x = "",
+         y = "") +
     theme_minimal() -> reb3
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont1, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Obs Rebound in Area 1",
+  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont1, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 1",
          x = "Hmax",
-         y = "Biomass contrast") +
+         y = "Observfed rebound in biomass") +
     theme_minimal() -> oreb1
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont2, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Obs Rebound in Area 2",
+  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont2, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 2",
          x = "Hmax",
-         y = "Biomass contrast") +
+         y = "") +
     theme_minimal() -> oreb2
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont3, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Obs Rebound in Area 3",
+  ggplot(sim_stats, aes(x = factor(Hmax), y = obs_reb_bio_cont3, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 3",
          x = "Hmax",
-         y = "Biomass contrast") +
+         y = "") +
     theme_minimal() -> oreb3
   
-ggarrange(reb1,reb2,reb3,oreb1,oreb2,oreb3)}
+ggarrange(reb1,reb2,reb3,oreb1,oreb2,oreb3, common.legend = TRUE, legend = "right") -> plot
 
-{ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_1, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Stock Status in Area 1",
+annotate_figure(plot, top = text_grob("Population rebound: (end bio-lo bio)/lo bio", 
+                                      color = "darkblue", face = "bold", size = 14))}
+
+ggsave("Production_models_STAN/Kotaro/figures/rebound.png",width = 8, height = 6, units = "in")
+
+
+{ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_1, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 1",
          x = "Hmax",
          y = "Stock Status (B/B0)") +
     theme_minimal() -> depl1
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_2, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Stock Status in Area 2",
+  ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_2, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 2",
          x = "Hmax",
          y = "Stock Status (B/B0)") +
     theme_minimal() -> depl2
   
-  ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_3, fill = harv_hist)) + #, fill = factor(cyl))) +
-    geom_boxplot(notch = TRUE) +
-    labs(title = "Stock Status in Area 3",
+  ggplot(sim_stats, aes(x = factor(Hmax), y = Depl_3, fill = harv_hist, col = harv_hist)) + #, fill = factor(cyl))) +
+    #geom_boxplot(notch = TRUE) +
+    geom_violin(alpha=.5,scale = "width",trim = FALSE, position=position_dodge(0.75),
+                draw_quantiles = c(0.5)) +
+    scale_fill_manual(values = pal) + scale_colour_manual(values = pal) + 
+    labs(title = "Area 3",
          x = "Hmax",
          y = "Stock Status (B/B0)") +
     theme_minimal() -> depl3
   
-  ggarrange(depl1,depl2,depl3)}
+  ggarrange(depl1,depl2,depl3, common.legend = TRUE, legend = "right") -> plot
+  
+  annotate_figure(plot, top = text_grob("Stock status: B/B0", 
+                                        color = "darkblue", face = "bold", size = 14))}
 
+ggsave("Production_models_STAN/Kotaro/figures/stockstatus.png",width = 8, height = 8, units = "in")
 
 # Make data frames from the master list
 
@@ -469,46 +535,55 @@ colors1<- viridis(length(sim_dat), begin = 0.7, end = 0.9, option = "B")
 colors2<- viridis(length(sim_dat), begin = 0.3, end = 0.5, option = "D")
 colors3<- viridis(length(sim_dat), begin = 0.7, end = 0.9, option = "A")
 
-h_pat <- "Harv6"
 
-ggplot(bio_true %>% filter(harv_hist == h_pat)) +
-  geom_line(aes(x=year ,y=Area1, col=as.factor(iter)), alpha = 0.2) +
-  geom_point(data = bio_est %>% filter(harv_hist == h_pat),
-             aes(x=year,y=Area1,col=as.factor(iter),alpha=0.2)) +
-  scale_color_manual(values = colors1) +
-  new_scale_color()+
-  geom_line(aes(x=year ,y=Area2, col=as.factor(iter)), alpha = 0.2) +
-  geom_point(data = bio_est %>% filter(harv_hist == h_pat),
-             aes(x=year,y=Area2,col=as.factor(iter),alpha=0.2)) +
-  scale_color_manual(values = colors2) +
-  new_scale_color()+
-  geom_line(aes(x=year ,y=Area3, col=as.factor(iter)), alpha = 0.2) +
-  geom_point(data = bio_est %>% filter(harv_hist == h_pat),
-             aes(x=year,y=Area3,col=as.factor(iter),alpha=0.2)) +
-  scale_color_manual(values = colors3) +
-  facet_wrap(~Hmax, labeller = "label_both") +
-  guides(alpha = "none") +
-  theme(legend.position = "none") +
-  labs(title = paste0("Biomass; Harvest = ",h_pat),
+for (i in 1:length(harv_opts)) {
+  h_pat <- harv_opts[i]
+  
+  ggplot(bio_true %>% filter(harv_hist == h_pat)) +
+    geom_point(data = bio_est %>% filter(harv_hist == h_pat),
+               aes(x=year,y=Area1,col=as.factor(iter),alpha=0.01, stroke=NA)) +
+    geom_line(aes(x=year ,y=Area1, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors1) +
+    new_scale_color()+
+    geom_point(data = bio_est %>% filter(harv_hist == h_pat),
+               aes(x=year,y=Area2,col=as.factor(iter),alpha=0.01, stroke=NA)) +
+    geom_line(aes(x=year ,y=Area2, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors2) +
+    new_scale_color()+
+    geom_point(data = bio_est %>% filter(harv_hist == h_pat),
+               aes(x=year,y=Area3,col=as.factor(iter),alpha=0.01, stroke=NA)) +
+    geom_line(aes(x=year ,y=Area3, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors3) +
+    facet_wrap(~Hmax, labeller = "label_both") +
+    guides(alpha = "none") +
+    theme(legend.position = "none") +
+    labs(title = paste0("Biomass; Harvest pattern = ",h_pat),
          x = "Year",
          y = "Biomass")
+  
+  ggsave(paste0("Production_models_STAN/Kotaro/figures/sim_biomass_",h_pat,".png"),width = 8, height = 6, units = "in")
+  
+  # plot catch: 
+  ggplot(catch %>% filter(harv_hist == h_pat)) +
+    geom_line(aes(x=year ,y=Area1, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors1) +
+    new_scale_color()+
+    geom_line(aes(x=year ,y=Area2, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors2) +
+    new_scale_color()+
+    geom_line(aes(x=year ,y=Area3, col=as.factor(iter)), alpha = 0.1) +
+    scale_color_manual(values = colors3) +
+    facet_wrap(~Hmax, labeller = "label_both") +
+    guides(alpha = "none") +
+    theme(legend.position = "none") +
+    labs(title = paste0("Catch; Harvest pattern = ",h_pat),
+         x = "Year",
+         y = "Catch")
+  
+  ggsave(paste0("Production_models_STAN/Kotaro/figures/sim_catch_",h_pat,".png"),width = 8, height = 6, units = "in")
+}
 
-# plot catch: 
-ggplot(catch %>% filter(harv_hist == h_pat)) +
-  geom_line(aes(x=year ,y=Area1, col=as.factor(iter)), alpha = 0.2) +
-  scale_color_manual(values = colors1) +
-  new_scale_color()+
-  geom_line(aes(x=year ,y=Area2, col=as.factor(iter)), alpha = 0.2) +
-  scale_color_manual(values = colors2) +
-  new_scale_color()+
-  geom_line(aes(x=year ,y=Area3, col=as.factor(iter)), alpha = 0.2) +
-  scale_color_manual(values = colors3) +
-  facet_wrap(~Hmax, labeller = "label_both") +
-  guides(alpha = "none") +
-  theme(legend.position = "none") +
-  labs(title = paste0("Catch; Harvest = ",h_pat),
-       x = "Year",
-       y = "Catch")
+
 
 
 #-------------------------------------------------------------------------------
