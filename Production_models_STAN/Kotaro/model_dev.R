@@ -4,6 +4,9 @@ gc()
 library(MASS) ## needed for the multivariate normal distribution
 library(dplyr)
 library(tidyverse)
+library(wesanderson)
+
+source("Production_models_STAN/Code/stan_helper.R")
 
 Niter = 1000   # number of simulation iterations
 Narea = 3      # number of sub-area
@@ -17,7 +20,7 @@ i = 123
 ### Setting up the OM 
 
 set.seed(i)
-rs = runif(Narea, 0.04, 0.06)    # variability in rs
+rs = runif(Narea, 0.045, 0.055)    # variability in rs
 Ks = runif(Narea, 100000, 200000)
 Nyear = 40
 Year_start = 1   # when we have survey/CPUE info from; ignore for now and keep at 1. Dealing with it a little different...  
@@ -119,7 +122,7 @@ Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
   
   #need to vectorize the biomass estimates:B_obs <- as.vector(data$B_ests[!is.na(data$B_ests)])
   B_obs <- as.vector(B_ests[!is.na(B_ests)])
-  B_cv <- as.vector(B_cv[!is.na(B_cvs)])
+  B_cv <- as.vector(B_cvs[!is.na(B_cvs)])
   N_Bobs <- sum (!is.na(B_ests))
   B_pos <- list()
   for (i in 1:Narea) {
@@ -151,16 +154,16 @@ Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
   matplot(Catch[Year_start:(Nyear-1),], type="l")
 
   #Eventually vectorize the index...
-  #try getting rid of first five years of index data:
-  cpue_start <- 6
+# START of CPUE DATAtry getting rid of first five years of index data:
+  cpue_start <- 6 #models behaved well! 
+  cpue_start <- 11
   
   cpue2 <- data.frame()
   for (i in 1:Nyear){
     cpue2[i,c(1:Narea)] <- NA
   }
   for (i in 1:Narea){
-    cpue2[seq(cpue_start,Nyear,1),i] <- 
-      IA_obs[seq(cpue_start,Nyear,1),i]
+    cpue2[seq(cpue_start,Nyear,1),i] <- IA_obs[seq(cpue_start,Nyear,1),i]
   }
   
   #I_obs <- as.vector(IA_obs[!is.na(IA_obs)]) 
@@ -185,14 +188,6 @@ library("rstan")
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-iters <- 2000
-chains <- 3
-burnin <- 0.6 #proportion of chain length used as warmup/burnin
-
-adapt_delta <- 0.99
-stepsize <- 0.01
-max_treedepth <- 15
-stepsize_jitter <- 0
 
 ## Play around with informative priors, start at true, add more noisiness
 if (Narea == 1){
@@ -319,6 +314,23 @@ check_inits <- function(x, data, type="Biomass") {
 # check_inits(init_ll[[2]], data = data, type="MSY")
 # check_inits(init_ll[[3]], data = data, type="MSY")
 
+#-----------------------------------------------------------------
+iters <- 2000
+chains <- 3
+burnin <- 0.6 #proportion of chain length used as warmup/burnin
+
+adapt_delta <- 0.99
+stepsize <- 0.01
+max_treedepth <- 15
+stepsize_jitter <- 0
+
+rs
+#------------------------------------------------------------------------------
+# Model running:
+#------------------------------------------------------------------------------
+#Original: we have index data all the way through the time series
+# and OE and PE are equal
+
 tstart <- Sys.time()
 fit_ind_only <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro.stan"), 
             data = data, init = init_ll, #inits, inits),
@@ -328,17 +340,94 @@ fit_ind_only <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro.stan"),
                            max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter)) #stepsize_jitter default(0), values between 0 and 1
 #metric (string, one of "unit_e", "diag_e", "dense_e", defaults to "diag_e")
 runtime <- Sys.time() - tstart; runtime
-
-# try with biomass estimates: 
+launch_shinystan(fit_ind_only)
+#-------------------------------------------------------------------------------
+# try with biomass estimates on top of complete index time series: 
 fit_bio <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro_estB.stan"), 
             data = data, init = init_ll, #inits, inits),
             iter = iters, chains = chains, cores=chains, seed=123,
             warmup=burnin*iters, verbose=F, thin=1,
             control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
                            max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
+# conv and no dts 7/9/24
+launch_shinystan(fit_bio)
+#-------------------------------------------------------------------------------
+# Now the index data doesn't start until year 6 of the catch data...
+data$N <- Nyear
+data$Npre <- length(cpue_start:Nyear)
+data$I_obs <- data$I_obs[,c((cpue_start):Nyear)]
 
-# Try with entered index and biomass error: 
-data = list(Npre = length(Year_start:Nyear), 
+adapt_delta <- 0.999
+stepsize <- 0.001
+
+tstart <- Sys.time()
+fit_ind_only2 <- stan(file = paste0("Production_models_STAN/Models/ko.stan"), 
+                     data = data, init = init_ll, #inits, inits),
+                     iter = iters, chains = chains, cores=chains, seed=123,
+                     warmup=burnin*iters, verbose=F, thin=1,
+                     control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
+                                    max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter)) #stepsize_jitter default(0), values between 0 and 1
+#metric (string, one of "unit_e", "diag_e", "dense_e", defaults to "diag_e")
+runtime <- Sys.time() - tstart; runtime
+launch_shinystan(fit_ind_only2)
+# Start to get divergences here: 23, so not crazy. It doesn't like not having an index all the way thru 
+# converged but estimates are off too
+# halved stepsize from 0.01 to 0.005: still 23
+# increased adapt delta from 0.99 to 0.995: 26 dts
+# increased adapt delta from 0.99 to 0.999: 30 dts... going up!
+# decreased adapt delta to 0.9: 44 dts :(
+# adapt del to 0.999 and stepsize to 0.001: still 29 dts! damn! 
+
+# Second try with narrower rs... and no dts!!! ... data quality... 
+# cpue dat starting in year 11: 32 dts, need longer chains... 
+#-------------------------------------------------------------------------------
+# Estimating a singel r?
+init_create_1r <- function(chain_id=1){
+  set.seed(chain_id+123)
+  inits <- list(
+    r = runif(1, 0.01, 0.1),
+    PP_init = runif(data1$S, 0.99, 1),
+    K = runif(data1$S, Ks/2, Ks*2),
+    isigma2 = (1/sigE)^2
+  )
+  inits$PE = matrix(0, nrow=data1$S, ncol=Nyear - 1) #inits$PE = matrix(0, nrow=data$S, ncol=Nyear - Year_start)
+  inits$iqs = 1/(qs*inits$K/Ks)
+  return(inits)
+}
+data1 <- data
+init_ll_1r <- lapply(1:chains, function(id) init_create_1r(chain_id = id))
+
+fit_ind_only_1r <- stan(file = paste0("Production_models_STAN/Models/ko_1r.stan"), 
+                      data = data, init = init_ll_1r, #inits, inits),
+                      iter = iters, chains = chains, cores=chains, seed=123,
+                      warmup=burnin*iters, verbose=F, thin=1,
+                      control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
+                                     max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
+# no dts with cpue dat starting in year 6!
+# cpue dat starting in year 11? 22 divergences/ 26 with clamped down step size and adapt delta
+launch_shinystan(fit_ind_only_1r)
+
+#-------------------------------------------------------------------------------
+# Now adding biomass index and just estimating a single r for all 3 areas
+adapt_delta <- 0.99
+stepsize <- 0.01
+
+fit_bio2 <- stan(file = paste0("Production_models_STAN/Models/ko_estB.stan"), 
+                data = data, init = init_ll_1r, #inits, inits),
+                iter = iters, chains = chains, cores=chains, seed=123,
+                warmup=burnin*iters, verbose=F, thin=1,
+                control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
+                               max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
+launch_shinystan(fit_bio2)
+# no dts...
+# cpue dat starting in year 11? still good! ... bc is using whole cpue time series. duh. 
+
+#------------------------------------------------------------------------------
+# Try with entered index and biomass error and 
+# get rid of assumption that OE and PE are equal
+
+data2 = list(Npre = length(Year_start:Nyear), 
+            N = Nyear,
             S=Narea, 
             p = 0.18815,
             C_obs = t(Catch[Year_start:(Nyear-1),]),
@@ -355,21 +444,64 @@ data = list(Npre = length(Year_start:Nyear),
             B_pos = B_pos)
 
 fit_bio_ind <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro_estB_estI.stan"), 
-                    data = data, init = init_ll, #inits, inits),
+                    data = data2, init = init_ll, #inits, inits),
                     iter = iters, chains = chains, cores=chains, seed=123,
                     warmup=burnin*iters, verbose=F, thin=1,
                     control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
                                    max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
+# converged and no dts 7/9
+launch_shinystan(fit_bio_ind)
+# cpue dat starting in year 11? still good!! 
+#------------------------------------------------------------------------------
+# Entered index and biomass error and OE separate from PE 
+# Also, just one r
 
-fit_ind <- stan(file = paste0("Production_models_STAN/Kotaro/kotaro_estI.stan"), 
-                    data = data, init = init_ll, #inits, inits),
+I_obs_mat <- IAs[cpue_start:Nyear,]
+data3 = list(Npre = length(cpue_start:Nyear), 
+             N = Nyear, 
+             S=Narea, 
+             p = 0.18815,
+             C_obs = t(Catch[1:(Nyear-1),]),
+             #I_obs_mat = I_obs_mat, # matrix of Iobs fo Kotaro's model... 
+             N_Iobs = N_Iobs,
+             I_obs=I_obs, 
+             I_cv = I_cv,
+             S_Iobs = S_Iobs,
+             I_pos = I_pos,
+             ratio = 1,
+             N_Bobs = N_Bobs,
+             B_obs = B_obs,
+             B_cv = B_cv,
+             S_Bobs = S_Bobs,
+             B_pos = B_pos)
+
+fit_bio_ind2 <- stan(file = paste0("Production_models_STAN/Models/ko_estB_estI.stan"), 
+                    data = data3, init = init_ll_1r, #inits, inits),
                     iter = iters, chains = chains, cores=chains, seed=123,
                     warmup=burnin*iters, verbose=F, thin=1,
                     control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
                                    max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
-#Divergences back with this version. Need to keep PE and OE equal with just the index. 
+# converged and no dts 7/9
+launch_shinystan(fit_bio_ind2)
+# cpue dat starting in year 11? still good! 
+#-------------------------------------------------------------------------------
+# Index only with OE and PE separate:
 
-fit <- fit_ind
+fit_ind <- stan(file = paste0("Production_models_STAN/Models/ko_estI.stan"), 
+                    data = data3, init = init_ll_1r, #inits, inits),
+                    iter = iters, chains = chains, cores=chains, seed=123,
+                    warmup=burnin*iters, verbose=F, thin=1,
+                    control = list(adapt_delta = adapt_delta, stepsize = stepsize, 
+                                   max_treedepth = max_treedepth, stepsize_jitter = stepsize_jitter))
+#Divergences back with this version. Need to keep PE and OE equal with just the index.
+# second try and no dts! data quality... 
+launch_shinystan(fit_ind)
+# cpue dat starting in year 11? 25dts
+#-------------------------------------------------------------------------------
+
+# Diagnostics: 
+
+fit <- fit_bio
 list_of_draws <- extract(fit)
 print(names(list_of_draws))
 
@@ -387,7 +519,7 @@ get_bfmi(fit)
 get_low_bfmi_chains(fit)
 
 library(shinystan)
-launch_shinystan(fit)
+launch_shinystan(fit_ind_only)
 
 
 library(bayesplot)

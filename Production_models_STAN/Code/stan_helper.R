@@ -23,7 +23,11 @@ pella_toml <- function(pmsy = 0.46) {
 
 #pella_toml(0.46)
 
-
+#----------------------------------------------------------------------------
+# check convergence function
+check_convergence <- function(fit) {
+  summary(fit)$summary[,"Rhat"]
+}
 #--------------------------------------------------------------------------------
 # Create simulated data for simulation testing of models
 
@@ -472,7 +476,7 @@ prep_data <- function(data = sim_dat, # set up to accept data from simulation se
                    I1_pos = I1_pos,
                    S_I1obs = S_I1obs,
                    i1_tau_vec = i1_tau_vec,
-                   i1_tau_no = i1_tau_no,)
+                   i1_tau_no = i1_tau_no,
                    #index 2
                    I2_obs = I2_obs,
                    I2_cv = I2_cv, 
@@ -1484,42 +1488,83 @@ plot_discards <- function(fit=fit,years=years,strata=strata,
 
 #------------------------------------------------------------------------------
 # process error
-plot_pe <- function(fit = fit, sim_pe = pe, sim=TRUE, save=TRUE, 
+plot_pe1 <- function(fit = fit, sim_pe = pe, sim=TRUE, save=TRUE, strata = strata,
                     mod_name="Testing", year1 = 1980) {
   samples <- rstan::extract(fit, permuted = TRUE)
   N<-Nyear
-  true_years = seq(year1,year1+years-1,1)
+  true_years = seq(year1,year1+Nyear-2,1)
   
-  quants4<-array(dim=c(3,years))
-  for (i in 1:years){
+  quants4<-array(dim=c(3,(N-1),strata))
+  for (i in 1:(N-1)){
     for (s in 1:strata){
-    quants4[,i] <- quantile(samples$PE[,i,s],probs=,c(0.05,0.5,0.95))
+    quants4[,i,s] <- quantile(samples$PE[,s,i],probs=,c(0.05,0.5,0.95))
     }
   }
-  quants4<-t(quants4)
-  quants4<-cbind(quants4,seq(1,years))
-  colnames(quants4) <- c("lo90","median","hi90","year")
+  
+  quants44 <- data.frame()
+  for (s in 1:strata) {
+    ssamp <- t(quants4[,,s]) %>% data.frame() %>% mutate(strata = s,
+                                                         year = seq(1,(N-1),1))
+    colnames(ssamp) <- c("lo90","median","hi90","strata","year")
+    if (s == 1) {
+      quants44 <- ssamp
+    } else {
+      quants44 <- rbind(quants44,ssamp)
+    }
+  }
+  
+  quants44$true_year <- rep(true_years,strata)
   
   pal <- wes_palette("FantasticFox1", 4, type = "discrete")
   
-  if (sim == TRUE){
-    true_pe<-cbind(seq(1,years),as.data.frame(sim_pe))
-    colnames(true_pe)<-c("year","true_pe")
-    ggplot(quants4 %>% data.frame()) +
-      scale_fill_manual(values = pal) +
-      geom_ribbon(aes(ymin=lo90,ymax=hi90,x=year),col=NA,fill=pal[1], alpha=0.2) +
-      geom_line(aes(year,median),col=pal[1]) +
-      geom_point(aes(year,median),col=pal[1]) +
-      geom_point(data=true_pe, aes(year,true_pe), col=pal[3]) +
-      labs(title = "process error") -> plot
-  } else {
-    ggplot(quants4 %>% data.frame()) +
-      scale_fill_manual(values = pal) +
-      geom_ribbon(aes(ymin=lo90,ymax=hi90,x=year),col=NA,fill=pal[1], alpha=0.2) +
-      geom_line(aes(year,median),col=pal[1]) +
-      geom_point(aes(year,median),col=pal[1]) +
-      labs(title = "process error") -> plot
-  }
+  str_ref <- strata
+
+  epsilon %>% data.frame() %>% 
+    pivot_longer(cols = seq(1,str_ref,1), names_to = "strata", values_to = "est" ) %>%
+    arrange(strata) %>% 
+    mutate(strata = gsub("[^0-9.-]", "", strata),
+           year = rep(seq(1,(N),1),str_ref)) -> plot_data
+  plot_data$true_year <- rep(seq(1,50,1),strata)
+    
+  ggplot(quants44) +
+    scale_fill_manual(values = pal) +
+    #geom_line(data = true_bio, aes(true_year,est), col=pal[3], size=1.25, linetype=1) +
+    geom_ribbon(aes(ymin=lo90,ymax=hi90,x=true_year),col=NA,fill=pal[2], alpha=0.2) +
+    geom_line(aes(true_year,median),col=pal[2]) +
+    geom_point(aes(true_year,median),col=pal[2]) +
+    facet_grid(rows = vars(strata)) +  #facet_wrap?
+    #facet_wrap(~ strata) +
+    geom_point(data=plot_data, aes(true_year,est), col=pal[4]) +
+    geom_line(data=plot_data, aes(true_year,est), col=pal[4]) +
+    labs(title = "Process error") +
+    ylab(paste0("Process error")) +
+    xlab("Year") + 
+    theme(
+      axis.text.x = element_text(
+        angle = 45,
+        hjust = 1,
+        vjust = 0.5
+      )) + 
+    scale_x_continuous(breaks=seq(year1,N+year1-1,5))-> plot
+  
+#  if (sim == TRUE){
+#    true_pe<-cbind(seq(1,years),as.data.frame(sim_pe))
+#    colnames(true_pe)<-c("year","true_pe")
+#    ggplot(quants4 %>% data.frame()) +
+#      scale_fill_manual(values = pal) +
+#      geom_ribbon(aes(ymin=lo90,ymax=hi90,x=year),col=NA,fill=pal[1], alpha=0.2) +
+#      geom_line(aes(year,median),col=pal[1]) +
+#      geom_point(aes(year,median),col=pal[1]) +
+#      geom_point(data=true_pe, aes(year,true_pe), col=pal[3]) +
+#      labs(title = "process error") -> plot
+#  } else {
+#    ggplot(quants4 %>% data.frame()) +
+#      scale_fill_manual(values = pal) +
+#      geom_ribbon(aes(ymin=lo90,ymax=hi90,x=year),col=NA,fill=pal[1], alpha=0.2) +
+#      geom_line(aes(year,median),col=pal[1]) +
+#      geom_point(aes(year,median),col=pal[1]) +
+#      labs(title = "process error") -> plot
+#  }
   if (save == TRUE) {
     ggsave(paste0("Production_models_STAN/Figures/proc_err_", mod_name, ".png"),plot=plot,
            dpi=300,  height=6, width=7, units="in")
