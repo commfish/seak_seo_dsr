@@ -63,7 +63,7 @@ results_ko <- data.frame()
 results_ko_Best <- data.frame()
 results_ko_Best_Iest <- data.frame()
 results_ko_Iest <- data.frame()
-nsims <- 50
+nsims <- 100
 #h_hist <- "opt6" #opt2, opt3, opt4, opt5, opt6, opt_mix
 #harv_opts <-c("opt1","opt2","opt3","opt4","opt5","opt6") = c("IncMax_Taper","IncMax_Taper_plat","IncMod_Drop_taper",
 #                                                             "IncMax_shutdown","IncMax_modTaper","IncMod_notaper")
@@ -82,8 +82,13 @@ total_sims
 
 for (opts in harv_opts) { # opts <- harv_opts[1]
   h_hist <- opts
-  for (fs in fpres){ # fs <- fpres[1]
-    Hmax <- fs
+  for (fs in 1:length(fpres)){ # fs <- fpres[1]
+    #Hmax <- fpres[fs]
+    if (h_hist == harv_opts[1]) {
+      Hmax <- fpres[2]
+    } else {
+      Hmax <- fpres[fs]
+    }
     for (i in 1:nsims){ #i <- 1
       #rs = runif(Narea, 0.045, 0.055)    # variability in rs, but will estimate on r in model data_iter <- data_iter+1
       rs = rlnorm(Narea,log(0.05),0.025)
@@ -104,7 +109,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       P[1,] = rep(1, Narea)
       MSYs =  rs * Ks/(p+1)^((p+1)/p)
       HMSYs = MSYs/Ks
-      Hmax = 3
+      
       Catch <- matrix(0, nrow=Nyear-1, ncol=Narea)
       
       C_br1 <- 25
@@ -315,9 +320,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       # save sim_dat in case its lost:
       saveRDS(sim_dat, file = "Production_models_STAN/Output/sim_res/simulated_data.Rds")
-      saveRDS(sim_dat, file = "H://Documents/SEO_DSR/stan_development/sim_backup/simulated_data.Rds")
+ #     saveRDS(sim_dat, file = "H://Documents/SEO_DSR/stan_development/sim_backup/simulated_data.Rds")
       write.csv(sim_stats,'Production_models_STAN/Output/sim_res/sim_stats.csv')
-      write.csv(sim_stats,'H://Documents/SEO_DSR/stan_development/sim_backup/sim_stats.csv')
+#      write.csv(sim_stats,'H://Documents/SEO_DSR/stan_development/sim_backup/sim_stats.csv')
       
       # run models and record results: -------------------------------------
       stan_iters <- 2000
@@ -379,6 +384,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       while (any(rhats > 1.1) && sum(fit_OEePE@sim$iter) < maxiter) {
         print("Model not converged. Running additional chains...")
         add_iter <- add_iter + 5000
+        init_ll_3r <- lapply(1:chains, function(id) init_create_3r(chain_id = id))
         #fit <- run_stan(iter = initial_iter + additional_iter, chains = initial_chains)
         fit_OEePE <- stan(file = paste0("Production_models_STAN/Models/ko.stan"), 
                           data = data1, init = init_ll_3r, #inits, inits),
@@ -477,7 +483,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         
       }
       write.csv(results_ko,'Production_models_STAN/Output/sim_res/results_ko.csv')
-      write.csv(results_ko,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko.csv')
+#      write.csv(results_ko,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko.csv')
 
       #---- next model ----#
       tstart <- Sys.time()
@@ -495,6 +501,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       while (any(rhats > 1.1) && sum(fit_Best_OEePE@sim$iter) < maxiter) {
         print("Model not converged. Running additional chains...")
         add_iter <- add_iter + 5000
+        init_ll_1r <- lapply(1:chains, function(id) init_create_1r(chain_id = id))
         #fit <- run_stan(iter = initial_iter + additional_iter, chains = initial_chains)
         fit_Best_OEePE <- stan(file = paste0("Production_models_STAN/Models/ko_estB.stan"), 
                           data = data1, init = init_ll_1r, #inits, inits),
@@ -590,7 +597,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         
       }
       write.csv(results_ko_Best,'Production_models_STAN/Output/sim_res/results_ko_Best.csv')
-      write.csv(results_ko_Best,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best.csv')
+ #     write.csv(results_ko_Best,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best.csv')
       
       
       
@@ -610,6 +617,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       while (any(rhats > 1.1) && sum(fit_Best_Iest@sim$iter) < maxiter) {
         print("Model not converged. Running additional chains...")
         add_iter <- add_iter + 5000
+        init_ll_1r <- lapply(1:chains, function(id) init_create_1r(chain_id = id))
         #fit <- run_stan(iter = initial_iter + additional_iter, chains = initial_chains)
         fit_Best_Iest <- stan(file = paste0("Production_models_STAN/Models/ko_estB_estI.stan"), 
                           data = data2, init = init_ll_1r, #inits, inits),
@@ -705,7 +713,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         
       }
       write.csv(results_ko_Best_Iest,'Production_models_STAN/Output/sim_res/results_ko_Best_Iest.csv')
-      write.csv(results_ko_Best_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest.csv')
+#      write.csv(results_ko_Best_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest.csv')
       
       
       
@@ -726,6 +734,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       while (any(rhats > 1.1) && sum(fit_Iest@sim$iter) < maxiter) {
         print("Model not converged. Running additional chains...")
         add_iter <- add_iter + 5000
+        init_ll_1r <- lapply(1:chains, function(id) init_create_1r(chain_id = id))
         #fit <- run_stan(iter = initial_iter + additional_iter, chains = initial_chains)
         fit_Iest <- stan(file = paste0("Production_models_STAN/Models/ko_estI.stan"), 
                           data = data2, init = init_ll_1r, #inits, inits),
@@ -821,7 +830,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         
       }
       write.csv(results_ko_Iest,'Production_models_STAN/Output/sim_res/results_ko_Iest.csv')
-      write.csv(results_ko_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Iest.csv')
+#      write.csv(results_ko_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Iest.csv')
       
       # END set for next run:
       data_iter <- data_iter+1

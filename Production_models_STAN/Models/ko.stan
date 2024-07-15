@@ -20,7 +20,7 @@ parameters {
   real<lower=0, upper=2> r[S];
   real<lower=0, upper=1> PP_init[S];
   real K[S];
-  real iqs[S];
+  real<lower=0.1> iqs[S];
   real<lower=0> isigma2;
   real PE[S, N-1];  
 }

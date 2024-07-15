@@ -33,7 +33,7 @@ parameters {
   real<lower=0, upper=2> r;
   real<lower=0, upper=1> PP_init[S];
   real K[S];
-  real iqs[S];
+  real<lower=0.1> iqs[S];
   real<lower=0> isigma2;
   // real<lower=0> sigma_proc;
   real PE[S, N-1];  
