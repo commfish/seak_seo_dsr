@@ -1,28 +1,28 @@
 #################################################################################################
-## Modified from DSR_SEAK_SSEO_2020.R
+## Modified from NSEO 2022 script
 ##
 ## This script is used to clean and organize the raw ROV data
 ## minor modifications from DSR_SEAK_SSEO_2020.R script
 ## included in this project for completion
 ## minimal modifications made for consistency and ease of use in this project... 
-## Aug 2021
-## Phil Joy
+## July 2024
+## Laura Coleman
 #################################################################################################
 
-YEAR<-2022
-Subd<-"NSEO"
+YEAR<-2024
+Subd<-"EYKT"
 #surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
-surveyed_area<-442
+surveyed_area<-739
 
 ##REFERENCE INSTALLED PACKAGES
 {library(tidyverse)
-library(lubridate)
-library(zoo)
-library(Distance)
-library(broom)
-library(ggplot2)
-library(arsenal)
-library(chron)}
+  library(lubridate)
+  library(zoo)
+  library(Distance)
+  library(broom)
+  library(ggplot2)
+  library(arsenal)
+  library(chron)}
 
 #Estimate Line Lengths from Sub/ROV DSR surveys
 #Clean up line length data and trim out bad line lengths
@@ -32,18 +32,23 @@ library(chron)}
 #setwd("D:/Groundfish Biometrics/Yelloweye/NSEO_2018/")
 
 ##IMPORT NAVIGATION, QUALITY CONTROL, AND SPECIMEN DATA#########################
-nav <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",YEAR,"_",Subd,"_NAV_Final.csv"))		#("SSEO_2020_Nav.csv")
-qc <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/QC_",Subd,"_",YEAR,"_summary.csv"))
-species <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/SPECIES_",Subd,"_",YEAR,"_summary.csv"))
-	#("SSEO_2020_Species.csv")
+# nav <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",YEAR,"_",Subd,"_NAV_Final.csv"))		#("SSEO_2020_Nav.csv")
+# qc <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/QC_",Subd,"_",YEAR,"_summary.csv"))
+# species <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/SPECIES_",Subd,"_",YEAR,"_summary.csv"))
+# 	#("SSEO_2020_Species.csv")
+
+nav<-read_csv("YE_density_estimation/Data/EYKT_2023/2023_EYKT_Nav_Data.csv")%>% na.omit()
+qc<-read_csv("YE_density_estimation/Data/EYKT_2023/QC_EYKT_2023_summary.csv")
+species<-read_csv("YE_density_estimation/Data/EYKT_2023/SPECIES_EYKT_2023_summary.csv")
 
 head(nav)
-	str(nav)
+str(nav)
 head(qc)
-	str(qc)
+str(qc)
 view(qc)
-	str(qc)
+str(qc)
 head(species)
+
 #Plot ROV transects#
 
 idseps<-max(stringr::str_count(nav$Event_ID, "_"))+1
@@ -60,11 +65,7 @@ ggplot(nav, aes(x, y)) + geom_point() +
 ## If GIS processing has been done, skip down to  LOAD PROCESSED GIS DATA
 ################################################################################
 unique(nav$DIVE_NO)
-d17<-nav[nav$DIVE_NO == "17",]
-d17b<-nav[nav$DIVE_NO == "17b",]
-summary(comparedf(d17,d17b))  #17 and 17b look different?
 
-#nav %>% mutate(Dive = substr(DIVE_NO, 6, 7)) -> subd_nav
 nav %>% mutate(Dive = as.numeric(DIVE_NO),
                ROV_X = x, ROV_Y = y) -> subd_nav
 unique(subd_nav$Dive)
@@ -92,14 +93,12 @@ with(qc, table(Dive, Depth))
 #Join Tables using a "full join"remove.
 transect <- full_join(subd_nav, qc, by = c("Dive", "Seconds"))	#SSEO2020#c("DIVE_NO", "Seconds"))
 unique(transect$Dive)
-view(transect %>% filter(Dive == 35))
-view(transect %>% filter(Dive == 1))
+
 #Need to fill in missing values in nav table from the quality control so the good and bad sections have
 #time assignments for the entire transect.
 
 #fill() function automatically replaces NA values with previous value
 head(transect)
-transect$Depth[transect$DIVE_NO.x =="1" & !is.na(transect$Depth)]
 
 #Use select() to only keep the necessary columns i.e. Seconds, Dive #, x, y, video quality (good/bad)
 transect_qc <- transect %>% fill(Family) %>% filter(!is.na(Family)) %>% 
@@ -112,18 +111,24 @@ transect_qc <- transect %>% fill(Family) %>% filter(!is.na(Family)) %>%
          Depth = ifelse(prop_depth_na == 1, NA, replace_na(Depth,mean(Depth,na.rm=TRUE))))
 
 view(transect_qc)  
-  
-transect_qc %>% filter(Dive == 2)  
-  
-  
+
+#Dives 12,16,19,20,22,22 have NAs at the beginning of the file while - the start of 
+#the QC video is within seconds of the nav, so i think it's fine moving forward.
+#Times in qc file also match miles notes when the dives were started .
+
+view(transect_qc %>% filter(Dive == 12))
+view(transect_qc %>% filter(Dive == 16))
+view(transect_qc %>% filter(Dive == 19))
+view(transect_qc %>% filter(Dive == 20))
+view(transect_qc %>% filter(Dive == 22)) 
+
 nrow(transect_qc)
 hist(transect_qc$Depth)
 #Check Data
 head(transect_qc); unique(transect_qc$Dive); unique(transect_qc$DIVE_NOraw)
-view(transect_qc %>% filter (Dive == 35))
-#Four rows were empty, remove rows by using this code:
-# get rid of empty rows except for dives with no depth data....
+view(transect_qc %>% filter (Dive == 24))
 
+#Six rows were empty, remove rows by using this code
 new_transect_qc <- transect_qc %>% 
   drop_na(-c("Depth"))
 
@@ -132,23 +137,17 @@ nrow(new_transect_qc)
 unique(new_transect_qc$Dive)
 unique(new_transect_qc$Depth)
 
-#new_transect_qc <- (na.omit(transect_qc))
-view(new_transect_qc)
-
-#Check that rows were omitted
-view(new_transect_qc %>% filter(Dive == 2))
-
 #Output cleaned data table (make sure to use updated transect_qc table)
-write.csv(new_transect_qc, file = paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
+write.csv(new_transect_qc, file = paste0("Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
 #Use ggplot to look at data to identify good/bad areas:
-new_transect_qc <- read_csv(paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
+new_transect_qc <- read_csv(paste0("Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
-jpeg(filename = paste0("YE_density_estimation/Figures/",Subd,"_rov_transects_",YEAR,".jpg"),
+jpeg(filename = paste0("Figures/",Subd,"_rov_transects_",YEAR,".jpg"),
      width = 12, height = 15, units = "in", res = 50)
 
 ggplot(new_transect_qc, aes(ROV_X, ROV_Y)) + geom_point(aes(colour = factor(Family))) +
-#  ggplot(new_transect_qc, aes(x, y)) + geom_point(aes(colour = factor(Family))) +
+  #  ggplot(new_transect_qc, aes(x, y)) + geom_point(aes(colour = factor(Family))) +
   facet_wrap(~Dive, scales = "free") +			#SSEO20 used DIVE_NO instead of Dive	
   theme(axis.text.x = element_text(angle = 90))
 
@@ -179,8 +178,8 @@ view(new_transect_qc)
 glimpse(new_transect_qc)
 
 #Save output as a pdf so it can be reviewed easily:
-paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg")
-pdf(paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg"))
+paste0("Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg")
+pdf(paste0("Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg"))
 
 #Set up graph window as a 2X2 frame
 par(mfrow = c(2,2))
@@ -192,7 +191,7 @@ dev.off()
 head(new_transect_qc)
 par(mfrow = c(3,3))
 
-new_transect_qc <- new_transect_qc %>% filter(Dive != 35)
+# new_transect_qc <- new_transect_qc %>% filter(Dive != 35)
 unique(new_transect_qc$Dive)
 
 Cull<-FALSE
@@ -216,7 +215,7 @@ for (i in 1:length (unique (new_transect_qc$DIVE_NO))) {  #i<-2
   dist <- c(dist,0)                 #double check this code
   prSp$dist <- dist
   prSp$Dive <- i				#added so that dive number is also recorded
-
+  
   #CULLING CODE: BLOCK this out the 1st time you run to identify outliers.
   if (Cull == TRUE) {
     if (max(prSp$dist) > 18*max(prSp$dist[prSp$dist < max(prSp$dist)])) {
@@ -229,10 +228,10 @@ for (i in 1:length (unique (new_transect_qc$DIVE_NO))) {  #i<-2
     }
   }
   #END CULLLING CODE
-    
+  
   plot (sT$ROV_X, sT$ROV_Y, main = levels (new_transect_qc$DIVE_NO)[i],asp = 1, ylab = "Y", xlab = "X") #plots the observed unsmoothed points for lat (x) vs.long (y)
   lines (prSp$X, prSp$Y, lwd = 2, col = 5)  #draws the predicted line for lat vs. long (2=red and 5=blue) 
-   
+  
   #Output
   if (i == 1){
     outPut <- prSp
@@ -244,9 +243,9 @@ for (i in 1:length (unique (new_transect_qc$DIVE_NO))) {  #i<-2
 dev.off()
 
 if (Cull == TRUE) {
-  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_culled.csv"))
+  write.csv(outPut, file = paste0("Output/",Subd,"_",YEAR,"_smooth_transect_output_culled.csv"))
 } else {
-  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_raw.csv")) 
+  write.csv(outPut, file = paste0("Output/",Subd,"_",YEAR,"_smooth_transect_output_raw.csv")) 
 }
 
 ##Check transect lengths...
@@ -267,17 +266,12 @@ nrow(outPut)
 unique(outPut$Dive)
 unique(new_transect_qc$Dive)
 
-#for NSEO 2022 get rid of dive 35
-new_transect_qc <- new_transect_qc %>% filter(Dive != 35)
-##check for bad line lengths that are out of line with expectations of ~1000 m transects... 
-#2022 CSEO, lots.  Lets package this bad stuff up for GIS measured length and then
-# do our best to adjust line lengths with R
 transect_pred <- cbind(new_transect_qc, predX = outPut$X, predY = outPut$Y, Dist = outPut$dist)
 
 #Use this output for ArcGIS to determine length
 #******This file will be used in ArcGIS*****#
 
-write.csv(transect_pred, file = paste0("YE_density_estimation/Output/",YEAR,"_",Subd,"_smooth_predict_GISreview.csv")) #This file will be used in ArcGIS
+write.csv(transect_pred, file = paste0("Output/",YEAR,"_",Subd,"_smooth_predict_GISreview.csv")) #This file will be used in ArcGIS
 
 #-------------------------------------------------------------------------------
 # Lets fix transect length here
@@ -293,7 +287,7 @@ plot (d4raw$ROV_X, d4raw$ROV_Y,  ylab = "Y", xlab = "X", xlim=c(min(d4raw$ROV_X)
 lines (d4$X, d4$Y, lwd = 2, col = 5) 
 quantile(d4$dist,c(0.025,0.5,0.999))
 
-d4raw<-d17raw[d17raw$ROV_X < max(d17raw$ROV_X),]
+# d4raw<-d17raw[d17raw$ROV_X < max(d17raw$ROV_X),] #from 2022
 plot (d4raw$ROV_X, d4raw$ROV_Y,  ylab = "Y", xlab = "X", xlim=c(min(d4raw$ROV_X),max(d4raw$ROV_X)))
 
 max(d4$dist)
@@ -310,7 +304,8 @@ sum(d24$dist)
 
 head(d4); head(d5); head(d24)
 par(mfrow=c(3,1))
-hist(d17$dist, breaks=100); hist(d5$dist, breaks=100); hist(d24$dist, breaks=100)
+# hist(d17$dist, breaks=100); 
+hist(d5$dist, breaks=100); hist(d24$dist, breaks=100)
 
 quantile(d5$dist,c(0.025,0.5,0.975))
 quantile(d24$dist,c(0.025,0.5,0.998))
@@ -389,7 +384,7 @@ for (d in D){
 
 #Tran.Length2<-Tran.Length
 
-write.csv(Tran.Length, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_predict_lengths_Rfix.csv")) 
+write.csv(Tran.Length, file = paste0("Output/",Subd,"_",YEAR,"_smooth_predict_lengths_Rfix.csv")) 
 
 ### If using R measured transect lengths, turn Tran.Length into transects to proceed...
 transects<-Tran.Length
@@ -426,7 +421,9 @@ transects<-Tran.Length
 ######################################################################################
 ##GIS TRANSECT LENGTHS:
 r_transects<-Tran.Length
-transects <- read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Smooth_Predict_Lengths_gis.csv"))		#This was created in ArcGIS
+
+transects <- read.csv("YE_density_estimation/Data/EYKT_2023/EYKT_2023_Smooth_Predict_Lengths_gis.csv")
+
 #R CALC TRANSECT LENGTHS
 #transects<-read.csv("Output/2022_CSEO_smooth_predict_lengths_Rfix.csv") 
 str(transects)
@@ -459,35 +456,18 @@ with(transect_summary, table(Dive,transect_length_m))
 
 #Import ROV specimen data and filter for YE only
 
-species <- read_csv(paste0("YE_density_estimation/Data/", Subd, "_", YEAR, "/SPECIES_", Subd, "_", YEAR, "_summary.csv"))%>%filter(Species == 145)			#("Data/SSEO_2020_species.csv") %>% filter(Species == 145)
+species <- read_csv("YE_density_estimation/Data/EYKT_2023/SPECIES_EYKT_2023_summary.csv")%>%
+  filter(Species == 145)
 view(species)
 str(species)
 
 #quick sloppy check on number of fish/dive
 Dives<-unique(species$Dive)
+#2023 EYKT - there are no YE for the first 3 dives
 
 species %>% group_by(Dive) %>%
   summarize(n=n()) -> raw.count
 View(raw.count)
-
-#NA's are dive 18 in CSEO 2022 transect files... 
-
-#need to fix dive numbers for CSEO 2022
-colnames(species)[21]<-"DIVE_NOraw"
-species %>% mutate(Dive = ifelse(DIVE_NOraw %in% c("17b"),17,
-                                 ifelse(is.na(DIVE_NOraw),18,
-                                        as.numeric(DIVE_NOraw)))) -> species
-
-
-
-unique(species$Dive)
-unique(species$DIVE_NOraw)
-
-#colnames(species)[11]
-#colnames(species)[11]<-"Mid.X..mm."
-#colnames(species)[12]<-"Mid.Y..mm."
-#colnames(species)[13]<-"Mid.Z..mm."
-#colnames(species)[20]<-"Transect.Number"
 
 
 #For the density estimate we only want adults and subadults as these are selected for in the fishery
@@ -499,30 +479,32 @@ view(ye_adult)
 ye_adult_NoAttracted <- ye_adult %>% filter(Activity != "Attracted")
 view(ye_adult_NoAttracted)
 
-#Join specimen and transect summary table together
-#Columns are renamed to avoid confusion with specimen table						#NOT NECESSARY WITH PHIL CHANGES...
-#plyr::rename(transect_summary, replace = c("DIVE_NO" = "Dive")) -> transect_summary
-#view(transect_summary)
+#For 2023 EYKT we need to filter out dives 22 and 15 because those were experimental
+#to groundtruth the habitat suitability model. They were not done in the DYRH so they
+#cannot be used in the assessment
 
-### Added to deal with NSEO 2018... not sure if necessary for other ones?... 
-### this summarizes transect lengths for brevity; DID NOT WORK RIGHT?!?! SKIP 
-Tsum<-data.frame()
-T<-unique(transect_summary$Dive)
-i<-1
-for (t in T){
-	TN<-transect_summary[transect_summary$Dive == t,]
-	Tsum[i,"Dive"]<-t
-	Tsum[i,"transect_length_m"]<-mean(TN$Dist)
-	i<-i+1
-}
+ye_adult_NoAttracted <- ye_adult_NoAttracted %>% filter(!Dive %in% c(15,22))
+unique(ye_adult_NoAttracted$Dive)
+
+# ### Added to deal with NSEO 2018... not sure if necessary for other ones?... 
+# ### this summarizes transect lengths for brevity; DID NOT WORK RIGHT?!?! SKIP 
+# Tsum<-data.frame()
+# T<-unique(transect_summary$Dive)
+# i<-1
+# for (t in T){
+# 	TN<-transect_summary[transect_summary$Dive == t,]
+# 	Tsum[i,"Dive"]<-t
+# 	Tsum[i,"transect_length_m"]<-mean(TN$Dist)
+# 	i<-i+1
+# }
 
 #Make sure to change the Area for each surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
 # Use Tsum or transect_summary depending on how it is set up that year
 str(transect_summary)
 str(ye_adult_NoAttracted)
 
-survey <- full_join(transect_summary, 
-                    ye_adult_NoAttracted %>% filter(Dive != 35), 
+survey <- full_join(transect_summary %>% filter(!Dive %in% c(15,22)), 
+                    ye_adult_NoAttracted, 
                     by = "Dive") %>% 	
   mutate(mgt_area = Subd, Area = surveyed_area, distance = abs(`Mid.X..mm.` * 0.001))
 
@@ -539,15 +521,15 @@ head(survey)
 # PJJ: Added in Fish.L, Depth, Stage as covariates... 
 
 distance <- survey %>% select(Year, mgt_area, Area, Dive, transect_length_m,
-						    Fish.L.mm,Depth,Stage, distance,avg.depth) %>%
+                              Fish.L.mm,Depth,Stage, distance,avg.depth) %>%
   mutate(YEAR = replace_na(Year, YEAR)) %>% 
   group_by(Dive) %>% 
   mutate(Depth =replace_na(Depth,mean(avg.depth)))
-  
+
 head(distance)
 
 plyr::rename(distance, replace = c("mgt_area" = "Region.Label", "Dive" = "Sample.Label",
-                                        "transect_length_m" = "Effort" )) -> distance
+                                   "transect_length_m" = "Effort" )) -> distance
 
 #Data has to be in a data frame in order to work in distance
 as.data.frame(distance) -> distance
@@ -555,9 +537,10 @@ unique(distance$Sample.Label)
 
 view(distance)
 
-write.csv(distance, file = paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
+# write.csv(distance, file = paste0("YE_density_estimation/Data/EYKT_2023/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
+write.csv(distance, "YE_density_estimation/Data/EYKT_2023/EYKT_2023_distance_data_GIStran_for_analysis.csv")
 ################################################################################
-##2020 SSEO DENSITY ANALYSIS####################################################
+##2024 EYKT DENSITY ANALYSIS####################################################
 ################################################################################
 #EXPLORE THE DATA..
 ################################
@@ -594,7 +577,7 @@ ggplot(droplevels(DAT), aes(x = Stage, y = distance)) +
 ##check out depth and distance
 ggplot(DAT, aes(x = Depth, y = distance)) +
   geom_point() + labs(x = "survey depth",
-                        y = "distance (m)")
+                      y = "distance (m)")
 plot(DAT$distance~DAT$Depth)
 abline(lm(DAT$distance~DAT$Depth)) #?lm
 summary(lm(DAT$distance~DAT$Depth))
@@ -608,3 +591,4 @@ abline(lm(DAT$distance~DAT$Fish.L))
 summary(lm(DAT$distance~DAT$Fish.L))
 
 #######################################################################
+
