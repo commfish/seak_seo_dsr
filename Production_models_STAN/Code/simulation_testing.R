@@ -63,11 +63,11 @@ results_ko <- data.frame()
 results_ko_Best <- data.frame()
 results_ko_Best_Iest <- data.frame()
 results_ko_Iest <- data.frame()
-nsims <- 100
+nsims <- 50
 #h_hist <- "opt6" #opt2, opt3, opt4, opt5, opt6, opt_mix
 #harv_opts <-c("opt1","opt2","opt3","opt4","opt5","opt6") = c("IncMax_Taper","IncMax_Taper_plat","IncMod_Drop_taper",
 #                                                             "IncMax_shutdown","IncMax_modTaper","IncMod_notaper")
-harv_opts <- c("Harv1","Harv2","Harv3","Harv4","Harv5", "Harv_mix")
+harv_opts <- c("Harv1") #,"Harv2","Harv3","Harv4","Harv5", "Harv_mix")
 
 fpres <- c(3,8)
 
@@ -80,15 +80,18 @@ total_sims <- nsims*length(harv_opts)*length(fpres)*
   4 # number of models to test
 total_sims
 
+#name for saving this set up
+sim_lab <- "H1"
+
 for (opts in harv_opts) { # opts <- harv_opts[1]
   h_hist <- opts
-  for (fs in 1:length(fpres)){ # fs <- fpres[1]
-    #Hmax <- fpres[fs]
-    if (h_hist == harv_opts[1]) {
-      Hmax <- fpres[2]
-    } else {
-      Hmax <- fpres[fs]
-    }
+  for (fs in 1:length(fpres)){ # fs <- 1
+    Hmax <- fpres[fs]
+    #if (h_hist == harv_opts[1]) {
+    #  Hmax <- fpres[2]
+    #} else {
+    #  Hmax <- fpres[fs]
+    #}
     for (i in 1:nsims){ #i <- 1
       #rs = runif(Narea, 0.045, 0.055)    # variability in rs, but will estimate on r in model data_iter <- data_iter+1
       rs = rlnorm(Narea,log(0.05),0.025)
@@ -187,6 +190,8 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       qs <- runif(Narea, 0.00001, 0.0001)
       
       for(j in 1:Narea){ #j <-1
+        sim_stats[data_iter,paste0("pe_med_",j)] <- median(epsilon[,j])
+        sim_stats[data_iter,paste0("pe_absmed_",j)] <- median(abs(epsilon[,j]))
         sim_stats[data_iter,paste0("true_term_bio",j)] <- B[Nyear,j]
         sim_stats[data_iter,paste0("true_ss",j)] <- B[Nyear,j] / Ks[j]
         #total contrast
@@ -319,9 +324,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                               "Btrue" = Btrue,"B_ests" = BEs,"Index" = IA_obs, "Catch" = Catch)
       
       # save sim_dat in case its lost:
-      saveRDS(sim_dat, file = "Production_models_STAN/Output/sim_res/simulated_data.Rds")
+      saveRDS(sim_dat, file = paste0("Production_models_STAN/Output/sim_res/simulated_data_",sim_lab,".Rds"))
  #     saveRDS(sim_dat, file = "H://Documents/SEO_DSR/stan_development/sim_backup/simulated_data.Rds")
-      write.csv(sim_stats,'Production_models_STAN/Output/sim_res/sim_stats.csv')
+      write.csv(sim_stats,paste0("Production_models_STAN/Output/sim_res/sim_stats_",sim_lab,".csv"))
 #      write.csv(sim_stats,'H://Documents/SEO_DSR/stan_development/sim_backup/sim_stats.csv')
       
       # run models and record results: -------------------------------------
@@ -422,7 +427,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       samples <- rstan::extract(fit_OEePE, permuted = TRUE)
       MSY_e = Bmsy_e = Fmsy_e = Stock_status_e <-data.frame(matrix(NA, nrow = Narea, ncol = 3))
-      r_e = K_e = Bterm = q_e = data.frame(matrix(NA, nrow = Narea, ncol = 3))
+      r_e = K_e = Bterm = q_e = pe_e = pe_abs_e = data.frame(matrix(NA, nrow = Narea, ncol = 3)) #***
       
       results_ko[data_iter,"model"] <- "ko"
       results_ko[data_iter,"iter"] <- data_iter
@@ -441,6 +446,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         Bterm[,s] <- quantile(samples$B[,s,Nyear],probs=,c(0.05,0.5,0.95))
         q_e[,s] <- 1/quantile(samples$iqs[,s], probs = ,c(0.05,0.5,0.95))
         
+        pe_e[,s] <- quantile(samples$PE[,s,],probs=,c(0.05,0.5,0.95)) #***
+        pe_abs_e[,s] <- quantile(abs(samples$PE[,s,]),probs=,c(0.05,0.5,0.95)) #***
+        
         MSY_e[,s] <- quantile(samples$MSY[,s],probs=,c(0.05,0.5,0.95))
         Bmsy_e[,s] <- quantile(samples$Bmsy[,s],probs=,c(0.05,0.5,0.95))
         Fmsy_e[,s] <- quantile(samples$Fmsy[,s],probs=,c(0.05,0.5,0.95))
@@ -452,6 +460,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko[data_iter,paste0("Bterm_e_",s)] <- Bterm[,s][2]
         results_ko[data_iter,paste0("q_e_",s)] <- q_e[,s][2]
         
+        results_ko[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        results_ko[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        
         results_ko[data_iter,paste0("rbias_",s)] <- (r_e[,s][2] - sim_stats[data_iter,paste0("r_",s)]) / sim_stats[data_iter,paste0("r_",s)]
         results_ko[data_iter,paste0("r_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("r_",s)] > r_e[,s][1] & 
                                                             sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
@@ -460,6 +471,16 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko[data_iter,paste0("K_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("K_",s)] > K_e[,s][1] & 
                                                             sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
                                                           "TRUE","FALSE")
+        results_ko[data_iter,paste0("pebias_",s)] <- (pe_e[,s][2] - sim_stats[data_iter,paste0("pe_med_",s)]) / sim_stats[data_iter,paste0("pe_med_",s)]
+        results_ko[data_iter,paste0("pe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_med_",s)] > pe_e[,s][1] & 
+                                                                 sim_stats[data_iter,paste0("pe_med_",s)] < pe_e[,s][3],
+                                                               "TRUE","FALSE")
+        
+        results_ko[data_iter,paste0("abspebias_",s)] <- (pe_abs_e[,s][2] - sim_stats[data_iter,paste0("pe_absmed_",s)]) / sim_stats[data_iter,paste0("pe_absmed_",s)]
+        results_ko[data_iter,paste0("abspe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_absmed_",s)] > pe_abs_e[,s][1] & 
+                                                                 sim_stats[data_iter,paste0("pe_absmed_",s)] < pe_abs_e[,s][3],
+                                                               "TRUE","FALSE")
+        
         results_ko[data_iter,paste0("SSbias_",s)] <- (Stock_status_e[,s][2] - sim_stats[data_iter,paste0("Depl_",s)]) / sim_stats[data_iter,paste0("Depl_",s)]
         results_ko[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                             sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
@@ -482,7 +503,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                                                              "TRUE","FALSE")
         
       }
-      write.csv(results_ko,'Production_models_STAN/Output/sim_res/results_ko.csv')
+      write.csv(results_ko,paste0('Production_models_STAN/Output/sim_res/results_ko_',sim_lab,'.csv'))
 #      write.csv(results_ko,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko.csv')
 
       #---- next model ----#
@@ -532,11 +553,11 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       plot_pe1(fit = fit_Best_OEePE, sim_pe = epsilon, sim=TRUE, save=FALSE, mod_name="Model ko", year1 = 1, strata = Narea) -> pe_plot
       
-      ggarrange(bio_plot,index_plot,pe_plot)
+      print(ggarrange(bio_plot,index_plot,pe_plot))
       
       samples <- rstan::extract(fit_Best_OEePE, permuted = TRUE)
       MSY_e = Bmsy_e = Fmsy_e = Stock_status_e <-data.frame(matrix(NA, nrow = Narea, ncol = 3))
-      r_e = K_e = Bterm = q_e = data.frame(matrix(NA, nrow = Narea, ncol = 3))
+      r_e = K_e = Bterm = q_e = pe_e = pe_abs_e = data.frame(matrix(NA, nrow = Narea, ncol = 3)) #***
       
       results_ko_Best[data_iter,"model"] <- "ko_estB"
       results_ko_Best[data_iter,"iter"] <- data_iter
@@ -545,15 +566,18 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       results_ko_Best[data_iter,"runtime"] <- runtime
       results_ko_Best[data_iter,"iterations"] <- add_iter
-      results_ko_Best[data_iter,"param_not_conv"] <- sum(summary(fit_OEePE)$summary[,"Rhat"] > 1.1, na.rm=T)
-      results_ko_Best[data_iter,"div_trans"] <- get_num_divergent(fit_OEePE)
-      results_ko_Best[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_OEePE)
+      results_ko_Best[data_iter,"param_not_conv"] <- sum(summary(fit_Best_OEePE)$summary[,"Rhat"] > 1.1, na.rm=T)
+      results_ko_Best[data_iter,"div_trans"] <- get_num_divergent(fit_Best_OEePE)
+      results_ko_Best[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_Best_OEePE)
       
       for (s in 1:Narea){ #s<-1
         r_e[,s] <- quantile(samples$r,probs=,c(0.05,0.5,0.95))
         K_e[,s] <- quantile(samples$K[,s],probs=,c(0.05,0.5,0.95))
         Bterm[,s] <- quantile(samples$B[,s,Nyear],probs=,c(0.05,0.5,0.95))
         q_e[,s] <- 1/quantile(samples$iqs[,s], probs = ,c(0.05,0.5,0.95))
+        
+        pe_e[,s] <- quantile(samples$PE[,s,],probs=,c(0.05,0.5,0.95)) #***
+        pe_abs_e[,s] <- quantile(abs(samples$PE[,s,]),probs=,c(0.05,0.5,0.95)) #***
         
         MSY_e[,s] <- quantile(samples$MSY[,s],probs=,c(0.05,0.5,0.95))
         Bmsy_e[,s] <- quantile(samples$Bmsy[,s],probs=,c(0.05,0.5,0.95))
@@ -566,37 +590,49 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best[data_iter,paste0("Bterm_e_",s)] <- Bterm[,s][2]
         results_ko_Best[data_iter,paste0("q_e_",s)] <- q_e[,s][2]
         
+        results_ko_Best[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        results_ko_Best[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        
         results_ko_Best[data_iter,paste0("rbias_",s)] <- (r_e[,s][2] - sim_stats[data_iter,paste0("r_",s)]) / sim_stats[data_iter,paste0("r_",s)]
         results_ko_Best[data_iter,paste0("r_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("r_",s)] > r_e[,s][1] & 
-                                                            sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
-                                                          "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
+                                                               "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("Kbias_",s)] <- (K_e[,s][2] - sim_stats[data_iter,paste0("K_",s)]) / sim_stats[data_iter,paste0("K_",s)]
         results_ko_Best[data_iter,paste0("K_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("K_",s)] > K_e[,s][1] & 
-                                                            sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
-                                                          "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
+                                                               "TRUE","FALSE")
+        results_ko_Best[data_iter,paste0("pebias_",s)] <- (pe_e[,s][2] - sim_stats[data_iter,paste0("pe_med_",s)]) / sim_stats[data_iter,paste0("pe_med_",s)]
+        results_ko_Best[data_iter,paste0("pe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_med_",s)] > pe_e[,s][1] & 
+                                                                  sim_stats[data_iter,paste0("pe_med_",s)] < pe_e[,s][3],
+                                                                "TRUE","FALSE")
+        
+        results_ko_Best[data_iter,paste0("abspebias_",s)] <- (pe_abs_e[,s][2] - sim_stats[data_iter,paste0("pe_absmed_",s)]) / sim_stats[data_iter,paste0("pe_absmed_",s)]
+        results_ko_Best[data_iter,paste0("abspe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_absmed_",s)] > pe_abs_e[,s][1] & 
+                                                                     sim_stats[data_iter,paste0("pe_absmed_",s)] < pe_abs_e[,s][3],
+                                                                   "TRUE","FALSE")
+        
         results_ko_Best[data_iter,paste0("SSbias_",s)] <- (Stock_status_e[,s][2] - sim_stats[data_iter,paste0("Depl_",s)]) / sim_stats[data_iter,paste0("Depl_",s)]
         results_ko_Best[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
-                                                             sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
-                                                           "TRUE","FALSE")
+                                                                  sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
+                                                                "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
         results_ko_Best[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                            sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
-                                                          "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+                                                               "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko_Best[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
-                                                               sim_stats[data_iter,paste0("MSY_t_",s)] < MSY_e[,s][3],
-                                                             "TRUE","FALSE")
+                                                                    sim_stats[data_iter,paste0("MSY_t_",s)] < MSY_e[,s][3],
+                                                                  "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("Bmsybias_",s)] <- (Bmsy_e[,s][2] - sim_stats[data_iter,paste0("Bmsy_t_",s)]) / sim_stats[data_iter,paste0("Bmsy_t_",s)]
         results_ko_Best[data_iter,paste0("Bmsy_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Bmsy_t_",s)] > Bmsy_e[,s][1] & 
-                                                               sim_stats[data_iter,paste0("Bmsy_t_",s)] < Bmsy_e[,s][3],
-                                                             "TRUE","FALSE")
+                                                                    sim_stats[data_iter,paste0("Bmsy_t_",s)] < Bmsy_e[,s][3],
+                                                                  "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("Fmsybias_",s)] <- (Fmsy_e[,s][2] - sim_stats[data_iter,paste0("Fmsy_t_",s)]) / sim_stats[data_iter,paste0("Fmsy_t_",s)]
         results_ko_Best[data_iter,paste0("Fmsy_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Fmsy_t_",s)] > Fmsy_e[,s][1] & 
-                                                               sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
-                                                             "TRUE","FALSE")
-        
+                                                                    sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
+                                                                  "TRUE","FALSE")
       }
-      write.csv(results_ko_Best,'Production_models_STAN/Output/sim_res/results_ko_Best.csv')
+      write.csv(results_ko_Best,paste0('Production_models_STAN/Output/sim_res/results_ko_Best_',sim_lab,'.csv'))
  #     write.csv(results_ko_Best,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best.csv')
       
       
@@ -652,7 +688,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       samples <- rstan::extract(fit_Best_Iest, permuted = TRUE)
       MSY_e = Bmsy_e = Fmsy_e = Stock_status_e <-data.frame(matrix(NA, nrow = Narea, ncol = 3))
-      r_e = K_e = Bterm = q_e = data.frame(matrix(NA, nrow = Narea, ncol = 3))
+      r_e = K_e = Bterm = q_e = pe_e = pe_abs_e = data.frame(matrix(NA, nrow = Narea, ncol = 3)) #***
       
       results_ko_Best_Iest[data_iter,"model"] <- "ko_estB_estI"
       results_ko_Best_Iest[data_iter,"iter"] <- data_iter
@@ -661,15 +697,18 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       results_ko_Best_Iest[data_iter,"runtime"] <- runtime
       results_ko_Best_Iest[data_iter,"iterations"] <- add_iter
-      results_ko_Best_Iest[data_iter,"param_not_conv"] <- sum(summary(fit_OEePE)$summary[,"Rhat"] > 1.1, na.rm=T)
-      results_ko_Best_Iest[data_iter,"div_trans"] <- get_num_divergent(fit_OEePE)
-      results_ko_Best_Iest[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_OEePE)
+      results_ko_Best_Iest[data_iter,"param_not_conv"] <- sum(summary(fit_Best_Iest)$summary[,"Rhat"] > 1.1, na.rm=T)
+      results_ko_Best_Iest[data_iter,"div_trans"] <- get_num_divergent(fit_Best_Iest)
+      results_ko_Best_Iest[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_Best_Iest)
       
       for (s in 1:Narea){ #s<-1
         r_e[,s] <- quantile(samples$r,probs=,c(0.05,0.5,0.95))
         K_e[,s] <- quantile(samples$K[,s],probs=,c(0.05,0.5,0.95))
         Bterm[,s] <- quantile(samples$B[,s,Nyear],probs=,c(0.05,0.5,0.95))
         q_e[,s] <- 1/quantile(samples$iqs[,s], probs = ,c(0.05,0.5,0.95))
+        
+        pe_e[,s] <- quantile(samples$PE[,s,],probs=,c(0.05,0.5,0.95)) #***
+        pe_abs_e[,s] <- quantile(abs(samples$PE[,s,]),probs=,c(0.05,0.5,0.95)) #***
         
         MSY_e[,s] <- quantile(samples$MSY[,s],probs=,c(0.05,0.5,0.95))
         Bmsy_e[,s] <- quantile(samples$Bmsy[,s],probs=,c(0.05,0.5,0.95))
@@ -682,6 +721,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best_Iest[data_iter,paste0("Bterm_e_",s)] <- Bterm[,s][2]
         results_ko_Best_Iest[data_iter,paste0("q_e_",s)] <- q_e[,s][2]
         
+        results_ko_Best_Iest[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        results_ko_Best_Iest[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        
         results_ko_Best_Iest[data_iter,paste0("rbias_",s)] <- (r_e[,s][2] - sim_stats[data_iter,paste0("r_",s)]) / sim_stats[data_iter,paste0("r_",s)]
         results_ko_Best_Iest[data_iter,paste0("r_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("r_",s)] > r_e[,s][1] & 
                                                                  sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
@@ -690,6 +732,16 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best_Iest[data_iter,paste0("K_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("K_",s)] > K_e[,s][1] & 
                                                                  sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
                                                                "TRUE","FALSE")
+        results_ko_Best_Iest[data_iter,paste0("pebias_",s)] <- (pe_e[,s][2] - sim_stats[data_iter,paste0("pe_med_",s)]) / sim_stats[data_iter,paste0("pe_med_",s)]
+        results_ko_Best_Iest[data_iter,paste0("pe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_med_",s)] > pe_e[,s][1] & 
+                                                                  sim_stats[data_iter,paste0("pe_med_",s)] < pe_e[,s][3],
+                                                                "TRUE","FALSE")
+        
+        results_ko_Best_Iest[data_iter,paste0("abspebias_",s)] <- (pe_abs_e[,s][2] - sim_stats[data_iter,paste0("pe_absmed_",s)]) / sim_stats[data_iter,paste0("pe_absmed_",s)]
+        results_ko_Best_Iest[data_iter,paste0("abspe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_absmed_",s)] > pe_abs_e[,s][1] & 
+                                                                     sim_stats[data_iter,paste0("pe_absmed_",s)] < pe_abs_e[,s][3],
+                                                                   "TRUE","FALSE")
+        
         results_ko_Best_Iest[data_iter,paste0("SSbias_",s)] <- (Stock_status_e[,s][2] - sim_stats[data_iter,paste0("Depl_",s)]) / sim_stats[data_iter,paste0("Depl_",s)]
         results_ko_Best_Iest[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                   sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
@@ -710,10 +762,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best_Iest[data_iter,paste0("Fmsy_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Fmsy_t_",s)] > Fmsy_e[,s][1] & 
                                                                     sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
                                                                   "TRUE","FALSE")
-        
       }
-      write.csv(results_ko_Best_Iest,'Production_models_STAN/Output/sim_res/results_ko_Best_Iest.csv')
-#      write.csv(results_ko_Best_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest.csv')
+      write.csv(results_ko_Best_Iest,paste0('Production_models_STAN/Output/sim_res/results_ko_Best_Iest_',sim_lab,'.csv'))
+      #write.csv(results_ko_Best_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest.csv')
       
       
       
@@ -769,7 +820,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       samples <- rstan::extract(fit_Iest, permuted = TRUE)
       MSY_e = Bmsy_e = Fmsy_e = Stock_status_e <-data.frame(matrix(NA, nrow = Narea, ncol = 3))
-      r_e = K_e = Bterm = q_e = data.frame(matrix(NA, nrow = Narea, ncol = 3))
+      r_e = K_e = Bterm = q_e = pe_e = pe_abs_e = data.frame(matrix(NA, nrow = Narea, ncol = 3)) #***
       
       results_ko_Iest[data_iter,"model"] <- "ko_estI"
       results_ko_Iest[data_iter,"iter"] <- data_iter
@@ -778,15 +829,18 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       results_ko_Iest[data_iter,"runtime"] <- runtime
       results_ko_Iest[data_iter,"iterations"] <- add_iter
-      results_ko_Iest[data_iter,"param_not_conv"] <- sum(summary(fit_OEePE)$summary[,"Rhat"] > 1.1, na.rm=T)
-      results_ko_Iest[data_iter,"div_trans"] <- get_num_divergent(fit_OEePE)
-      results_ko_Iest[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_OEePE)
+      results_ko_Iest[data_iter,"param_not_conv"] <- sum(summary(fit_Iest)$summary[,"Rhat"] > 1.1, na.rm=T)
+      results_ko_Iest[data_iter,"div_trans"] <- get_num_divergent(fit_Iest)
+      results_ko_Iest[data_iter,"over_max_treedepth"] <- get_num_max_treedepth(fit_Iest)
       
       for (s in 1:Narea){ #s<-1
         r_e[,s] <- quantile(samples$r,probs=,c(0.05,0.5,0.95))
         K_e[,s] <- quantile(samples$K[,s],probs=,c(0.05,0.5,0.95))
         Bterm[,s] <- quantile(samples$B[,s,Nyear],probs=,c(0.05,0.5,0.95))
         q_e[,s] <- 1/quantile(samples$iqs[,s], probs = ,c(0.05,0.5,0.95))
+        
+        pe_e[,s] <- quantile(samples$PE[,s,],probs=,c(0.05,0.5,0.95)) #***
+        pe_abs_e[,s] <- quantile(abs(samples$PE[,s,]),probs=,c(0.05,0.5,0.95)) #***
         
         MSY_e[,s] <- quantile(samples$MSY[,s],probs=,c(0.05,0.5,0.95))
         Bmsy_e[,s] <- quantile(samples$Bmsy[,s],probs=,c(0.05,0.5,0.95))
@@ -799,37 +853,50 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Iest[data_iter,paste0("Bterm_e_",s)] <- Bterm[,s][2]
         results_ko_Iest[data_iter,paste0("q_e_",s)] <- q_e[,s][2]
         
+        results_ko_Iest[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        results_ko_Iest[data_iter,paste0("pe_e",s)] <- pe_e[,s][2] #***
+        
         results_ko_Iest[data_iter,paste0("rbias_",s)] <- (r_e[,s][2] - sim_stats[data_iter,paste0("r_",s)]) / sim_stats[data_iter,paste0("r_",s)]
         results_ko_Iest[data_iter,paste0("r_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("r_",s)] > r_e[,s][1] & 
-                                                                      sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
-                                                                    "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("r_",s)] < r_e[,s][3],
+                                                               "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("Kbias_",s)] <- (K_e[,s][2] - sim_stats[data_iter,paste0("K_",s)]) / sim_stats[data_iter,paste0("K_",s)]
         results_ko_Iest[data_iter,paste0("K_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("K_",s)] > K_e[,s][1] & 
-                                                                      sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
-                                                                    "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("K_",s)] < K_e[,s][3],
+                                                               "TRUE","FALSE")
+        results_ko_Iest[data_iter,paste0("pebias_",s)] <- (pe_e[,s][2] - sim_stats[data_iter,paste0("pe_med_",s)]) / sim_stats[data_iter,paste0("pe_med_",s)]
+        results_ko_Iest[data_iter,paste0("pe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_med_",s)] > pe_e[,s][1] & 
+                                                                  sim_stats[data_iter,paste0("pe_med_",s)] < pe_e[,s][3],
+                                                                "TRUE","FALSE")
+        
+        results_ko_Iest[data_iter,paste0("abspebias_",s)] <- (pe_abs_e[,s][2] - sim_stats[data_iter,paste0("pe_absmed_",s)]) / sim_stats[data_iter,paste0("pe_absmed_",s)]
+        results_ko_Iest[data_iter,paste0("abspe_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("pe_absmed_",s)] > pe_abs_e[,s][1] & 
+                                                                     sim_stats[data_iter,paste0("pe_absmed_",s)] < pe_abs_e[,s][3],
+                                                                   "TRUE","FALSE")
+        
         results_ko_Iest[data_iter,paste0("SSbias_",s)] <- (Stock_status_e[,s][2] - sim_stats[data_iter,paste0("Depl_",s)]) / sim_stats[data_iter,paste0("Depl_",s)]
         results_ko_Iest[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
-                                                                       sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
-                                                                     "TRUE","FALSE")
+                                                                  sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
+                                                                "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
         results_ko_Iest[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                      sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
-                                                                    "TRUE","FALSE")
+                                                                 sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+                                                               "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko_Iest[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
-                                                                         sim_stats[data_iter,paste0("MSY_t_",s)] < MSY_e[,s][3],
-                                                                       "TRUE","FALSE")
+                                                                    sim_stats[data_iter,paste0("MSY_t_",s)] < MSY_e[,s][3],
+                                                                  "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("Bmsybias_",s)] <- (Bmsy_e[,s][2] - sim_stats[data_iter,paste0("Bmsy_t_",s)]) / sim_stats[data_iter,paste0("Bmsy_t_",s)]
         results_ko_Iest[data_iter,paste0("Bmsy_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Bmsy_t_",s)] > Bmsy_e[,s][1] & 
-                                                                         sim_stats[data_iter,paste0("Bmsy_t_",s)] < Bmsy_e[,s][3],
-                                                                       "TRUE","FALSE")
+                                                                    sim_stats[data_iter,paste0("Bmsy_t_",s)] < Bmsy_e[,s][3],
+                                                                  "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("Fmsybias_",s)] <- (Fmsy_e[,s][2] - sim_stats[data_iter,paste0("Fmsy_t_",s)]) / sim_stats[data_iter,paste0("Fmsy_t_",s)]
         results_ko_Iest[data_iter,paste0("Fmsy_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Fmsy_t_",s)] > Fmsy_e[,s][1] & 
-                                                                         sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
-                                                                       "TRUE","FALSE")
-        
+                                                                    sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
+                                                                  "TRUE","FALSE")
       }
-      write.csv(results_ko_Iest,'Production_models_STAN/Output/sim_res/results_ko_Iest.csv')
+      
+      write.csv(results_ko_Iest,paste0('Production_models_STAN/Output/sim_res/results_ko_Iest_',sim_lab,'.csv'))
 #      write.csv(results_ko_Iest,'H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Iest.csv')
       
       # END set for next run:

@@ -32,8 +32,8 @@ parameters {
   // real<lower=0> MSY[S];
   real<lower=0, upper=2> r;
   real<lower=0, upper=1> PP_init[S];
-  real K[S];
-  real<lower=0.1> iqs[S];
+  real<lower=0> K[S];
+  real<lower=1> iqs[S];
   real<lower=0> isigma2;
   // real<lower=0> sigma_proc;
   real PE[S, N-1];  
@@ -71,7 +71,7 @@ model {
 		// MSY[i] ~ lognormal(10, 0.5);
 		r ~ lognormal(log(0.1), 0.2);
 		iqs[i] ~ uniform(1000,100000);
-		PP_init[i] ~ normal(0.9,0.1);
+		PP_init[i] ~ normal(0.99,0.1);
   }
 
 // Likelihoods process error
