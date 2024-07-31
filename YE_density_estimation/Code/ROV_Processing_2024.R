@@ -138,12 +138,12 @@ unique(new_transect_qc$Dive)
 unique(new_transect_qc$Depth)
 
 #Output cleaned data table (make sure to use updated transect_qc table)
-write.csv(new_transect_qc, file = paste0("Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
+write.csv(new_transect_qc, file = paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
 #Use ggplot to look at data to identify good/bad areas:
-new_transect_qc <- read_csv(paste0("Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
+new_transect_qc <- read_csv(paste0("YE_density_estimation/Output/",Subd,"_new_transect_qc_",YEAR,".csv"))
 
-jpeg(filename = paste0("Figures/",Subd,"_rov_transects_",YEAR,".jpg"),
+jpeg(filename = paste0("YE_density_estimation/Figures/",Subd,"_rov_transects_",YEAR,".jpg"),
      width = 12, height = 15, units = "in", res = 50)
 
 ggplot(new_transect_qc, aes(ROV_X, ROV_Y)) + geom_point(aes(colour = factor(Family))) +
@@ -178,8 +178,8 @@ view(new_transect_qc)
 glimpse(new_transect_qc)
 
 #Save output as a pdf so it can be reviewed easily:
-paste0("Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg")
-pdf(paste0("Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg"))
+paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg")
+pdf(paste0("YE_density_estimation/Figures/",YEAR,"_",Subd,"_smoothed_transects.jpg"))
 
 #Set up graph window as a 2X2 frame
 par(mfrow = c(2,2))
@@ -243,9 +243,9 @@ for (i in 1:length (unique (new_transect_qc$DIVE_NO))) {  #i<-2
 dev.off()
 
 if (Cull == TRUE) {
-  write.csv(outPut, file = paste0("Output/",Subd,"_",YEAR,"_smooth_transect_output_culled.csv"))
+  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_culled.csv"))
 } else {
-  write.csv(outPut, file = paste0("Output/",Subd,"_",YEAR,"_smooth_transect_output_raw.csv")) 
+  write.csv(outPut, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_transect_output_raw.csv")) 
 }
 
 ##Check transect lengths...
@@ -271,7 +271,7 @@ transect_pred <- cbind(new_transect_qc, predX = outPut$X, predY = outPut$Y, Dist
 #Use this output for ArcGIS to determine length
 #******This file will be used in ArcGIS*****#
 
-write.csv(transect_pred, file = paste0("Output/",YEAR,"_",Subd,"_smooth_predict_GISreview.csv")) #This file will be used in ArcGIS
+write.csv(transect_pred, file = paste0("YE_density_estimation/Output/",YEAR,"_",Subd,"_smooth_predict_GISreview.csv")) #This file will be used in ArcGIS
 
 #-------------------------------------------------------------------------------
 # Lets fix transect length here
@@ -384,7 +384,7 @@ for (d in D){
 
 #Tran.Length2<-Tran.Length
 
-write.csv(Tran.Length, file = paste0("Output/",Subd,"_",YEAR,"_smooth_predict_lengths_Rfix.csv")) 
+write.csv(Tran.Length, file = paste0("YE_density_estimation/Output/",Subd,"_",YEAR,"_smooth_predict_lengths_Rfix.csv")) 
 
 ### If using R measured transect lengths, turn Tran.Length into transects to proceed...
 transects<-Tran.Length
@@ -425,7 +425,7 @@ r_transects<-Tran.Length
 transects <- read.csv("YE_density_estimation/Data/EYKT_2023/EYKT_2023_Smooth_Predict_Lengths_gis.csv")
 
 #R CALC TRANSECT LENGTHS
-#transects<-read.csv("Output/2022_CSEO_smooth_predict_lengths_Rfix.csv") 
+# transects<-read.csv("YE_density_estimation/Output/2022_CSEO_smooth_predict_lengths_Rfix.csv") 
 str(transects)
 nrow(r_transects); nrow(transects)
 
