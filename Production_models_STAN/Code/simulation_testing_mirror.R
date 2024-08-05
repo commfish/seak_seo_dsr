@@ -67,7 +67,7 @@ nsims <- 50
 #h_hist <- "opt6" #opt2, opt3, opt4, opt5, opt6, opt_mix
 #harv_opts <-c("opt1","opt2","opt3","opt4","opt5","opt6") = c("IncMax_Taper","IncMax_Taper_plat","IncMod_Drop_taper",
 #                                                             "IncMax_shutdown","IncMax_modTaper","IncMod_notaper")
-harv_opts <- c("Harv1") #,"Harv2","Harv3","Harv4","Harv5", "Harv_mix")
+harv_opts <- c("Harv2") #,"Harv2","Harv3","Harv4","Harv5", "Harv_mix")
 
 fpres <- c(3,8)
 
@@ -81,7 +81,7 @@ total_sims <- nsims*length(harv_opts)*length(fpres)*
 total_sims
 
 #name for saving this set up
-sim_lab <- "H1"
+sim_lab <- "H2"
 
 for (opts in harv_opts) { # opts <- harv_opts[1]
   h_hist <- opts
