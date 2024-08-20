@@ -31,10 +31,11 @@ YE.Harv.update2$Year<-YE.Harv.update2[,1]
 YE.Harv.update<-rbind(YE.Harv.update1,YE.Harv.update2)
 
 unique(YE.Harv.update$Species.Code)
+unique(YE.Harv.update$Gear.Name)
 colnames(YE.Harv.update)
 
 YE.Harv.update <- YE.Harv.update %>% 
-  mutate(Whole.weight.lbs = Whole.Weight..sum.,
+  rename(Whole.weight.lbs = Whole.Weight..sum.,
          Mgt.Area = Mgt.Area.District) 
 
 #*****************************************************************************
@@ -42,21 +43,21 @@ YE.Harv.update <- YE.Harv.update %>%
 # compare old and new data if you want.  C
 {str(YE.Harv.update)
 YE.Harv.update %>%
-  group_by(Year,Mgt.Area,CFEC.Fishery.Code) %>% 
+  group_by(Year,Mgt.Area,CFEC.Fishery.Code,Gear.Name) %>% 
   summarize(total.removals.lbs = sum(Whole.weight.lbs)) %>%
   mutate(total.removals.mt = 0.00045359*total.removals.lbs,
-         source = "update",
-         Fishery.Code = CFEC.Fishery.Code,
-         gear=Gear.Name )%>%
+         source = "update") %>% 
+  rename(Fishery.Code = CFEC.Fishery.Code,
+         gear=Gear.Name)%>%
   select(Year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt) -> Comm.harv.up
 str(Comm.harv.up)
 #
 YE.Harv %>%
-  group_by(year,mgmt_area,fishery) %>% 
+  group_by(year,mgmt_area,fishery,gear) %>% 
   summarize(total.removals.lbs = sum(whole_pounds)) %>%
   mutate(total.removals.mt = 0.00045359*total.removals.lbs,
-         Mgt.Area = mgmt_area, 
-         source = "original",
+         source = "original") %>% 
+  rename(Mgt.Area = mgmt_area, 
          Fishery.Code = fishery) %>%
   select(Year=year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt)-> Comm.harv.orig
 str(Comm.harv.orig)
@@ -64,7 +65,7 @@ str(Comm.harv.orig)
 harvests<-rbind(Comm.harv.up,Comm.harv.orig)
 
 ggplot(harvests,aes(Year,total.removals.mt,col = source)) +
-  geom_line() + 
+  geom_point() + 
   facet_wrap(~Mgt.Area)
 
 #old data and update data matches up for commercial harvests... yeah! 
@@ -85,12 +86,11 @@ YE.Harv %>% mutate(Year = year, Mgt.Area = mgmt_area, ye.lbs = whole_pounds,
                    ye.mt = ye.lbs*0.00045359) %>%
   dplyr::select(Year,Mgt.Area,fishery.code,gear,ye.lbs,ye.mt,ha.bycatch) ->YE.Harv.old
 
-YE.Harv.update %>% mutate(Mgt.Area = Mgt.Area.District,
-                          gear = Gear.Name,
+YE.Harv.update %>% rename(gear = Gear.Name,
                           ye.lbs = Whole.weight.lbs,
-                          ye.mt = ye.lbs*0.00045359,
-                          fishery.code = CFEC.Fishery.Code,
-                          ha.bycatch = ifelse(substr(fishery.code,1,1) %in% c("B"),"hal.by","other")) %>% 
+                          fishery.code = CFEC.Fishery.Code) %>%
+  mutate(ye.mt = ye.lbs*0.00045359,
+  ha.bycatch = ifelse(substr(fishery.code,1,1) %in% c("B"),"hal.by","other")) %>% 
   dplyr::select(Year,Mgt.Area,fishery.code,gear,ye.lbs,ye.mt,ha.bycatch) ->YE.Harv.latest
 
 YE.comm.rem<-rbind(YE.Harv.old %>% filter(Year < min(YE.Harv.latest$Year)),
