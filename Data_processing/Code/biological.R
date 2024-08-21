@@ -14,15 +14,21 @@ library(ggpubr)
 library(cowplot)
 source("r_helper/Port_bio_function.R")
 
-YEAR<-2022
+YEAR<-2024
 
 #setwd("D:/Groundfish Biometrics/Yelloweye/SAFE reports")
 
-{ Port1<-read.csv("Data/SEO_YE_port_sampling_bio_data_1980-1989.csv")
-  Port2<-read.csv("Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
-  Port3<-read.csv("Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
-  Port4<-read.csv("Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
-  Port5<-read.csv("Data/SEO_YE_port_sampling_bio_data_2020-2022.csv")
+{ Port1<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1980-1989.csv")
+  Port2<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
+  Port3<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
+  Port4<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
+  Port5<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-2024.csv")
+  
+  #This report has way more fields now - the original report has project code twice - 
+  #edited the oceanAK report to match Ports 1-4 saved in my personal folder in OceanAK.
+  
+  names(Port5)
+  names(Port4)
   
   Port<-rbind(Port1,Port2,Port3, Port4, Port5); nrow(Port)
   #str(Port)
@@ -33,9 +39,9 @@ YEAR<-2022
   unique(Port$Groundfish.Stat.Area.Group)
   unique(Port$Groundfish.Management.Area.Code)
   
-  Port$Groundfish.Management.Area.Code[Port$Groundfish.Management.Area.Code == "EYAK"]<-"EYKT"
+  # Port$Groundfish.Management.Area.Code[Port$Groundfish.Management.Area.Code == "EYAK"]<-"EYKT"
   
-  statareas<-read.csv("Data/g_stat_area.csv")
+  statareas<-read.csv("Data_processing/Data/g_stat_area.csv")
   str(statareas)
   unique(statareas$G_MANAGEMENT_AREA_CODE)
   
