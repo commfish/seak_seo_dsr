@@ -141,7 +141,7 @@ ggplot(agecomps %>%
          summarize(meanage = mean(Age)),
        aes(x=meanage)) + geom_histogram()
 
-mean_age
+# mean_age
 
 ## get proportion of each age by year...
 ## will rerun by length bin... 
