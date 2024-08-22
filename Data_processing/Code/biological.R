@@ -345,8 +345,8 @@ ggplot(age_smpl_size,aes(Year,samples)) +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = c(0.2,0.7)) +
-  scale_x_continuous(breaks=seq(1984,2022,2)) ->raw_ss_plot
+        legend.position.inside = c(0.2,0.7)) +
+  scale_x_continuous(breaks=seq(1984,2024,2)) ->raw_ss_plot;raw_ss_plot
 
 ggplot(agecomps %>% group_by(Year) %>%
          summarize(samples = n(),
@@ -356,7 +356,7 @@ ggplot(agecomps %>% group_by(Year) %>%
   ylab("Number of landings sampled") +
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
-  scale_x_continuous(breaks=seq(1984,2022,2))-> lnds_ss_plot
+  scale_x_continuous(breaks=seq(1984,2024,2))-> lnds_ss_plot
 
 ggarrange(raw_ss_plot, lnds_ss_plot, nrow=2)
 
@@ -2233,7 +2233,7 @@ lendat %>%
   facet_wrap(~ GFMU + Sex) + 
   facet_grid(GFMU ~ Sex)+	
   scale_x_continuous(limits=c(300,900),breaks = c(seq(from=300, to=900, by=50))) +	#, labels = axisx$labels) +
-  scale_y_continuous(limits=c(1984,2022),breaks = c(seq(from=1984, to=2024, by=2)))#scales::pretty_breaks(n=15)) 
+  scale_y_continuous(limits=c(1984,2024),breaks = c(seq(from=1984, to=2024, by=2)))#scales::pretty_breaks(n=15)) 
 
 ggsave("figures/EYKT_ridgejitter_lengthcomp_byyear.png", dpi=900, height=8, width=5, units="in")
 
@@ -2264,7 +2264,7 @@ lendat %>%
                  label = n), colour="black", fill="white", nudge_y=0.5, size=3)+
   scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
   #  scale_y_discrete(breaks = scales::pretty_breaks(n=15))  
-  scale_y_continuous(breaks = c(seq(from=1984, to=2022, by=2)) )
+  scale_y_continuous(breaks = c(seq(from=1984, to=2024, by=2)) )
 
 ggsave("figures/SSEO_ridgelabeled_lengthcomp_byyear.png", dpi=900, height=8, width=5, units="in")
 
