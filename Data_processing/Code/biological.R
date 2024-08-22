@@ -251,7 +251,7 @@ plus_group<-100
 ## Base plots of age and length compositions for management areas: 
 
 unique(Port$GFMU)
-gmus <- unique(Port$GFMU)[-c(5, 6)]
+gmus <- unique(Port$GFMU)[-5]
 
 for (i in gmus){  #i<-gmus[1]
   ## AGE BUBBLE PLOTS
