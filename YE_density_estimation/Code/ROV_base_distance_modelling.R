@@ -17,10 +17,10 @@ library(boot)
 library(Distance)}
 
 
-YEAR<-2022
-Subd<-"NSEO"
+YEAR<-2023
+Subd<-"EYKT"
 #surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
-surveyed_area<-442
+surveyed_area<-739
 
 ##Set working directory
 #setwd("D:/Groundfish Biometrics/Yelloweye/YE Code")
@@ -29,6 +29,9 @@ surveyed_area<-442
 ##Load cleaned data from ROV created with "DSR_ROV_SEAK_ROVprocessing.R"
 DAT<-distance
 DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
+
+DAT <- DAT[-c(1, 2, 3), ]
+
 
 str(DAT)
 summary(DAT$distance)
@@ -55,11 +58,19 @@ summary(lm(DAT$Fish.L.mm ~ DAT$Depth))
 plot(DAT$Fish.L.mm ~ DAT$Depth)
 abline(lm(DAT$Fish.L.mm ~ DAT$Depth))
 
+# So when you're running models you want to avoid using two variables in the same 
+# model if they are highly correlated. I was thinking about using fish length as 
+# a covariate but you can't actually do that because you don't have a fish length 
+# for every fish. When you get down to fitting the distance models you'll see that 
+# the only covariates I used were life stage (adult/subadult) and depth. 
+
 summary(lm(DAT$Fish.L.mm ~ factor(DAT$Stage)))
 boxplot(DAT$Fish.L.mm ~ DAT$Stage)
+#R^2 is .1776 - fish length has a moderate effect by the stage
 
 summary(lm(DAT$Depth ~ DAT$Stage, na.rm=T))
 boxplot(DAT$Depth ~ DAT$Stage)
+#2023 stage doesn't seems like its a strong predictor of depth
 
 ## box plot relationships between D and covariates... 
 ##check out maturity and detection...
@@ -91,7 +102,7 @@ summary(lm(DAT$distance~DAT$Fish.L.mm))
 
 ##slight tendency for bigger fish to be further away
 ##not every fish measured so would be complicated to use length as a covariate
-##Lenth and stage are strongly related... could model with stage? 
+##Length and stage are strongly related... could model with stage? 
 
 ######################################################################
 ## Check and set Conversion Units
