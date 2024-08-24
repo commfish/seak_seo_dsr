@@ -27,10 +27,10 @@ surveyed_area<-739
 
 ######################################################################
 ##Load cleaned data from ROV created with "DSR_ROV_SEAK_ROVprocessing.R"
-DAT<-distance
+# DAT<-distance
 DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 
-DAT <- DAT[-c(1, 2, 3), ]
+DAT <- DAT[-c(1, 2, 3, 142), ]
 
 
 str(DAT)
@@ -52,8 +52,8 @@ hist(DAT$Fish.L.mm, xlab = "Fish.L (mm)")
 hist(DAT$Depth, xlab = "Depth (m)")
 
 ## examine COLINEARITY in covariates... Pearson R2 over 0.15 is no bueno... 
-cor(x=DAT$Fish.L.mm, y=DAT$Depth, use="complete.obs", method=c("pearson"))
-cor(x=DAT$Depth, y=DAT$Fish.L.mm, use="complete.obs", method=c("pearson"))^2 #
+cor(x=DAT$Fish.L.mm, y=DAT$Depth, use="complete.obs", method=c("pearson")) #0.126188
+cor(x=DAT$Depth, y=DAT$Fish.L.mm, use="complete.obs", method=c("pearson"))^2 #0.01592341
 summary(lm(DAT$Fish.L.mm ~ DAT$Depth))
 plot(DAT$Fish.L.mm ~ DAT$Depth)
 abline(lm(DAT$Fish.L.mm ~ DAT$Depth))
@@ -66,17 +66,21 @@ abline(lm(DAT$Fish.L.mm ~ DAT$Depth))
 
 summary(lm(DAT$Fish.L.mm ~ factor(DAT$Stage)))
 boxplot(DAT$Fish.L.mm ~ DAT$Stage)
-#R^2 is .1776 - fish length has a moderate effect by the stage
+#2023: R^2 is .1776 - fish length has a moderate effect by stage
 
 summary(lm(DAT$Depth ~ DAT$Stage, na.rm=T))
 boxplot(DAT$Depth ~ DAT$Stage)
-#2023 stage doesn't seems like its a strong predictor of depth
+#2023: stage doesn't seems like its a strong predictor of depth
 
 ## box plot relationships between D and covariates... 
 ##check out maturity and detection...
 ggplot(droplevels(DAT), aes(x = Stage, y = distance)) +
   geom_boxplot() + labs(x = "YE Maturity",
                         y = "distance (m)")
+
+summary(lm(DAT$distance~DAT$Stage))
+#2023: maturity is a significant factor but does not explain the variability in distance
+
 ##check out depth and distance
 ggplot(DAT, aes(x = Depth, y = distance)) +
   geom_point() + labs(x = "survey depth",
@@ -84,11 +88,13 @@ ggplot(DAT, aes(x = Depth, y = distance)) +
 plot(DAT$distance~DAT$Depth)
 abline(lm(DAT$distance~DAT$Depth)) #?lm
 summary(lm(DAT$distance~DAT$Depth))
+#2023: the effect of depth on distance is not significant
 
 Shallow<-DAT[DAT$Depth <150,]
 plot(Shallow$distance~Shallow$Depth)
 abline(lm(Shallow$distance~Shallow$Depth)) #?lm
 summary(lm(Shallow$distance~Shallow$Depth))
+#in 2023 the deepest transect was at 137m
 
 ##2020 SSEO looks like depth and stage are uncorrelated with distance
 
@@ -100,7 +106,7 @@ plot(DAT$distance~DAT$Fish.L.mm)
 abline(lm(DAT$distance~DAT$Fish.L.mm))
 summary(lm(DAT$distance~DAT$Fish.L.mm))
 
-##slight tendency for bigger fish to be further away
+##in previous years, slight tendency for bigger fish to be further away
 ##not every fish measured so would be complicated to use length as a covariate
 ##Length and stage are strongly related... could model with stage? 
 
