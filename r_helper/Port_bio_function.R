@@ -1,6 +1,6 @@
 ##Function for loading port sampling bio data
 
-port.bio<-function(YEAR=2022){
+port.bio<-function(YEAR=2024){
 
 Port1<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1980-1989.csv")
 Port2<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
