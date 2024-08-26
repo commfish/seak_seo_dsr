@@ -254,7 +254,7 @@ unique(Port$GFMU)
 gmus <- unique(Port$GFMU)[-c(5, 6)]
 
 for (i in gmus){  
-  i<-gmus[4]
+  i<-gmus[1]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
@@ -497,6 +497,12 @@ Bio_lw<-bind_rows(Bio_lw %>% filter(Sex %in% "Male") %>%
 Bio_lw_noOL<-Bio_lw[Bio_lw$Quantile > 0.0005 & Bio_lw$Quantile < 0.9995, ]
 nrow(Bio_lw_noOL)
 nrow(Bio_lw)
+
+# Identify the outliers
+outliers <- Bio_lw %>% filter(!(Quantile > 0.0005 & Quantile < 0.9995))
+
+# Write the outliers to a CSV file
+write.csv(outliers, "Output/Bio_lw_outliers.csv", row.names = FALSE)
 
 hist(Bio_lw$length, breaks = 50)
 max(Bio_lw$length, na.rm=T); 
