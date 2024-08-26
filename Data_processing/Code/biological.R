@@ -254,7 +254,7 @@ unique(Port$GFMU)
 gmus <- unique(Port$GFMU)[-c(5, 6)]
 
 for (i in gmus){  
-  i<-gmus[1]
+  i<-gmus[4]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
@@ -493,12 +493,13 @@ Bio_lw<-bind_rows(Bio_lw %>% filter(Sex %in% "Male") %>%
                          mutate(Condition = weight/(length^beta_f),
                                 Quantile = ntile(Condition,1000)/1000))
 
+#filtering out the outliers
 Bio_lw_noOL<-Bio_lw[Bio_lw$Quantile > 0.0005 & Bio_lw$Quantile < 0.9995, ]
 nrow(Bio_lw_noOL)
 nrow(Bio_lw)
 
 hist(Bio_lw$length, breaks = 50)
-max(Bio_lw$length, na.rm=T); max(Bio_lw$length, na.rm=T)
+max(Bio_lw$length, na.rm=T); 
 plot(Bio_lw$weight ~ Bio_lw$length)
 points(Bio_lw_noOL$weight ~ Bio_lw_noOL$length, col="blue")
 
@@ -532,6 +533,7 @@ bind_rows(
 ggplot() +
   geom_point(data = emp_waa, # %>% filter(!is.na(Source)), 
              aes(x = age, y = weight, col = Gear, shape = Sex))
+
 
 str(emp_waa)
 
