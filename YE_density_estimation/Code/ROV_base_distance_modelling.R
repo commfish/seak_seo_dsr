@@ -462,11 +462,14 @@ summary(YE.hr)
 ##truncated models
 
 TR<-summarize_ds_models(YE.hn.tr5, YE.hn.tr5.cos,YE.hn.tr5.herm, YE.hn.tr5.poly, 
-	#YE.hn.tr5.Depth,
-	YE.hn.tr5.Stage,	#YE.hn.tr5.Depth.Stage, 
+	YE.hn.tr5.Depth,
+	YE.hn.tr5.Stage,
+	YE.hn.tr5.Depth.Stage, 
 	YE.hr.tr5, YE.hr.tr5.cos, YE.hr.tr5.herm, YE.hr.tr5.poly, 
-	YE.hr.tr5.Depth, YE.hr.tr5.Stage, YE.hr.tr5.Depth.Stage, 
-	YE.unif.tr5.cos,YE.unif.tr5.herm,YE.unif.tr5.poly) 
+	YE.hr.tr5.Depth, YE.hr.tr5.Stage, YE.hr.tr5.Depth.Stage) 
+	#YE.unif.tr5.cos,
+	#YE.unif.tr5.herm,
+	#YE.unif.tr5.poly) 
 names(TR)[names(TR) == "Model"]<-"Full.Model.Code"
 TR$Model<-substr(gsub('[\\{}]','',TR$Full.Model.Code),7,50)
 names(TR)[names(TR) == "C-vM p-value"]<-"CvM_pvalue"
@@ -479,7 +482,7 @@ TR$Model<-as.factor(TR$Model)
 summary(YE.hr.tr5.Stage)
 view(TR)
 
-##uniform models with different adjustments did well
+##uniform models with different adjustments did well and needed to removed to summarize the models
 ## hn and hr models did not improve with adjustments (they revert to base hr and hn models)
 ##scrap redundant models from the list from list
 #NT.red<-data.frame()
