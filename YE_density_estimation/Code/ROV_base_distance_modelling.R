@@ -4,6 +4,7 @@
 ## This script provides code for basic exploration of the process ROV distance files
 ## and running a base set of models for consideration
 ## August 2021 - Phil Joy
+## LAST UPDATED 8/27/24 - LSC
 ###################################################################
 ################################################################################
 #EXPLORE THE DATA..
@@ -442,11 +443,18 @@ gof_ds(YE.unif.tr5.poly )
 #####################################################################
 ## non-truncated models:
 
-NT<-summarize_ds_models(YE.hn,YE.hn.cos,YE.hn.herm,YE.hn.poly,
-	YE.hn.Depth,YE.hn.Stage,	YE.hn.Depth.Stage,
-	YE.hr,YE.hr.cos,YE.hr.herm,YE.hr.poly,
-	YE.hr.Depth,YE.hr.Stage,	YE.hr.Depth.Stage,
-	YE.unif.cos,YE.unif.herm,YE.unif.poly) 
+NT<-summarize_ds_models(YE.hn,YE.hn.cos,
+                        YE.hn.herm,YE.hn.poly,
+                        YE.hn.Depth,
+                        YE.hn.Stage,
+                        YE.hn.Depth.Stage,
+                        YE.hr,YE.hr.cos,
+                        YE.hr.herm,YE.hr.poly,
+                        YE.hr.Depth,YE.hr.Stage,
+                        YE.hr.Depth.Stage,
+                        YE.unif.cos,
+                        YE.unif.herm,
+                        YE.unif.poly) 
 names(NT)[names(NT) == "Model"]<-"Full.Model.Code"
 NT$Model<-substr(gsub('[\\{}]','',NT$Full.Model.Code),7,50)
 names(NT)[names(NT) == "C-vM p-value"]<-"CvM_pvalue"
@@ -456,17 +464,26 @@ names(NT)[names(NT) == "$\\Delta$AIC"]<-"Delta.AIC"
 names(NT)[names(NT) == "Key function"]<-"Key.function"
 
 NT$Model<-as.factor(NT$Model)
-summary(YE.hr)
+# summary(YE.hr)
+summary(YE.hr.Stage) #AIC = 427
 
 ##above analysis showed much better fit and model stability with truncation
 ##truncated models
 
-TR<-summarize_ds_models(YE.hn.tr5, YE.hn.tr5.cos,YE.hn.tr5.herm, YE.hn.tr5.poly, 
-	YE.hn.tr5.Depth,
-	YE.hn.tr5.Stage,
-	YE.hn.tr5.Depth.Stage, 
-	YE.hr.tr5, YE.hr.tr5.cos, YE.hr.tr5.herm, YE.hr.tr5.poly, 
-	YE.hr.tr5.Depth, YE.hr.tr5.Stage, YE.hr.tr5.Depth.Stage) 
+TR<-summarize_ds_models(YE.hn.tr5,
+                        YE.hn.tr5.cos,
+                        YE.hn.tr5.herm,
+                        YE.hn.tr5.poly,
+                        YE.hn.tr5.Depth,
+                        YE.hn.tr5.Stage,
+                        YE.hn.tr5.Depth.Stage,
+                        YE.hr.tr5, 
+                        YE.hr.tr5.cos, 
+                        YE.hr.tr5.herm, 
+                        YE.hr.tr5.poly,
+                        YE.hr.tr5.Depth, 
+                        YE.hr.tr5.Stage,
+                        YE.hr.tr5.Depth.Stage) 
 	#YE.unif.tr5.cos,
 	#YE.unif.tr5.herm,
 	#YE.unif.tr5.poly) 
@@ -479,10 +496,30 @@ names(TR)[names(TR) == "$\\Delta$AIC"]<-"Delta.AIC"
 names(TR)[names(TR) == "Key function"]<-"Key.function"
 
 TR$Model<-as.factor(TR$Model)
-summary(YE.hr.tr5.Stage)
 view(TR)
+summary(YE.hn.tr5.Stage) #AIC = 358
 
-##uniform models with different adjustments did well and needed to removed to summarize the models
+#Unable to compare the uniform models for some reason - tried to separate them out below
+#but am still getting an error. Below is a summary of their AIC values:
+
+#YE.unif.tr5.cos = 362.867 = Delta AIC is 4
+#YE.unif.tr5.herm = 362.867  = Delta AIC is 4
+#YE.unif.tr5.poly 362.867  = Delta AIC is 4
+
+# UN <- summarize_ds_models(YE.unif.tr5.cos, YE.unif.tr5.herm, YE.unif.tr5.poly)
+# 
+# names(UN)[names(UN) == "Model"]<-"Full.Model.Code"
+# UN$Model<-substr(gsub('[\\{}]','',UN$Full.Model.Code),7,50)
+# names(UN)[names(UN) == "C-vM p-value"]<-"CvM_pvalue"
+# names(UN)[names(UN) == "$\\hat{P_a}$"]<-"P_a.hat"
+# names(UN)[names(UN) == "se($\\hat{P_a}$)"]<-"se.P_a.hat"
+# names(UN)[names(UN) == "$\\Delta$AIC"]<-"Delta.AIC"
+# names(UN)[names(UN) == "Key function"]<-"Key.function"
+# 
+# UN$Model<-as.factor(UN$Model)
+
+
+##notes from 2022: uniform models with different adjustments did well and needed to removed to summarize the models
 ## hn and hr models did not improve with adjustments (they revert to base hr and hn models)
 ##scrap redundant models from the list from list
 #NT.red<-data.frame()
@@ -501,7 +538,7 @@ for (i in 1:nrow(NT)) { #i<-1
 
 
 for (i in 1:nrow(TR)) { #i<-1
-  m<-NT[i,]
+  m<-TR[i,]
   if (i == 1){
     TR.red<-m
     t<-2
@@ -517,7 +554,10 @@ for (i in 1:nrow(TR)) { #i<-1
 ##use this so you can cut and paste and then remove quotes at beginning and end...
 paste(NT.red$Model,collapse=", ")
 
-NTMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage, YE.hr.Depth, YE.unif.herm)
+# NTMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage, YE.hr.Depth, YE.unif.herm)
+NTMods<-list(YE.hr.Stage, YE.hr, YE.hn.Stage, YE.unif.poly, YE.unif.cos, 
+             YE.hn.Depth.Stage, YE.hn.poly, YE.unif.herm, YE.hn.herm, YE.hn, 
+             YE.hn.Depth, YE.hr.Depth, YE.hr.Depth.Stage)
 
 	NT.red$Det.Prob<-sapply(NTMods, function(x) summary(x)$dht$individuals$average.p)
 	NT.red$Nhat<-sapply(NTMods, function(x) summary(x)$dht$individuals$N$Estimate)
@@ -532,9 +572,10 @@ NTMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, Y
 	NT.red$Dhat.lcl<-sapply(NTMods, function(x) summary(x)$dht$individuals$D$lcl)
 	NT.red$Dhat.ucl<-sapply(NTMods, function(x) summary(x)$dht$individuals$D$ucl)
 
-paste(TR.red$Model,collapse=", ")
+paste(TR.red$Model,collapse=", ") 
 
-TrMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage)
+# TrMods<-list(YE.hn.Stage, YE.unif.cos, YE.hn.Depth.Stage, YE.hn, YE.unif.poly, YE.hn.Depth, YE.hr.cos, YE.hr.Stage, YE.hr, YE.hr.Depth.Stage)
+TrMods<-list(YE.hn.tr5.Stage, YE.hn.tr5.Depth.Stage, YE.hn.tr5, YE.hn.tr5.Depth, YE.hr.tr5, YE.hr.tr5.Stage, YE.hr.tr5.Depth, YE.hr.tr5.Depth.Stage)
 
 	TR.red$Det.Prob<-sapply(TrMods, function(x) summary(x)$dht$individuals$average.p)
 	TR.red$Nhat<-sapply(TrMods, function(x) summary(x)$dht$individuals$N$Estimate)
@@ -562,12 +603,13 @@ Mods<-TrMods
 minAIC<-min(as.numeric(sapply(Mods,function(x)AIC(x)[2])))
 
 AIC(Mods[[1]])
+#2024: YE.hn.tr5.Stage had the lowesst AIC (AIC = 358)
 
 ## plot detection 
 par(mfrow = c(3,4),mar=c(4,4,4,1)+0.1,oma=c(5,5,5,1))
 
 for (i in 1:length(Mods)) {		#i<-1
-	plot(Mods[[i]],cex.axis=1.3, cex.main=50, ylab="",
+	plot(Mods[[i]],cex.axis=1.3, cex.main=1, ylab="",
 		xlab=paste("deltaAIC=",round(AIC(Mods[[i]])[2]-minAIC,2)))
 	mtext(paste(Mods[[i]]$call$key,Mods[[i]]$call$adjustment, sep=","),side=3,adj=-0.1,cex=1)
 	mtext(Mods[[i]]$call$formula,side=3,adj=1,cex=1)
