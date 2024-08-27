@@ -75,7 +75,7 @@ unique(master$Hmax)
 #-------------------------------------------------------------------------------
 # These are the original 1st draft simulations.
 # Not different from the extra sims I ran to examine the effect of dropping 
-# process error. Skip down to that section ... LINE 554
+# process error. Skip down to that section ... LINE 550
 #-------------------------------------------------------------------------------
 
 # Examine the results graphically: 
