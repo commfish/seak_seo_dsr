@@ -383,7 +383,7 @@ gof_ds(YE.unif.cos)
 
 YE.unif.herm <- ds(DAT, key = "unif", adjustment = "herm", transect="line",
                   convert_units = CU)
-summary(YE.unif.herm )
+summary(YE.unif.herm)
 summary(YE.unif.herm $ddf)
 
 plot(YE.unif.herm , nc = 10)
@@ -394,7 +394,7 @@ gof_ds(YE.unif.herm )
 
 YE.unif.poly <- ds(DAT, key = "unif", adjustment = "poly", transect="line",
                   convert_units = CU)
-summary(YE.unif.poly )
+summary(YE.unif.poly)
 summary(YE.unif.poly $ddf)
 
 plot(YE.unif.poly , nc = 10)
@@ -493,7 +493,7 @@ names(TR)[names(TR) == "Key function"]<-"Key.function"
 
 TR$Model<-as.factor(TR$Model)
 view(TR)
-summary(YE.hn.tr5.Stage) #AIC = 358
+summary(YE.hn.tr5.Stage) #AIC = 358.3245
 
 
 #Unable to compare the uniform models for some reason - tried to separate them out below
@@ -505,6 +505,9 @@ summary(YE.unif.tr5.poly)
 #YE.unif.tr5.cos = 362.867 
 #YE.unif.tr5.herm = 362.867  
 #YE.unif.tr5.poly 362.867 
+
+#delta AIC is larger than 4, so not going to proceed further with model comparison with the 
+#truncated uniform models - it is odd that summarize_ds_models does not work.
 
 # UN <- summarize_ds_models(YE.unif.tr5.cos, YE.unif.tr5.herm, YE.unif.tr5.poly)
 # 
@@ -599,7 +602,7 @@ write.csv(TR.red, file = paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",
 #################################################################################
 ## Compare models visually...
 ###################################################
-Mods<-TrMods
+Mods<-TrMods;  Mods
 minAIC<-min(as.numeric(sapply(Mods,function(x)AIC(x)[2])))
 
 AIC(Mods[[1]])
