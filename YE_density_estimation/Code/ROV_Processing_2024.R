@@ -9,7 +9,7 @@
 ## Laura Coleman
 #################################################################################################
 
-YEAR<-2024
+YEAR<-2023
 Subd<-"EYKT"
 #surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
 surveyed_area<-739
@@ -32,14 +32,9 @@ surveyed_area<-739
 #setwd("D:/Groundfish Biometrics/Yelloweye/NSEO_2018/")
 
 ##IMPORT NAVIGATION, QUALITY CONTROL, AND SPECIMEN DATA#########################
-# nav <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",YEAR,"_",Subd,"_NAV_Final.csv"))		#("SSEO_2020_Nav.csv")
-# qc <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/QC_",Subd,"_",YEAR,"_summary.csv"))
-# species <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/SPECIES_",Subd,"_",YEAR,"_summary.csv"))
-# 	#("SSEO_2020_Species.csv")
-
-nav<-read_csv("YE_density_estimation/Data/EYKT_2023/2023_EYKT_Nav_Data.csv")%>% na.omit()
-qc<-read_csv("YE_density_estimation/Data/EYKT_2023/QC_EYKT_2023_summary.csv")
-species<-read_csv("YE_density_estimation/Data/EYKT_2023/SPECIES_EYKT_2023_summary.csv")
+nav <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",YEAR,"_",Subd,"_NAV_Final.csv"))%>% na.omit()
+qc <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/QC_",Subd,"_",YEAR,"_summary.csv"))
+species <-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/SPECIES_",Subd,"_",YEAR,"_summary.csv"))
 
 head(nav)
 str(nav)
@@ -389,7 +384,7 @@ write.csv(Tran.Length, file = paste0("YE_density_estimation/Output/",Subd,"_",YE
 ### If using R measured transect lengths, turn Tran.Length into transects to proceed...
 transects<-Tran.Length
 
-#Combines your original dataset with the predicted output from smoothing function
+#Combines your original data set with the predicted output from smoothing function
 #need to do this without the culling code I added above to get rid of outliers.
 
 
@@ -537,7 +532,7 @@ unique(distance$Sample.Label)
 
 view(distance)
 
-# write.csv(distance, file = paste0("YE_density_estimation/Data/EYKT_2023/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
+#write.csv(distance, file = paste0("YE_density_estimation/Data/EYKT_2023/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 write.csv(distance, "YE_density_estimation/Data/EYKT_2023/EYKT_2023_distance_data_GIStran_for_analysis.csv")
 ################################################################################
 ##2024 EYKT DENSITY ANALYSIS####################################################
