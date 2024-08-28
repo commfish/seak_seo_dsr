@@ -20,12 +20,12 @@ surveyed_area<-739
 #DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_rtran_for_analysis.csv"))
 DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 head(DAT)
-DAT <- DAT[-c(1, 2, 3, 142), ]
+
 ### get model list created in "DSR_ROV_SEAK_base_distance_modelling.R"
 G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_all.csv"))
 G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_Trunc.csv"))
 
-## Pick the models with deltaAIC less than four.  These are the candidate models to average
+## Pick the models with deltaAIC less than four  These are the candidate models to average
 ## in the bootstrap
 dAIC_lt4<-G[G$Delta.AIC <= 4,]
 nrow(dAIC_lt4)
@@ -49,9 +49,9 @@ Model.Boot<-data.frame(NA)		#results data frame
 tic("boot")					#time the bootstrap for reference
 pb = txtProgressBar(min = 0, max = length(nboot), initial = 0, style=3) #progress bar to monitor... 
 
-for (r in 1:nboot){										r<-1
+for (r in 1:nboot){										#r<-1
 ### randomly sample the transects with replacement...
-	for (s in 1:1){ #length(smpls)
+	for (s in 1:length(smpls)){ 
 		rn<-sample(unique(DAT$Sample.Label), size=1,replace=TRUE)
 		R1<-DAT[DAT$Sample.Label == rn,]
 		R1$Orig.Sample.Label<-R1$Sample.Label
@@ -65,7 +65,7 @@ for (r in 1:nboot){										r<-1
 	
 ##Fit candidate models to the replicated data set... 
 	Mlist<-list()
-	for (i in 1:nrow(dAIC_lt4)){								i<-1
+	for (i in 1:nrow(dAIC_lt4)){								#i<-1
 ## for each candidate model, extract the KEY, FORMULA and ADJUSTMENT terms to run the distance model
 
 		AA<-dAIC_lt4[i,]									#str(AA)

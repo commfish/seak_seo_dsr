@@ -31,9 +31,6 @@ surveyed_area<-739
 # DAT<-distance
 DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 
-DAT <- DAT[-c(1, 2, 3, 142), ]
-
-
 str(DAT)
 summary(DAT$distance)
 quantile(DAT$distance, probs=c(0.9, 0.95, 0.975),na.rm=TRUE)
@@ -91,7 +88,7 @@ abline(lm(DAT$distance~DAT$Depth)) #?lm
 summary(lm(DAT$distance~DAT$Depth))
 #2023: the effect of depth on distance is not significant
 
-Shallow<-DAT[DAT$Depth <150,]
+Shallow<-DAT[DAT$Depth <100,]
 plot(Shallow$distance~Shallow$Depth)
 abline(lm(Shallow$distance~Shallow$Depth)) #?lm
 summary(lm(Shallow$distance~Shallow$Depth))
@@ -464,7 +461,6 @@ names(NT)[names(NT) == "$\\Delta$AIC"]<-"Delta.AIC"
 names(NT)[names(NT) == "Key function"]<-"Key.function"
 
 NT$Model<-as.factor(NT$Model)
-# summary(YE.hr)
 summary(YE.hr.Stage) #AIC = 427
 
 ##above analysis showed much better fit and model stability with truncation
@@ -499,12 +495,16 @@ TR$Model<-as.factor(TR$Model)
 view(TR)
 summary(YE.hn.tr5.Stage) #AIC = 358
 
+
 #Unable to compare the uniform models for some reason - tried to separate them out below
 #but am still getting an error. Below is a summary of their AIC values:
+summary(YE.unif.tr5.cos)
+summary(YE.unif.tr5.herm)
+summary(YE.unif.tr5.poly)
 
-#YE.unif.tr5.cos = 362.867 = Delta AIC is 4
-#YE.unif.tr5.herm = 362.867  = Delta AIC is 4
-#YE.unif.tr5.poly 362.867  = Delta AIC is 4
+#YE.unif.tr5.cos = 362.867 
+#YE.unif.tr5.herm = 362.867  
+#YE.unif.tr5.poly 362.867 
 
 # UN <- summarize_ds_models(YE.unif.tr5.cos, YE.unif.tr5.herm, YE.unif.tr5.poly)
 # 
@@ -603,7 +603,7 @@ Mods<-TrMods
 minAIC<-min(as.numeric(sapply(Mods,function(x)AIC(x)[2])))
 
 AIC(Mods[[1]])
-#2024: YE.hn.tr5.Stage had the lowesst AIC (AIC = 358)
+#2024: YE.hn.tr5.Stage had the lowest AIC (AIC = 358)
 
 ## plot detection 
 par(mfrow = c(3,4),mar=c(4,4,4,1)+0.1,oma=c(5,5,5,1))
