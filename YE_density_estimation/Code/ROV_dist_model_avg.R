@@ -126,7 +126,7 @@ for (r in 1:nboot){										#r<-1
             	      convert_units = CU, quiet=TRUE),type="message")),silent=TRUE)
 			}
 		}
-		Mlist[[]]<-M		
+		Mlist[[i]]<-M		
 		assign(paste0("M",i),M)
 	}	#finish loop running all candidate models on replicated data set r
 	
