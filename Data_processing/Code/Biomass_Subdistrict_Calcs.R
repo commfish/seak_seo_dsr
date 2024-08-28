@@ -24,7 +24,7 @@ meanfun <- function(x, d) {
 # 2) Get port sampling data for weights
 # 3) recalculate biomass
 
-YEAR<-2022
+YEAR<-2023
 #===========================================================================================
 # 1) Get subdistrict density data
 Dens<-read.csv("Data_processing/Data/YE_Density_SEOsubdistricts.csv")
@@ -54,9 +54,9 @@ ggplot(Dens, aes(x=Year)) +
 ggsave(paste0("Figures/YE_Density_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
 #===========================================================================================
 # 2) Get port sampling data for weights
-#last update of port sampling data was: 10-7-22 <-update this whenever you run this!!
+#last update of port sampling data was: 08/26/24 <-update this whenever you run this!!
 
-{Port<-port.bio(2022)
+{Port<-port.bio(2024)
 
 unique(Port$Sample.Type)
 Port.rand<-Port[Port$Sample.Type=="Random",]
@@ -169,11 +169,11 @@ for (i in Years){    #i<-Years[1]
     Dens[,"bootvar.YE.kg_hal"][Dens$Year == i & Dens$Subdistrict == j]<-var(bootsmpl$t)
   }
 }
-head(Dens[Dens$Subdistrict == "CSEO",],20)
+head(Dens[Dens$Subdistrict == "EYKT",],20)
 Dens$var.YE.kg
 Dens$bootvar.YE.kg
 
-Dens[Dens$Subdistrict == "CSEO",]
+Dens[Dens$Subdistrict == "EYKT",]
 colnames(Dens)
 #Save weight data for tables in SAFE------------------------------------------
 Wts<-Dens[,c(2,1,9,10,11,12,13)]; head(Wts)
@@ -185,7 +185,7 @@ head(Port.rand)
 nrow(Port.rand)
 colnames(Port.rand)
 
-Port.rand[Port.rand$GFMU == "CSEO" & Port.rand$Year == 1984,]
+Port.rand[Port.rand$GFMU == "EYKT" & Port.rand$Year == 1984,]
 
 Port %>% group_by(GFMU,Year) %>%
   filter(!is.na(GFMU),
@@ -238,7 +238,7 @@ Dens$Biomass.cv<-sqrt(Dens$var.Biomass.kg)/Dens$Biomass.kg
 
 Dens$Biomass.mt<-Dens$Biomass.kg/1000
 
-eg<-Dens[Dens$Subdistrict =="CSEO",]; head(eg) eg$mean.YE.kg
+eg<-Dens[Dens$Subdistrict =="EYKT",]; head(eg) eg$mean.YE.kg
 
 str(Dens)
 
