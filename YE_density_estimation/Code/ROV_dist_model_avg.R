@@ -126,11 +126,11 @@ for (r in 1:nboot){										#r<-1
             	      convert_units = CU, quiet=TRUE),type="message")),silent=TRUE)
 			}
 		}
-		Mlist[[i]]<-M		
+		Mlist[[]]<-M		
 		assign(paste0("M",i),M)
-	}	#finish loop running all cadidate models on replicated data set r
+	}	#finish loop running all candidate models on replicated data set r
 	
-## select top model from list of candadate models	
+## select top model from list of candidate models	
 	list.c <- sapply(Mlist, function(x) AIC(x)[2]> 0)
 	out.list  <- Mlist[list.c]
 
