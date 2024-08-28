@@ -1,24 +1,26 @@
 ##############################################################################
 ## Bootstrap and model averaging for YE ROV surveys
-## This script is used to model average difference models using the recomended proceedures 
+## This script is used to model average difference models using the recommended procedures 
 ## where transects are the samples that are bootstrapped and within each replicate
 ## the candidate models are fit to the data and the top ranked model from each iteration is used
 ## to produce density estimates and other outputs from the distance model
+## LAST UPDATED 8/27/24 - LSC
 #########################################################################
 {library(tictoc)
 library(Distance)
 library(boot)
 library(tidyverse)}
 
-YEAR<-2022
-Subd<-"NSEO"
+YEAR<-2023
+Subd<-"EYKT"
 #surveyed area (NSEO = 442, SSEO = 1056, CSEO = 1661, EYKT = 739)
-surveyed_area<-442
+surveyed_area<-739
 
 ## Load the processed ROV data produced in the "DSR_ROV_SEAK_ROV_Processing.R"
 #DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_rtran_for_analysis.csv"))
 DAT<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_distance_data_GIStran_for_analysis.csv"))
 head(DAT)
+DAT <- DAT[-c(1, 2, 3, 142), ]
 ### get model list created in "DSR_ROV_SEAK_base_distance_modelling.R"
 G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_all.csv"))
 G<-read.csv(paste0("YE_density_estimation/Data/",Subd,"_",YEAR,"/",Subd,"_",YEAR,"_Bootstrap_Model_List_Trunc.csv"))
@@ -47,7 +49,7 @@ Model.Boot<-data.frame(NA)		#results data frame
 tic("boot")					#time the bootstrap for reference
 pb = txtProgressBar(min = 0, max = length(nboot), initial = 0, style=3) #progress bar to monitor... 
 
-for (r in 1:nboot){										#r<-1
+for (r in 1:nboot){										r<-1
 ### randomly sample the transects with replacement...
 	for (s in 1:length(smpls)){
 		rn<-sample(unique(DAT$Sample.Label), size=1,replace=TRUE)
@@ -63,7 +65,7 @@ for (r in 1:nboot){										#r<-1
 	
 ##Fit candidate models to the replicated data set... 
 	Mlist<-list()
-	for (i in 1:nrow(dAIC_lt4)){								#i<-1
+	for (i in 1:nrow(dAIC_lt4)){								i<-1
 ## for each candidate model, extract the KEY, FORMULA and ADJUSTMENT terms to run the distance model
 
 		AA<-dAIC_lt4[i,]									#str(AA)
@@ -139,7 +141,7 @@ for (r in 1:nboot){										#r<-1
 	out.list.2  <- out.list[list.c.2]
 
 ##extract top model from list of candidates... 
-	try(RANK<-summarize_ds_models(out.list.2[[1]]))	#this is ussually used to rank a series of model but I used it here 
+	try(RANK<-summarize_ds_models(out.list.2[[1]]))	#this is usually used to rank a series of model but I used it here 
 									#for the top model as it was convenient for the code I had
 
 	if (length(RANK)<= 1) { 				#if else to skip in RANK produces nothing because of bad model
