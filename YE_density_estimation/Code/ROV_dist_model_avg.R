@@ -51,7 +51,7 @@ pb = txtProgressBar(min = 0, max = length(nboot), initial = 0, style=3) #progres
 
 for (r in 1:nboot){										r<-1
 ### randomly sample the transects with replacement...
-	for (s in 1:length(smpls)){
+	for (s in 1:1){ #length(smpls)
 		rn<-sample(unique(DAT$Sample.Label), size=1,replace=TRUE)
 		R1<-DAT[DAT$Sample.Label == rn,]
 		R1$Orig.Sample.Label<-R1$Sample.Label
