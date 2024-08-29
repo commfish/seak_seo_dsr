@@ -320,18 +320,18 @@ summary(YE.hn.tr5.Stage)
 
 #check... do we need to insert another year? 
 #NO....for the foreseeable future 2023 will be the last ROV survey
-# ny<-data.frame(matrix(ncol=ncol(dens))); i<-1
-# subs<-unique(dens$Subdistrict)
-# colnames(ny)<-colnames(dens)
-# for (s in subs) { #s <-subs[1]
-#   ny[i,"Subdistrict"] <- s
-#   ny[i,"Year"] <- YEAR+1
-#   ny[i,"Density"] <- NA
-#   ny[i,"CV"] <- 1
-#   ny[i,"Area_km2"] <- unique(dens$Area_km2[dens$Subdistrict == s])
-#   ny[i,"YE_abund"] <- NA
-#   i<-i+1
-# }
+ny<-data.frame(matrix(ncol=ncol(dens))); i<-1
+subs<-unique(dens$Subdistrict)
+colnames(ny)<-colnames(dens)
+for (s in subs) { #s <-subs[1]
+  ny[i,"Subdistrict"] <- s
+  ny[i,"Year"] <- YEAR+1
+  ny[i,"Density"] <- NA
+  ny[i,"CV"] <- 1
+  ny[i,"Area_km2"] <- unique(dens$Area_km2[dens$Subdistrict == s])
+  ny[i,"YE_abund"] <- NA
+  i<-i+1
+}
 
 # dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
 # dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
@@ -341,7 +341,7 @@ dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- 1741
 dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- 0.21
 dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- 1286654
 
-# dens<-rbind(dens,ny)
+dens<-rbind(dens,ny)
 
 write.csv(dens,file = paste0("Data_processing/Data/YE_Density_SEOsubdistricts.csv"))
 

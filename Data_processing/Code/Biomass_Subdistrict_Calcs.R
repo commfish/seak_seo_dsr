@@ -3,12 +3,13 @@
 ## Dec 2021
 ## For stock assessment
 ## Phil Joy
+## Last Updated 8/29/24 - LSC
 #############################################################################################
 
 {library(dplyr)
 library(boot)
 library(ggplot2)
-#library(plotly)
+library(plotly)
 library(scales)
 
 library(tidyverse)
@@ -45,7 +46,7 @@ ggplot(Dens, aes(x=Year)) +
                 col="black", alpha=0.5) +
   facet_wrap(~Subdistrict) +
   xlab("\nYear") +
-  ylab(bquote(yelloweye~rockfish/km^2)) +
+  ylab(bquote(Yelloweye~rockfish/km^2)) +
   #ylab("Density (yelloweye rockfish/kmsq)") +
   scale_y_continuous(label=comma) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
@@ -88,13 +89,16 @@ GFMA<-unique(Dens$Subdistrict)
 ## Get best data for average weights and add columns to survey data
 for (i in Years){    #i<-Years[1]
   for (j in GFMA){   #j<-GFMA[1]
-    #P<-Port[Port$GFMU == j,]
-    #P<-P[!is.na(Port$Weight.Kilograms),]
     P <- Port.rand %>% filter (GFMU == j); nrow(P)
     P <- P %>% filter(!is.na(Weight.Kilograms)); nrow(P)
     #reach back from year i and see if you can get 150 weights...nrow(P)
     Nw<-nrow(P[P$Year == i  & !is.na(P$Weight.Kilograms),])
     Nw<-nrow(P %>% filter(Year == i, !is.na(Weight.Kilograms)))
+    
+    #This segment of code is designed to ensure that you gather at least 75 
+    #weight measurements for each combination of year and subdistrict. If there 
+    #aren’t enough weights for the current year, it tries to collect additional 
+    #weights by expanding the range of years both backward and forward.
     
     k<-0
     while (Nw < 75 & i-k >= min(Port.rand$Year) ){         #go back as far as needed to get 150 weights... 
@@ -187,6 +191,9 @@ colnames(Port.rand)
 
 Port.rand[Port.rand$GFMU == "EYKT" & Port.rand$Year == 1984,]
 
+#These are ALL biological samples for yelloweye
+unique(Port$Sample.Type)
+
 Port %>% group_by(GFMU,Year) %>%
   filter(!is.na(GFMU),
          GFMU == "SSEO" | GFMU == "CSEO" | GFMU == "NSEO" | GFMU == "EYKT") %>% 
@@ -194,7 +201,7 @@ Port %>% group_by(GFMU,Year) %>%
             var.weight = var(Weight.Kilograms, na.rm=TRUE),
             sd.weight = sqrt(var.weight),
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
-  complete(Year = 1984:YEAR) -> Wt.smpl #,
+  complete(Year = 1984:YEAR) -> Wt.smpl 
 
 Wt.smpl$no.YE<-replace(Wt.smpl$no.YE,Wt.smpl$no.YE==0,NA)
 
@@ -204,8 +211,12 @@ table<-Wt.smpl %>% #group_by(Year) %>%
   #kable_paper("hover",full_width=F)
   kable_classic(full_width=F, html_font = "Times", position="center")
   #kable_classic_2(full_width=F, position = "left")
-webshot::install_phantomjs()
+webshot2::install_phantomjs()
 save_kable(table,"Figures/Weight_Table_SAFE14p1.pdf")
+#2024: can't get this pdf to run - need to come back to it
+
+#These are samples that have been randomly sampled only - includes directed fishery and bycatch
+unique(Port.rand$Project)
 
 Port.rand %>% group_by(GFMU,Year) %>% 
   filter(!is.na(GFMU),
@@ -231,14 +242,21 @@ Dens$N.wts_hal[Dens$Year > 2007]
 #====================================================================================
 # Calculate biomass
 
+#Calculate biomass in kilograms (yelloweye abundance * mean size)
 Dens$Biomass.kg<-Dens$YE_abund*Dens$mean.YE.kg_rand
+
+#Calculate the variance of biomass
 Dens$var.Biomass.kg<-(Dens$YE_abund^2)*Dens$bootvar.YE.kg_rand+(Dens$mean.YE.kg_rand^2)*Dens$var.Abund+
-  Dens$var.Abund*Dens$bootvar.YE.kg_rand  
+  Dens$var.Abund*Dens$bootvar.YE.kg_rand
+
+#Calculate coefficient of variation for Biomass
 Dens$Biomass.cv<-sqrt(Dens$var.Biomass.kg)/Dens$Biomass.kg
 
+#Cinvert biomass (kg) to metric tons
 Dens$Biomass.mt<-Dens$Biomass.kg/1000
 
-eg<-Dens[Dens$Subdistrict =="EYKT",]; head(eg) eg$mean.YE.kg
+eg <-Dens[Dens$Subdistrict =="EYKT",]; head(eg); eg$mean.YE.kg
+
 
 str(Dens)
 
@@ -269,7 +287,7 @@ ggplot(Dens, aes(x=Year)) +
                 col="blue", alpha=0.5) +
   facet_wrap(~Subdistrict) +
   xlab("\nYear") +
-  ylab("yelloweye rockfish biomass (mt)") +
+  ylab("Yelloweye rockfish biomass (mt)") +
   #ylab("Density (yelloweye rockfish/kmsq)") +
   scale_y_continuous(label=comma,
                      sec.axis=sec_axis(~.*0.25, name="Density (fish/km^2)", label=comma)) +
@@ -348,7 +366,7 @@ Biomass.sq$Biomass_mt<-Biomass.sq$Biomass/1000
 Biomass.sq$Biomass_mt_lo90<-Biomass.sq$Biomass_mt-Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 Biomass.sq$Biomass_mt_hi90<-Biomass.sq$Biomass_mt+Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 
-#write.csv(Biomass.sq,"Data/SEO_YE_Biomass_100722.csv")
+#write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_08292024.csv")
 
 #plot it for SAFE report
 head(Biomass.sq)
@@ -365,7 +383,7 @@ Biomass.sq %>% mutate(Bio.CSEO.mt = Biomass.CS/1000,
                       Bio.NSEO.lo90 = Bio.NSEO.mt-1.68*Bio.NSEO.cv*Bio.NSEO.mt,
                       Bio.SSEO.lo90 = Bio.SSEO.mt-1.68*Bio.SSEO.cv*Bio.SSEO.mt,) -> Biomass.sq
 
-#write.csv(Biomass.sq,"Data/SEO_YE_Biomass_subd_100722.csv")
+#write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_subd_08292024.csv")
 #===================================================================================
 xl<-expression()
 
@@ -384,7 +402,7 @@ write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_",Current
   
   
 ggplot(Biomass.sq, aes(x=Year)) +
-  geom_line(aes(y=Biomass_mt),size=1) +
+  geom_line(aes(y=Biomass_mt),linewidth=1) +
   geom_ribbon(aes(ymin = Biomass_mt_lo90, ymax= Biomass_mt_hi90),col="lightgrey", alpha=0.5) +
   xlab("\nYear") +
   ylab("SEO yelloweye biomass (t)\n") +
@@ -392,7 +410,7 @@ ggplot(Biomass.sq, aes(x=Year)) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
   theme (panel.grid.major = element_blank (),panel.grid.minor = element_blank())
   
-YEAR<-2022
+YEAR<-2023
 ggsave(paste0("Figures/SEO_status_quo_biomass_", YEAR, ".png"), dpi=300,  height=4, width=5, units="in")
 
 ##Compare to original Status-quo from the archives measurements
