@@ -37,6 +37,10 @@ CU<-convert_units(distance_units="Meter", effort_units="Meter",
 ## Are models truncated?
 TRUNC<-"Y"		##"Y"
 
+#2024 - unable to get this to run - Phil told me to proceed with the model with the lowest
+#AIC for now - hopefully can comeb ack and figure out why this is not running
+#Skipping to line 302
+
 #################################################################
 ## Run the bootstrap...
 
@@ -303,53 +307,73 @@ str(dens)
 max(dens$Year)
 dens %>% filter(Year == YEAR)
 
-dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
-dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
-dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
+#Since the bootstrapping didn't work in 2024 - rerunning this model here
+YE.hn.tr5.Stage <-ds(DAT, key = "hn", transect="line", formula=~Stage,
+                     convert_units = CU, truncation=c(right="5%"))
+plot(YE.hn.tr5.Stage)
+gof_ds(YE.hn.tr5.Stage)
+summary(YE.hn.tr5.Stage)
 
-#check... do we need to insert another year?
-ny<-data.frame(matrix(ncol=ncol(dens))); i<-1
-subs<-unique(dens$Subdistrict)
-colnames(ny)<-colnames(dens)
-for (s in subs) { #s <-subs[1]
-  ny[i,"Subdistrict"] <- s
-  ny[i,"Year"] <- YEAR+1
-  ny[i,"Density"] <- NA
-  ny[i,"CV"] <- 1
-  ny[i,"Area_km2"] <- unique(dens$Area_km2[dens$Subdistrict == s])
-  ny[i,"YE_abund"] <- NA
-  i<-i+1
-}
+# dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
+# dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
+# dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
 
-dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
-dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
-dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
+#check... do we need to insert another year? 
+#NO....for the foreseeable future 2023 will be the last ROV survey
+# ny<-data.frame(matrix(ncol=ncol(dens))); i<-1
+# subs<-unique(dens$Subdistrict)
+# colnames(ny)<-colnames(dens)
+# for (s in subs) { #s <-subs[1]
+#   ny[i,"Subdistrict"] <- s
+#   ny[i,"Year"] <- YEAR+1
+#   ny[i,"Density"] <- NA
+#   ny[i,"CV"] <- 1
+#   ny[i,"Area_km2"] <- unique(dens$Area_km2[dens$Subdistrict == s])
+#   ny[i,"YE_abund"] <- NA
+#   i<-i+1
+# }
 
-dens<-rbind(dens,ny)
+# dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Dhat),0)
+# dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- sd(MB$Dhat)/median(MB$Dhat)
+# dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- round(median(MB$Nhat.lcl),0)
+
+dens$Density[dens$Subdistrict == Subd & dens$Year == YEAR] <- 1741
+dens$CV[dens$Subdistrict == Subd & dens$Year == YEAR] <- 0.21
+dens$YE_abund[dens$Subdistrict == Subd & dens$Year == YEAR] <- 1286654
+
+# dens<-rbind(dens,ny)
 
 write.csv(dens,file = paste0("Data_processing/Data/YE_Density_SEOsubdistricts.csv"))
 
 # Save density details for table 14.7 in the SAFE report
 
-dens_sums<-read_csv(paste0("Data_processing/Data/seo_dsr_density_summary_stats.csv"))
+dens_sums<-read_csv(paste0("Data_processing/Data/seo_dsr_density_summary_stats.csv")) %>% na.omit()
 str(dens_sums)
 
 newdat<-data.frame(matrix(ncol=ncol(dens_sums))); i<-1
 colnames(newdat)<-colnames(dens_sums)
-newdat$Area <- Subd
+{newdat$Area <- Subd
 newdat$Year <- YEAR
 newdat$`Number transects` <- length(unique(DAT$Sample.Label))
 newdat$`Number YE`<- nrow(DAT[!is.na(DAT$Stage),])
 newdat$`Meters surveyed`<-round(sum(unique(DAT$Effort)),0)
 newdat$`Encounter rate (YE/m)`<- round(nrow(DAT[!is.na(DAT$Stage),])/sum(unique(DAT$Effort)),3)
-newdat$Density_YE_km2 <- round(median(MB$Dhat),0)
-newdat$`Lower CI`<- round(quantile(MB$Dhat, c(0.05)),0)
-newdat$`Upper CI`<- round(quantile(MB$Dhat, c(0.95)),0)
-newdat$CV <- sd(MB$Dhat)/median(MB$Dhat)
+# newdat$Density_YE_km2 <- round(median(MB$Dhat),0)
+# newdat$`Lower CI`<- round(quantile(MB$Dhat, c(0.05)),0)
+# newdat$`Upper CI`<- round(quantile(MB$Dhat, c(0.95)),0)
+# newdat$CV <- sd(MB$Dhat)/median(MB$Dhat)
+
+newdat$Density_YE_km2 <- 1741
+newdat$`Lower CI`<- 1134
+newdat$`Upper CI`<- 2672
+newdat$CV <- 0.211882
+newdat$...1 <- 28}
 
 dens_sums <- rbind(dens_sums,newdat)
 
-dens_sums <- dens_sums[order(dens_sums$Area,dens_sums$Year),]
+dens_sums <- dens_sums %>%
+  arrange(Area, Year)
+
 view(dens_sums)
 
 write.csv(dens_sums,file = paste0("Data_processing/Data/seo_dsr_density_summary_stats.csv"))
