@@ -13,10 +13,12 @@ YEAR<-2024
 
 #Pre-2021 YE DATA:
 YE.Harv<-read.csv("Data_processing/Data/Harvests/yelloweye_catch_data.csv", header=T)
+#Subsistence and sportfish only ahve data up until 2021 - this needs to be udpated before re-running everything
 YE.Subs<-read.csv("Data_processing/Data/Harvests/subsistence.csv", header=T)
 YE.Sport<-read.csv("Data_processing/Data/Harvests/sport.csv", header=T)
 
-## Recent data updated - updated 7.31.24
+
+## Recent data updated - updated 8.30.24
 YE.Harv.update1<-read.csv("Data_processing/Data/Harvests/Yelloweye harvest SEO in groundfish fish ticket data 2015-current.csv")
 YE.Harv.update2<-read.csv("Data_processing/Data/Harvests/Yelloweye harvest SEO in salmon fish ticket data 2015-current.csv")
 
