@@ -39,13 +39,34 @@ source("r_helper/Port_bio_function.R")
 # 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it CHECK
 # 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
 #    Station locations move by 3nm year to year, so may be in and out of actual habitat #going with Tweedie estimator
+### TALKED TO PHIL ALL OF THIS WAS COMPLETED BEFORE THE CIE REVIEW!
 #*******************************************************************************
 
 #IPHCfunction<-function(){
 {
-  #HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
+  HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
+  #This code above was scrubbed out and I am not sure what report it is from in OceanAK
+  #the report referenced in the rep has DOL, CFEC fishery code, gear, mgt area, whole weight
+  #for 2007 and 2022....
+  #The column names make it look like it is an ouput from something...but WHICH code....LOL
   
-  #GET Latest Data and prep to add into 1998-2020 data that script is set to handle
+  #Not from "halibut_harvest_reconstruction"
+  
+  #Get latest Data and prep to add into 1998-2020 data that script is set to handle
+  #2023-----------------------------------------------------------
+  But2C3A_2023<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C3A 2023.csv", check.names = TRUE)
+  #  View(But2C3A_2023)
+  
+  YE2C3A_2023<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data 2C3A 2023.csv", check.names = TRUE)
+  unique(YE2C3A_2023$Year)
+  #  View(YE2C3A_2023)
+  
+  Surv23<-But2C3A_2023 %>% full_join(YE2C3A_2023, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
+  colnames(Surv23)
+  Sur2C_23<-Surv23[Surv23$IPHC.Reg.Area == "2C",]
+  Sur3A_23<-Surv23[Surv23$IPHC.Reg.Area == "3A",]
+  
+  #2022-----------------------------------------------------------
   But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", check.names = TRUE)
 #  View(But2C3A_2022)
   
@@ -58,6 +79,21 @@ source("r_helper/Port_bio_function.R")
   Sur2C_22<-Surv22[Surv22$IPHC.Reg.Area == "2C",]
   Sur3A_22<-Surv22[Surv22$IPHC.Reg.Area == "3A",]
   
+  #2023 and 2022 have different number of columns
+  # Get column names as vectors
+  columns_surv23 <- colnames(Surv23)
+  columns_surv22 <- colnames(Surv22)
+  
+  # Find missing columns
+  missing_in_Surv22 <- setdiff(columns_surv23, columns_surv22)
+  
+  #Remove Gear from Surv23 - I don't think we need it!
+  unique(Surv23$Gear)
+  Surv23 <- Surv23 %>% select(-Gear)
+  Sur2C_23 <- Sur2C_23 %>% select(-Gear)
+  Sur3A_23 <- Sur3A_23 %>% select(-Gear)
+  
+  #2021-----------------------------------------------------------
   But2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C3A 2021.csv", header=T)
   YE2C3A_2021<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 2C3A 2021.csv", header=T)
   
@@ -65,10 +101,14 @@ source("r_helper/Port_bio_function.R")
   head(Surv21)
   Sur2C_21<-Surv21[Surv21$IPHC.Reg.Area == "2C",]
   Sur3A_21<-Surv21[Surv21$IPHC.Reg.Area == "3A",]
+  #Okay, now I hav ethe IPHC data for 2021-2023 to add to the 1998-2020 data
+  
   #******************************************************************************
   #*
   BUT2C<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 2C.csv", header=T)
+  unique(BUT2C$Year) #years 1998-2020
   YE2C<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 2C.csv", header=T)
+  unique(YE2C$Year) #years 1998-2020
   
   Sur2C<- BUT2C %>% full_join(YE2C, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))  
   Sur2C <- Sur2C %>% rbind(Sur2C, Sur2C_21, Sur2C_22)
@@ -85,22 +125,31 @@ source("r_helper/Port_bio_function.R")
                                                               ifelse(MidLat.fished<56,"SSEO",NA)))),NA))))
   
   nrow(Sur2C)
+  
   ## Lets bring in 3A and pull out surveys in the Yakutat area...
   BUT3A<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 3A.csv", header=T)
+  unique(BUT3A$Year) 
   YE3A<-read.csv("Data_processing/Data/IPHC_raw/Non-Pacific halibut data YE 3A.csv", header=T)
+  unique(YE3A$Year) 
   
-  Sur3A<- BUT3A %>% full_join(YE3A, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
-  Sur3A <- Sur3A %>% rbind(Sur3A,Sur3A_21, Sur3A_22)
+  Sur3A<- BUT3A %>% 
+    full_join(YE3A, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
+  
+  #Here we are comnining all the 3A data
+  Sur3A <- Sur3A %>% 
+    rbind(Sur3A,Sur3A_21, Sur3A_22, Sur3A_23)
   
   Sur3A<-Sur3A %>%
     mutate(SEdist = ifelse(-MidLon.fished <= 137 & MidLat.fished >= 57.5,"NSEO",
                            ifelse(-MidLon.fished > 137 & -MidLon.fished <139 & MidLat.fished > 54.5,  #Lon should be less than 138 but included here to increase sample size of the index... 
-                                  "EYKT","whocares")))
+                                  "EYKT","Yakutat")))
   nrow(Sur3A)
-  Sur3A<-Sur3A[Sur3A$SEdist != "whocares",]
+  Sur3A<-Sur3A[Sur3A$SEdist != "Yakutat",]
   
   ## connect the two data sets
   Survey<-rbind(Sur3A,Sur2C)
+  unique(Survey$Year) #1998-20223 - everything combined!
+  
   #make one more column to define inside versus outside for dealing with older data sets...
   Survey<-Survey %>% 
     mutate(In.Out = ifelse(SEdist %in% c("NSEO","CSEO","SSEO","EYKT"),"SEO",
@@ -128,6 +177,7 @@ source("r_helper/Port_bio_function.R")
   #Bring in and join hook adjustment factor to control for hook saturation when 
   # calculating CPUE
   
+  #2024 - put in a request for this data
   hadj<-read.csv(paste0("Data_processing/Data/IPHC_raw/iphc_",YEAR,"_fiss_hadj.csv"), check.names = TRUE) %>% 
   #hadj<-hadj %>% 
     filter(IPHC.Reg.Area == "3A " | IPHC.Reg.Area == "2C ") %>%
@@ -261,7 +311,7 @@ ggplot(plot_stations %>% filter(Station %in% c(use_stations))) +
   geom_sf(aes(color = var.YEcpue, size = var.YEcpue)) +
   scale_color_viridis_c(option = "viridis",begin = 0)
 
-ggplot(plot_stations %>% filter(Station.x %in% c(use_stations))) + 
+ggplot(plot_stations %>% filter(Station %in% c(use_stations))) + 
   geom_sf(aes(color = prop.0, size = prop.0)) +
   scale_color_viridis_c(option = "plasma",begin = 0)
 #==============================================================================================
@@ -474,7 +524,7 @@ SE.subdistricts<- YEHA.fxn(Survey=Survey_non0, Area="SEdist",Deep=250, Shallow=0
 str(SE.subdistricts); unique(SE.subdistricts$mngmt.area)
 
 IPHC.index<-SE.subdistricts[SE.subdistricts$mngmt.area != "NSEI" & 
-                              SE.subdistricts$mngmt.area != "SSEI",]
+                              SE.subdistricts$mngmt.area != "SSEI",NA]
 str(IPHC.index)
 
 ggplot(IPHC.index, aes(x=Year)) +
