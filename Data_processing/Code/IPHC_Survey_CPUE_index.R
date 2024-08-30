@@ -45,12 +45,29 @@ source("r_helper/Port_bio_function.R")
 #IPHCfunction<-function(){
 {
   HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
-  #This code above was scrubbed out and I am not sure what report it is from in OceanAK
-  #the report referenced in the rep has DOL, CFEC fishery code, gear, mgt area, whole weight
-  #for 2007 and 2022....
-  #The column names make it look like it is an ouput from something...but WHICH code....LOL
+  #This .csv above had the # before it but it is being called below  and I am not sure what report it is from in OceanAK
+  #the report referenced in the repo does not have data before 1995 even without a filter
   
-  #Not from "halibut_harvest_reconstruction"
+  #there is also a file in Data_processing/Data/Harvests called halibut_catch_data_new071422 that has a few mismatches with 
+  #"halibut_catch_data
+  
+  HA.Harv.UPDATE <- read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv", header = TRUE) %>%
+    rename(year.landed = DOL.Year,
+      permit.fishery = CFEC.Fishery.Code,
+      mgmt.area = Mgt.Area,
+      gear.description = Gear.Code.and.Name,
+      round.lbs = Whole.Weight..sum.) %>% 
+    mutate(X=NA) %>% 
+    select(X, 
+      year.landed, 
+      mgmt.area, 
+      permit.fishery, 
+      gear.description, 
+      round.lbs)
+  
+  HA.Harv <- rbind(HA.Harv,HA.Harv.UPDATE)
+  unique(HA.Harv$year.landed)
+  
   
   #Get latest Data and prep to add into 1998-2020 data that script is set to handle
   #2023-----------------------------------------------------------
@@ -101,7 +118,7 @@ source("r_helper/Port_bio_function.R")
   head(Surv21)
   Sur2C_21<-Surv21[Surv21$IPHC.Reg.Area == "2C",]
   Sur3A_21<-Surv21[Surv21$IPHC.Reg.Area == "3A",]
-  #Okay, now I hav ethe IPHC data for 2021-2023 to add to the 1998-2020 data
+  #Okay, now I have the IPHC data for 2021-2023 to add to the 1998-2020 data
   
   #******************************************************************************
   #*
@@ -185,9 +202,8 @@ source("r_helper/Port_bio_function.R")
     str(hadj)
     
     
-  Survey <- left_join(Survey,hadj,by=c("Year","Stlkey","Station"))  
+  Survey <- left_join(Survey,hadj,by=c("Year","Stlkey","Station"))}  
   #str(Survey)
-}
 
 {y<-sample(unique(Survey$Year),1)
 d<-sample(unique(Survey$depth_bin[Survey$Year==y]),1)
@@ -200,7 +216,9 @@ str(HA.Harv)
 mean(Survey$AvgDepth.fm)
 
 #Survey <-Survey %>% filter(Year < 2022)
-write.csv(Survey,paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+# write.csv(Survey,paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+#Included 2024 data - need ot hcekc with phil on this
+write.csv(Survey,"Data_processing/Data/IPHC_survey_1998-2024.csv")
 
 #================================================================================
 # Look at some depth stuff and identify stations that have seen yelloweye...
@@ -236,7 +254,7 @@ nrow(Station.sum)
 hist(Station.sum$mean.YE, breaks=50); 1-(nrow(Station.sum[Station.sum$mean.YE == 0,])/nrow(Station.sum))
 
 ggplot(Station.sum,aes(Depth, mean.YE)) +
-  geom_point() + geom_smooth(size = 1.5, se = FALSE, linetype=1, alpha=0.75) +
+  geom_point() + geom_smooth(linewidth = 1.5, se = FALSE, linetype=1, alpha=0.75) +
   ylab("Mean number of yelloweye encountered at FISS stations") +
   xlab("Depth (fathoms)") + theme_bw() +
   scale_x_continuous(breaks=seq(0,350,25)) 
@@ -295,7 +313,7 @@ length(YE.stations);length(YE.stations_10p);length(YE.stations_20p);length(YE.st
 
 plot_stations<-st_as_sf(Station.sum,coords = c("Lon","Lat"))
 
-plot_stations<-st_set_crs(plot_stations,crs=4326)
+plot_stations<-plot_stations %>% st_set_crs(4326)
 
 use_stations<-YE.stations
 
@@ -318,7 +336,7 @@ ggplot(plot_stations %>% filter(Station %in% c(use_stations))) +
 ## Load the port samples that were downloaded from oceansAK; 
 # Need Yelloweye weights to get wcpue estimates
 {
-  Port<-port.bio(2022)
+  Port<-port.bio(2024)
   str(Port)
   Port$Year<-as.integer(Port[,1])
   unique(Port$Groundfish.Management.Area.Code)  #EYAK = EYKT
@@ -546,6 +564,7 @@ ggplot(IPHC.index, aes(x=Year)) +
 
 ggsave(paste0("Figures/YE_IPHC_cpue_non0_boot_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
+#This output is used in the REMA model
 write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 
 #get average number of stations in each area 
@@ -573,6 +592,7 @@ ggplot(IPHC.index_40p, aes(x=Year)) +
 
 ggsave(paste0("Figures/YE_IPHC_cpue_min40percentYE_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
+#This output is used in the REMA model if being more restrictive 
 write.csv(IPHC.index_40p,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
 
 comp<-rbind(IPHC.index %>% mutate(yelloweye_presence = "at least once"),
@@ -708,6 +728,7 @@ IPHC_tweed <- IPHC_tweed %>%
          Soak, 
          CPUE, WCPUE)
 
+
 # Look at distribution of CPUE data
 ggplot(IPHC_tweed, aes(WCPUE)) + geom_density(alpha = 0.4, fill = 4)
 ggplot(IPHC_tweed, aes(log(WCPUE+0.01))) + geom_density(alpha = 0.4, fill = 4)
@@ -722,6 +743,7 @@ fulldat<-IPHC_tweed[complete.cases(IPHC_tweed),]
 
 m0 <- gam(WCPUE ~ Year * SEdist, data=fulldat, gamma=1.4, family=tw(), method = "REML")
 m.depth <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4), data=fulldat, gamma=1.4, family=tw(), method = "REML")
+
 m.soak <- gam(WCPUE ~ Year * SEdist + s(Soak, k=4), data=fulldat, gamma=1.4, family=tw(), method = "REML")
 m.ll <- gam(WCPUE ~ Year * SEdist + te(Lon, Lat), data=fulldat, gamma=1.4, family=tw(), method = "REML")
 m.depth_soak <- gam(WCPUE ~ Year * SEdist + s(Depth, k=4) + s(Soak, k=4), 
