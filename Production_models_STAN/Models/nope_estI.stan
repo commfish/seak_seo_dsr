@@ -62,7 +62,7 @@ model {
 	for (i in 1:S){
 		K[i] ~ lognormal(12, 0.5);
 		// MSY[i] ~ lognormal(10, 0.5);
-		r ~ lognormal(log(0.1), 0.2);
+		r ~ lognormal(log(0.05), 0.25);
 		iqs[i] ~ uniform(1000,100000);
 		PP_init[i] ~ normal(0.99,0.1);
   }

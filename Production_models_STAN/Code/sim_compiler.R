@@ -4,9 +4,10 @@
 ## 8/26/24 Phil Joy
 ################################################################################
 ## NOTES: The models need to be examined because there are occasional bad starting
-##        values flagged as log(neg) warnings.I tried to change this mid-stream
-##        by putting bounds on q but that didn't fix anything so need to reexamine
-##        before running again. 
+##        values flagged as log(neg) warnings. Thy are coming from the B values
+##        which are in the production model in the transformed parameter section.
+##        I could not come up with a way to control how stan draws starting values
+##        for them so it is an unfortunate feature of the current model. 
 ##    2:  Need to record process error ests and biases in sims. r is always over-
 ##        estimated. During the development of my original model I found similar
 ##        results and the more I constrained process error the lower r was and vice
@@ -637,7 +638,7 @@ hist(master3$param_not_conv, breaks = 100)
 with(master3, table(param_not_conv))
 # get rid of 6 unconverged models
 master3 <- master3 %>% filter(param_not_conv == 0)
-
+library(wesanderson)
 cols <- wes_palette("IsleofDogs1")
 
 ## Divergent transitions: 

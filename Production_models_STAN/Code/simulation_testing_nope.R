@@ -82,7 +82,7 @@ total_sims <- nsims*length(harv_opts)*length(fpres)*
 total_sims
 
 #name for saving this set up
-sim_lab <- "Hmix_nope"
+sim_lab <- "Hmix"
 
 for (opts in harv_opts) { # opts <- harv_opts[1]
   h_hist <- opts
@@ -327,9 +327,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       
       # save sim_dat in case its lost:
       saveRDS(sim_dat, file = paste0("Production_models_STAN/Output/sim_res/simulated_data_",sim_lab,".Rds"))
-      saveRDS(sim_dat, file = paste0("H://Documents/SEO_DSR/stan_development/sim_backup/simulated_data_",sim_lab,".Rds"))
+      #saveRDS(sim_dat, file = paste0("H://Documents/SEO_DSR/stan_development/sim_backup/simulated_data_",sim_lab,".Rds"))
       write.csv(sim_stats,paste0("Production_models_STAN/Output/sim_res/sim_stats_",sim_lab,".csv"))
-      write.csv(sim_stats,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/sim_stats_',sim_lab,'.csv'))
+      #write.csv(sim_stats,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/sim_stats_',sim_lab,'.csv'))
       
       # run models and record results: -------------------------------------
       stan_iters <- 2000
@@ -498,14 +498,14 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                                                                             "TRUE","FALSE")
       }
       write.csv(results_nope_B_I,paste0('Production_models_STAN/Output/sim_res/results_nope_B_I_',sim_lab,'.csv'))
-      write.csv(results_nope_B_I,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_nope_B_I_',sim_lab,'.csv'))
+      #write.csv(results_nope_B_I,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_nope_B_I_',sim_lab,'.csv'))
       
       
       
       
       #---- next model ---#
       tstart <- Sys.time()
-      fit_nope_I <- stan(file = paste0("Production_models_STAN/Models/nope_estB_estI.stan"), 
+      fit_nope_I <- stan(file = paste0("Production_models_STAN/Models/nope_estI.stan"), 
                            data = data2, init = init_ll_1r, #inits, inits),
                            iter = stan_iters, chains = chains, cores=chains, seed=123,
                            warmup=burnin*stan_iters, verbose=F, thin=1,
@@ -521,7 +521,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         add_iter <- add_iter + 5000
         init_ll_1r <- lapply(1:chains, function(id) init_create_1r(chain_id = id))
         #fit <- run_stan(iter = initial_iter + additional_iter, chains = initial_chains)
-        fit_nope_I <- stan(file = paste0("Production_models_STAN/Models/nope_estB_estI.stan"), 
+        fit_nope_I <- stan(file = paste0("Production_models_STAN/Models/nope_estI.stan"), 
                              data = data2, init = init_ll_1r, #inits, inits),
                              iter = add_iter, chains = chains, cores=chains, seed=123,
                              warmup=burnin*add_iter, verbose=F, thin=1,
@@ -625,8 +625,8 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                                                                           sim_stats[data_iter,paste0("Fmsy_t_",s)] < Fmsy_e[,s][3],
                                                                         "TRUE","FALSE")
       }
-      write.csv(results_nope_I,paste0('Production_models_STAN/Output/sim_res/results_nope_I',sim_lab,'.csv'))
-      write.csv(results_nope_I,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_nope_I',sim_lab,'.csv'))
+      write.csv(results_nope_I,paste0('Production_models_STAN/Output/sim_res/results_nope_I_',sim_lab,'.csv'))
+      #write.csv(results_nope_I,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_nope_I',sim_lab,'.csv'))
       
       
       # -- back to PE models ---------------------------------------------------
@@ -761,7 +761,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         
       }
       write.csv(results_ko,paste0('Production_models_STAN/Output/sim_res/results_ko_',sim_lab,'.csv'))
-      write.csv(results_ko,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_',sim_lab,'.csv'))
+      #write.csv(results_ko,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_',sim_lab,'.csv'))
 
       #---- next model ----#
       tstart <- Sys.time()
@@ -890,7 +890,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                                                                   "TRUE","FALSE")
       }
       write.csv(results_ko_Best,paste0('Production_models_STAN/Output/sim_res/results_ko_Best_',sim_lab,'.csv'))
-      write.csv(results_ko_Best,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_',sim_lab,'.csv'))
+      #write.csv(results_ko_Best,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_',sim_lab,'.csv'))
       
       
       
@@ -1021,7 +1021,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
                                                                   "TRUE","FALSE")
       }
       write.csv(results_ko_Best_Iest,paste0('Production_models_STAN/Output/sim_res/results_ko_Best_Iest_',sim_lab,'.csv'))
-      write.csv(results_ko_Best_Iest,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest_',sim_lab,'.csv'))
+      #write.csv(results_ko_Best_Iest,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Best_Iest_',sim_lab,'.csv'))
       
       
       
@@ -1154,7 +1154,7 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
       }
       
       write.csv(results_ko_Iest,paste0('Production_models_STAN/Output/sim_res/results_ko_Iest_',sim_lab,'.csv'))
-      write.csv(results_ko_Iest,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Iest_',sim_lab,'.csv'))
+      #write.csv(results_ko_Iest,paste0('H://Documents/SEO_DSR/stan_development/sim_backup/results_ko_Iest_',sim_lab,'.csv'))
       
       # END set for next run:
       data_iter <- data_iter+1
