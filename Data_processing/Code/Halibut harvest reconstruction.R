@@ -7,19 +7,24 @@
 ## Because long term halibut data management areas do not align with ADFG
 ## management units, there is some extrapolation that include propagation of
 ## error
+## This is the most latest version of the code updated last 8.30.24 - LSC
 ################################################################################
-library(plyr)
+{library(plyr)
 library(dplyr)
 library(boot)
 library(ggplot2)
 library(scales)
+  }
 
 YEAR<-2023
 
 {#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
 HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
+unique(HA.Harv$year.landed) #1975-2020
 #Halibut fish ticket data:
-HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv")
+HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv") %>% 
+  filter(DOL.Year>2020)
+unique(HA.Harv.update$DOL.Year) #1975-2020
 #Halibut by IPHC area from web source data
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
 #Halibut harvest from IPHC data request 1982 - present
@@ -42,7 +47,7 @@ HA.Harv %>% mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
 
 HA.Harv.update %>% mutate(Year=DOL.Year,
                           gear = Gear.Code.and.Name,
-                          ha.lbs = Whole.Weight..sum.,
+                          ha.lbs = as.numeric(Whole.Weight..sum.),
                           ha.mt = ha.lbs*0.00045359,
                           fishery.code = CFEC.Fishery.Code,
                           source = "new") %>% 

@@ -45,13 +45,15 @@ source("r_helper/Port_bio_function.R")
 #IPHCfunction<-function(){
 {
   HA.Harv<-read.csv("Data_processing/Data/halibut_catch_data.csv", header=T)
+  unique(HA.Harv$year.landed)#1975-2020
   #This .csv above had the # before it but it is being called below  and I am not sure what report it is from in OceanAK
   #the report referenced in the repo does not have data before 1995 even without a filter
   
   #there is also a file in Data_processing/Data/Harvests called halibut_catch_data_new071422 that has a few mismatches with 
   #"halibut_catch_data
   
-  HA.Harv.UPDATE <- read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv", header = TRUE) %>%
+  HA.Harv.update <- read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv", header = TRUE) %>%
+    filter(DOL.Year>2020) %>% #or else you will get duplicates?
     rename(year.landed = DOL.Year,
       permit.fishery = CFEC.Fishery.Code,
       mgmt.area = Mgt.Area,
@@ -64,8 +66,9 @@ source("r_helper/Port_bio_function.R")
       permit.fishery, 
       gear.description, 
       round.lbs)
+  unique(HA.Harv.update$year.landed)
   
-  HA.Harv <- rbind(HA.Harv,HA.Harv.UPDATE)
+  HA.Harv <- rbind(HA.Harv,HA.Harv.update)
   unique(HA.Harv$year.landed)
   
   
