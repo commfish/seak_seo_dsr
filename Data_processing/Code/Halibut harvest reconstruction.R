@@ -80,12 +80,12 @@ write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",m
 # Get FISH TICKEt halibut data
 #update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
 
-HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
-#Halibut fish ticket data:
-#HA.fishtix<-read.csv("Data/Halibut harvest from fish ticket data_071522.csv")
-HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv") 
+# HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
+# #Halibut fish ticket data:
+# #HA.fishtix<-read.csv("Data/Halibut harvest from fish ticket data_071522.csv")
+# HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fish ticket data_071522.csv") 
 
-#Get IPHC HALOIBUT DATA: 
+#Get IPHC HALIBUT DATA: 
 
 #Halibut harvest from IPHC data request 1982 - present
 # Available from: https://www.iphc.int/data/commercial-datasets and 
@@ -96,7 +96,10 @@ HA.Harv.update<-read.csv("Data_processing/Data/Harvests/Halibut harvest from fis
 # get just the header row and the data for the most recent year.  This will then be
 # added to the sheet Randy came up with (HA.req) and then saved for next year 
 
-HA.newreq<-read.csv(paste0("Data_processing/Data/Harvests/IPHC_harv_",YEAR-1,".csv"))
+#Data available on the web is the same as what was used for the last assessment
+#I put in a request for updated numbers.
+#HA.newreq<-read.csv(paste0("Data_processing/Data/Harvests/IPHC_harv_",YEAR-1,".csv"))
+HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2022.csv")
 
 #get the request Randy put in... 
 HA.req<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
@@ -110,22 +113,23 @@ HA.web<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.
 
 #-------------------------------------------------------------------------------
 # 
-HA.Harv %>% mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
-                   fishery.code = permit.fishery,
-                   gear = gear.description,
-                   ha.mt = ha.lbs*0.00045359,
-                   source = "old") %>%
-  dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.old
-
-HA.Harv.update %>% mutate(Year=DOL.Year,
-                          gear = Gear.Code.and.Name,
-                          ha.lbs = Whole.Weight..sum.,
-                          ha.mt = ha.lbs*0.00045359,
-                          fishery.code = CFEC.Fishery.Code,
-                          source = "new") %>% 
-  dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.latest
-
-temp<-rbind(HA.Harv.old,HA.Harv.latest)
+#This step was already done above....remove this section?
+# HA.Harv %>% mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
+#                    fishery.code = permit.fishery,
+#                    gear = gear.description,
+#                    ha.mt = ha.lbs*0.00045359,
+#                    source = "old") %>%
+#   dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.old
+# 
+# HA.Harv.update %>% mutate(Year=DOL.Year,
+#                           gear = Gear.Code.and.Name,
+#                           ha.lbs = Whole.Weight..sum.,
+#                           ha.mt = ha.lbs*0.00045359,
+#                           fishery.code = CFEC.Fishery.Code,
+#                           source = "new") %>% 
+#   dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.latest
+# 
+# temp<-rbind(HA.Harv.old,HA.Harv.latest)
 
 ggplot(temp,aes(Year,ha.mt,col=source)) + geom_line()+facet_wrap(~Mgt.Area)
 
