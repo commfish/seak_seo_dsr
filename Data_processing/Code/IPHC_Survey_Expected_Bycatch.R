@@ -7,15 +7,16 @@
 ##
 ## Background stuff on these calculations in Discards.Rproj in Yelloweye/Unreported Discards
 #################################################################################
-library(dplyr)
+{library(dplyr)
 library(boot)
 library(ggplot2)
 library(RColorBrewer)
 library(matrixStats)
+  }
 
 source("r_helper/Port_bio_function.R")
 
-YEAR <- 2023
+YEAR <- 2024
 
 #*******************************************************************************
 ### NEED TO DO!!!!!!!! 7-12-23
@@ -36,7 +37,7 @@ smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey
 smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
 
 str(Survey); head(Survey,10)
-str(HA.Harv)
+# str(HA.Harv)
 #================================================================================
 # Look at some depth stuff... 
 hist(Survey$BeginDepth..fm., breaks=10)
@@ -50,7 +51,7 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
 #==============================================================================================
 ## Load the port samples that were downloaded from oceansAK; 
 # Need Yelloweye weights to get wcpue estimates
-{  Port<-port.bio(2022)
+{  Port<-port.bio(2024)
   
   unique(Port$Sample.Type)
   Port.rand<-Port[Port$Sample.Type=="Random",]
@@ -152,7 +153,10 @@ ggplot(data = Survey %>% filter(Year > 2015,
 #str(SubHal)
 #str(SubHal2)
 
-SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
+# SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
+#I am not sure where this data comes from - it's not in the "Halibut harvest reconstruction" code
+#Going to use the data from 2022 for now - LSC
+SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-2022.csv"), header=T)
 
 #notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
 # there is something.  
@@ -163,7 +167,8 @@ SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1
 
 Halibut<-function(){
  # HA.Harv<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
-  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
+  # HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
+  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) #fish ticket data
   LL<-HA.Harv #[HA.Harv$gear.description == "Longline",]
   head(LL)
   colnames(LL)
@@ -206,8 +211,10 @@ Years<-unique(Survey$Year)
 nboot<-1000
 Depths<-sort(unique(Survey$depth_bin))
 
+s23<-Survey %>% filter(Year == 2023)
 s22<-Survey %>% filter(Year == 2022)
 s21<-Survey %>% filter(Year == 2021)
+str(s23)
 str(s22)
 str(s21)
 
@@ -711,7 +718,7 @@ write.csv(SEO.expBy,paste0("Data_processing/Data/SEO_expBy_",YEAR,".csv"))
 #=====================================================================
 # compare to landed bycatch
 Removals.subd.1<-read.csv("Data_processing/Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
-Removals.subd<-read.csv("Data_processing/Data/SE_YE_known_removals_1980-2022.csv")  #YE reconstruction from most recent
+Removals.subd<-read.csv("Data_processing/Data/SE_YE_known_removals_1980-2024.csv")  #YE reconstruction from most recent
 #2) pre-1980 removals from SEO as a whole... 
 # Removals.pre<-read.csv("Data/XXX.csv") #Waiting on Donnie; 
 # generate fake data here for model development...
@@ -764,8 +771,11 @@ ggsave(paste0("Figures/exp_and_landed_bycatch_in_halibut_fishery_by_ma_", YEAR, 
 #*#IPHC records:
 SEOHal1<-read.csv("Data_processing/Data/SEO_Halibut_removals_1888-2022.csv", header=T)
 # Fish ticket records:
-SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) %>%
+# SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) %>%
+#   filter(Mgt.Area == "CSEO" | Mgt.Area == "SSEO" | Mgt.Area == "NSEO" | Mgt.Area == "EYKT") 
+SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) %>%
   filter(Mgt.Area == "CSEO" | Mgt.Area == "SSEO" | Mgt.Area == "NSEO" | Mgt.Area == "EYKT") 
+
 
 ys<-unique(SEOHal2$Year)
 SEOHal3<-data.frame()

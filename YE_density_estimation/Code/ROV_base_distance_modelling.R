@@ -649,7 +649,7 @@ ggplot(GG, aes(x=reorder(Model,Delta.AIC), y=Dhat))+geom_point()+
 
 
 ######################################################################################
-## Go to DSR_ROV_SEAK_basic_biomass_calc.R to calculate biomass from the best model
+## Go to DSR_ROV_SEAK_basic_biomass_calc.R to calculate biomass from the best model (LSC sept 4 - this is not in the repo...????)
 ## Go to DSR_ROV_SEAK_dist_model_avg.R to get Dhat from model averaging the best models
 ## Go to DSR_ROV_SEAK_Full_bootstrap_biomass_estimation.R to model average and calculate biomass in bootstrap 
 ########################################################################################

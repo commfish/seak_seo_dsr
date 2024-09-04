@@ -37,7 +37,7 @@ library("kableExtra")}
 YEAR<-2023
 
 #ROV biomass .. check date tag to get most recent
-bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2023-06-21.csv")
+bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2024-08-30.csv")
 str(bio_new)
 str(bio)
 

@@ -37,8 +37,9 @@ unique(YE.Harv.update$Gear.Name)
 colnames(YE.Harv.update)
 
 YE.Harv.update <- YE.Harv.update %>% 
-  rename(Whole.weight.lbs = Whole.Weight..sum.,
-         Mgt.Area = Mgt.Area.District) 
+  dplyr::rename(Whole.weight.lbs = Whole.Weight..sum.,
+    Mgt.Area = Mgt.Area.District)
+
 
 #*****************************************************************************
 #------------------------------------------------------------------------------
@@ -46,22 +47,22 @@ YE.Harv.update <- YE.Harv.update %>%
 {str(YE.Harv.update)
 YE.Harv.update %>%
   group_by(Year,Mgt.Area,CFEC.Fishery.Code,Gear.Name) %>% 
-  summarize(total.removals.lbs = sum(Whole.weight.lbs)) %>%
-  mutate(total.removals.mt = 0.00045359*total.removals.lbs,
+  dplyr::summarize(total.removals.lbs = sum(Whole.weight.lbs)) %>%
+  dplyr::mutate(total.removals.mt = 0.00045359*total.removals.lbs,
          source = "update") %>% 
-  rename(Fishery.Code = CFEC.Fishery.Code,
+  dplyr::rename(Fishery.Code = CFEC.Fishery.Code,
          gear=Gear.Name)%>%
-  select(Year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt) -> Comm.harv.up
+  dplyr::select(Year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt) -> Comm.harv.up
 str(Comm.harv.up)
 #
 YE.Harv %>%
   group_by(year,mgmt_area,fishery,gear) %>% 
-  summarize(total.removals.lbs = sum(whole_pounds)) %>%
-  mutate(total.removals.mt = 0.00045359*total.removals.lbs,
+  dplyr::summarize(total.removals.lbs = sum(whole_pounds)) %>%
+  dplyr::mutate(total.removals.mt = 0.00045359*total.removals.lbs,
          source = "original") %>% 
-  rename(Mgt.Area = mgmt_area, 
+  dplyr::rename(Mgt.Area = mgmt_area, 
          Fishery.Code = fishery) %>%
-  select(Year=year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt)-> Comm.harv.orig
+  dplyr::select(Year=year,Mgt.Area,source,Fishery.Code,gear,total.removals.lbs,total.removals.mt)-> Comm.harv.orig
 str(Comm.harv.orig)
 
 harvests<-rbind(Comm.harv.up,Comm.harv.orig)
@@ -73,7 +74,8 @@ ggplot(harvests,aes(Year,total.removals.mt,col = source)) +
 #old data and update data matches up for commercial harvests... yeah! 
 # going forward set up for adding fish ticket data
 YE.comm<-rbind(Comm.harv.up,Comm.harv.orig %>% 
-                 filter(Year < min(Comm.harv.up$Year)))}
+                 dplyr::filter(Year < min(Comm.harv.up$Year)))
+}
 #--------------------------------------------------------------------------------
 
 str(YE.Harv)
@@ -88,14 +90,14 @@ YE.Harv %>% mutate(Year = year, Mgt.Area = mgmt_area, ye.lbs = whole_pounds,
                    ye.mt = ye.lbs*0.00045359) %>%
   dplyr::select(Year,Mgt.Area,fishery.code,gear,ye.lbs,ye.mt,ha.bycatch) ->YE.Harv.old
 
-YE.Harv.update %>% rename(gear = Gear.Name,
+YE.Harv.update %>%  dplyr::rename(gear = Gear.Name,
                           ye.lbs = Whole.weight.lbs,
                           fishery.code = CFEC.Fishery.Code) %>%
   mutate(ye.mt = ye.lbs*0.00045359,
   ha.bycatch = ifelse(substr(fishery.code,1,1) %in% c("B"),"hal.by","other")) %>% 
   dplyr::select(Year,Mgt.Area,fishery.code,gear,ye.lbs,ye.mt,ha.bycatch) ->YE.Harv.latest
 
-YE.comm.rem<-rbind(YE.Harv.old %>% filter(Year < min(YE.Harv.latest$Year)),
+YE.comm.rem<-rbind(YE.Harv.old %>% dplyr::filter(Year < min(YE.Harv.latest$Year)),
                    YE.Harv.latest)
 ggplot(YE.comm.rem,aes(Year,ye.mt,col = ha.bycatch)) +
   geom_line() + 
@@ -231,13 +233,13 @@ YE.removals<-rbind(YE.removals,YE.sub2)
 str(YE.removals)
 
 YE.removals %>% group_by(Year,Mgt.Area) %>%
-  summarise(tot.rem.mt = sum(ye.mt)) ->pt1
+  dplyr::summarise(tot.rem.mt = sum(ye.mt)) ->pt1
 
 YE.removals %>% filter(ha.bycatch == "hal.by") %>% 
   group_by(Year,Mgt.Area) %>%
-  summarise(tot.hal.by = sum(ye.mt)) ->pt2
+  dplyr::summarise(tot.hal.by = sum(ye.mt)) ->pt2
 
-?join
+# ?join
 All.known.YE.removals<-full_join(pt1,pt2)
 
 View(All.known.YE.removals)
@@ -299,15 +301,49 @@ YE.Sport<- YE.Sport %>%
   mutate(IO = ifelse(mgmt_area %in% c("SSEO","CSEO","NSEO","EYKT","SEO"),"SEO", 
                      ifelse(mgmt_area %in% c("NSEI","SSEI"),"SEI",NA)))
 
+#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
+HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
+unique(HA.Harv$year.landed) #1975-2020
+
+#Halibut fish ticket data:
+HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv") %>% 
+  filter(DOL.Year>2020) #Filtered out 2020 to remove having duplicates after combining HA.Harv and HA.Harv.update
+unique(HA.Harv.update$DOL.Year) 
+
+str(HA.Harv)
+HA.Harv$year.landed<-as.character(HA.Harv$year.landed)
+str(HA.Harv.update)
+HA.Harv.update$Year<-HA.Harv.update$DOL.Year
+HA.Harv.update$Year<-as.character(HA.Harv.update$Year)
+min(HA.Harv.update$Year)
+
+HA.Harv %>% mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
+                   fishery.code = permit.fishery,
+                   gear = gear.description,
+                   ha.mt = ha.lbs*0.00045359,
+                   source = "old") %>%
+  dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.old
+
+HA.Harv.update %>% mutate(Year=DOL.Year,
+                          gear = Gear.Code.and.Name,
+                          ha.lbs = as.numeric(Whole.Weight..sum.),
+                          ha.mt = ha.lbs*0.00045359,
+                          fishery.code = CFEC.Fishery.Code,
+                          source = "new") %>% 
+  dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.latest
+
+HA.Harv<-rbind(HA.Harv.old,HA.Harv.latest)
+str(HA.Harv)
+
 HA.Harv<- HA.Harv %>%
-  mutate(IO = ifelse(groundfish.mgt.area.district %in% c("SSEO","CSEO","NSEO","EYKT","SEO"),"SEO", 
-                     ifelse(groundfish.mgt.area.district %in% c("NSEI","SSEI"),"SEI",NA))) 
+  dplyr::mutate(IO = ifelse(Mgt.Area %in% c("SSEO","CSEO","NSEO","EYKT","SEO"),"SEO", 
+                     ifelse(Mgt.Area %in% c("NSEI","SSEI"),"SEI",NA))) 
 
 Out.remove<-data.frame()
 a<-1
 
 for (i in IO){     #i<-IO[1]
-  for (y in Years){  #y<-Years[1]
+  for (y in ys){  #y<-Years[1]
     Com<-YE.Harv[YE.Harv$year == y & YE.Harv$IO == i,]
     Spt<-YE.Sport[YE.Sport$Year == y & YE.Sport$IO == i,]
     Sub<-YE.Subs[YE.Subs$Year == y,]
