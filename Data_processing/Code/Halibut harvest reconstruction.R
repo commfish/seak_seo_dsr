@@ -337,7 +337,7 @@ write.csv(Halibut_harvest_forSPM,paste0("Data_processing/Data/SEO_Halibut_remova
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
 ## Data check stuff here
-str(HA.Harv.IPHC)
+str(HA.Harv.IPHC)#not sure what dataframe this is supposed to be?
 str(Halibut.harv.1975)
 HA.web %>% 
   dplyr::select(Year = Year,a2C.mt=X2C.mt,a3A.mt=X3A.mt) ->old.HA
