@@ -24,6 +24,9 @@ CSc<-unique(statareas$G_STAT_AREA[statareas$G_MANAGEMENT_AREA_CODE == "CSEO"])
 NSc<-unique(statareas$G_STAT_AREA[statareas$G_MANAGEMENT_AREA_CODE == "NSEO"])
 EYc<-unique(statareas$G_STAT_AREA[statareas$G_MANAGEMENT_AREA_CODE == "EYKT"])
 
+SSIc <- unique(statareas$G_STAT_AREA[statareas$G_MANAGEMENT_AREA_CODE == "SSEI"])
+NSIc <- unique(statareas$G_STAT_AREA[statareas$G_MANAGEMENT_AREA_CODE == "NSEI"])
+
 Port %>% mutate(GFMU = ifelse(Groundfish.Management.Area.Code == "",
                               ifelse(Groundfish.Stat.Area %in% c(SSc) |
                                        substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("SSEO"),"SSEO",
@@ -35,6 +38,21 @@ Port %>% mutate(GFMU = ifelse(Groundfish.Management.Area.Code == "",
                                                             substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("EYKT"),"EYKT",NA)))),
                               Groundfish.Management.Area.Code)) -> Port
 
+#Port %>% mutate(GFMU = ifelse(Groundfish.Management.Area.Code == "",
+#                              ifelse(Groundfish.Stat.Area %in% c(SSc) |
+#                                       substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("SSEO"),"SSEO",
+#                                     ifelse(Groundfish.Stat.Area %in% c(CSc) |
+#                                              substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("CSEO"),"CSEO",
+#                                            ifelse(Groundfish.Stat.Area %in% c(NSc) |
+#                                                     substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("NSEO"),"NSEO",
+#                                                   ifelse(Groundfish.Stat.Area %in% c(EYc) |
+#                                                            substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("EYKT"),"EYKT",
+#                                                          ifelse(Groundfish.Stat.Area %in% c(NSIc) |
+#                                                                   substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("NSEI"),"NSEI",
+#                                                                 ifelse(Groundfish.Stat.Area %in% c(SSIc) |
+#                                                                          substr(Port$Groundfish.Stat.Area.Group,1,4) %in% c("SSEI"),"SSEI",NA)))))),
+#                              Groundfish.Management.Area.Code)) -> Port
+
 Port<-Port %>% mutate(Sex = 
                         case_when(Sex.Code == 1 ~ "Male",
                                   Sex.Code == 2 ~ "Female")
@@ -43,3 +61,6 @@ Port$Sex<-as.factor(Port$Sex)
 
 return(Port)
 }
+
+str(Port)
+with(Port, table(Year, GFMU))

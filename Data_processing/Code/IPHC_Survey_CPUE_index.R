@@ -86,6 +86,17 @@ source("r_helper/Port_bio_function.R")
   Sur2C_23<-Surv23[Surv23$IPHC.Reg.Area == "2C",]
   Sur3A_23<-Surv23[Surv23$IPHC.Reg.Area == "3A",]
   
+  unique(Surv23$IPHC.Stat.Area)
+  Surv23 %>% mutate(SEdist = ifelse(IPHC.Stat.Area %in% c(182:184,171,173,174,161:163),"NSEI", 
+                         ifelse(IPHC.Stat.Area %in% c(142:144,152,153),"SSEI",
+                                ifelse(IPHC.Stat.Area %in% c(140,141,151,150,160,170,181),
+                                       ifelse(-MidLon.fished>137,"EYKT",
+                                              ifelse(MidLat.fished>=57.5,"NSEO",
+                                                     ifelse(MidLat.fished<57.5 & MidLat.fished>=56,"CSEO",
+                                                            ifelse(MidLat.fished<56,"SSEO",NA)))),NA)))) ->check23
+  unique(check23$SEdist)
+  with(check23, table(SEdist)) #OK, districts are here at this point.
+  
   #2022-----------------------------------------------------------
   But2C3A_2022<-read.csv("Data_processing/Data/IPHC_raw/Set and Pacific halibut data 2C3A 2022.csv", check.names = TRUE)
 #  View(But2C3A_2022)
@@ -131,7 +142,7 @@ source("r_helper/Port_bio_function.R")
   unique(YE2C$Year) #years 1998-2020
   
   Sur2C<- BUT2C %>% full_join(YE2C, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))  
-  Sur2C <- Sur2C %>% rbind(Sur2C, Sur2C_21, Sur2C_22)
+  Sur2C <- Sur2C %>% rbind(Sur2C, Sur2C_21, Sur2C_22, Sur2C_23)  #FLAG!!! Don't forget to add in the new year here!!!
   
   Sur2C[Sur2C$Stlkey == 20200208,]
   
@@ -145,6 +156,7 @@ source("r_helper/Port_bio_function.R")
                                                               ifelse(MidLat.fished<56,"SSEO",NA)))),NA))))
   
   nrow(Sur2C)
+  with(Sur2C, table(Year.x,SEdist))
   
   ## Lets bring in 3A and pull out surveys in the Yakutat area...
   BUT3A<-read.csv("Data_processing/Data/IPHC_raw/IPHC Set and Pacific halibut data 3A.csv", header=T)
@@ -155,9 +167,9 @@ source("r_helper/Port_bio_function.R")
   Sur3A<- BUT3A %>% 
     full_join(YE3A, by=c("Stlkey","Station")) #by=c("Stlkey","Setno","Station"))
   
-  #Here we are comnining all the 3A data
+  #Here we are combining all the 3A data
   Sur3A <- Sur3A %>% 
-    rbind(Sur3A,Sur3A_21, Sur3A_22, Sur3A_23)
+    rbind(Sur3A,Sur3A_21, Sur3A_22, Sur3A_23) #FLAG!!! Don't forget to add in the new year here!!!
   
   Sur3A<-Sur3A %>%
     mutate(SEdist = ifelse(-MidLon.fished <= 137 & MidLat.fished >= 57.5,"NSEO",
@@ -168,7 +180,9 @@ source("r_helper/Port_bio_function.R")
   
   ## connect the two data sets
   Survey<-rbind(Sur3A,Sur2C)
-  unique(Survey$Year) #1998-20223 - everything combined!
+  unique(Survey$Year.x) #1998-20223 - everything combined!
+  
+  with(Survey, table(Year.x,SEdist))
   
   #make one more column to define inside versus outside for dealing with older data sets...
   Survey<-Survey %>% 
@@ -180,7 +194,10 @@ source("r_helper/Port_bio_function.R")
     mutate(depth_bin = cut(AvgDepth.fm, breaks = seq(0,400,50),
                            labels = paste (seq(50,400,50))),
            YE.obs = ifelse(is.na(YE.obs),0,YE.obs),
-           HooksObserved  = ifelse(is.na(HooksObserved ),140,HooksObserved ))
+           HooksObserved  = ifelse(is.na(HooksObserved ),140,HooksObserved ),
+           depth_m = AvgDepth.fm * 1.8288,
+           depth_bin_m = cut(depth_m, breaks = seq(0,800,50),
+                             labels = paste (seq(50,800,50))))
   
   Survey$HooksRetrieved<-as.numeric(Survey$HooksRetrieved)
   Survey$YE.exp<-Survey$HooksRetrieved/Survey$HooksObserved
@@ -198,14 +215,23 @@ source("r_helper/Port_bio_function.R")
   # calculating CPUE
   
   #2024 - put in a request for this data
-  hadj<-read.csv(paste0("Data_processing/Data/IPHC_raw/iphc_",YEAR,"_fiss_hadj.csv"), check.names = TRUE) %>% 
+  # Not from PJ: The data was already posted: https://www.iphc.int/data/fiss-survey-raw-survey-data/
+  hadj<-read.csv(paste0("Data_processing/Data/IPHC_raw/iphc-",YEAR,"-fiss-hadj-20231031.csv"), check.names = TRUE) %>% 
   #hadj<-hadj %>% 
     filter(IPHC.Reg.Area == "3A " | IPHC.Reg.Area == "2C ") %>%
     select(Stlkey = stlkey,Year,Station,h.adj)
     str(hadj)
+    mean(hadj$h.adj, na.rm=T)
     
-    
-  Survey <- left_join(Survey,hadj,by=c("Year","Stlkey","Station"))}  
+  Survey <- left_join(Survey,hadj,by=c("Year","Stlkey","Station"))
+  # if new hook adj not ready set them to 1
+  Survey %>% filter(is.na(h.adj))
+  Survey <- Survey %>% mutate(h.adj = ifelse(is.na(h.adj),mean(hadj$h.adj, na.rm=T),h.adj))
+  
+  # get rid of ineffective sataions
+  with(Survey, table(Year,Eff))
+  Survey <- Survey %>% filter(Eff == "Y")
+  }  
   #str(Survey)
 
 {y<-sample(unique(Survey$Year),1)
@@ -232,6 +258,13 @@ hist(Survey$AvgDepth.fm)
 plot(Survey$YE.obs ~ Survey$AvgDepth.fm)
 plot(Survey$O32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
 plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
+
+#Some data for PWS YE assessment: 
+with(Survey, table(YE.obs,depth_bin_m))
+Survey %>% group_by(depth_bin_m) %>% summarize(ye_obs = sum(YE.obs),
+                                               n_stations = n_distinct(Station)) %>%
+  mutate(YE_per_station = ye_obs / n_stations) -> ye_by_depth_m
+write.csv(ye_by_depth_m,"Data_processing/Data/SE_YE_FISS_depth_forPWS.csv")
 
 Survey %>% group_by(Station) %>%
   dplyr::summarise(Lat = mean(MidLat.fished, na.rm=T),
@@ -393,6 +426,7 @@ Survey %>% group_by(SEdist,Year) %>%
   geom_point(aes(Year,mean_wt,col=SEdist)) +
   geom_line(aes(Year,mean_wt,col=SEdist))
 
+
 #=============================================================================
 # FUNCTION for generating cpue estimates from IPHC surveys for different management areas
 
@@ -404,8 +438,8 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
   Years<-unique(Survey$Year)
   
   j<-1
-  for (y in Years) {  #y<-Years[1]
-    for (s in Subs){  #s<-Subs[1]
+  for (y in Years) {  #y<-Years[26]
+    for (s in Subs){  #s<-Subs[3]
       Dat<-Survey[Survey$Year == y & 
                     Survey[,col.ref] == s &
                     Survey$AvgDepth.fm > Shallow & 
@@ -478,51 +512,51 @@ YEHA.fxn<-function(Survey=Survey, Area="SEdist",Deep=250, Shallow=0,  nboot=1000
   }
   
   #couple of plots in output
-  Sub.cnt<-length(Subs)
-  cols<-brewer.pal(min(Sub.cnt,8),"Dark2")
+  #Sub.cnt<-length(Subs)
+  #cols<-brewer.pal(min(Sub.cnt,8),"Dark2")
   
-  if (Sub.cnt < 8) {par(mfrow=c(1,1))}
-  if (Sub.cnt > 8 & Sub.cnt < 17) {par(mfrow=c(2,1))}
-  if (Sub.cnt > 16) {par(mfrow=c(3,1))}
+  #if (Sub.cnt < 8) {par(mfrow=c(1,1))}
+  #if (Sub.cnt > 8 & Sub.cnt < 17) {par(mfrow=c(2,1))}
+  #if (Sub.cnt > 16) {par(mfrow=c(3,1))}
   
-  nplot<-ceiling(Sub.cnt/8)
+  #nplot<-ceiling(Sub.cnt/8)
   #cols<-brewer.pal(length(Subs),"Set3")
-  for (n in 1:nplot){  #n<-1
-    i<-1
-    pSubs<-Subs[(1+(n-1)*8):(8+(n-1)*8)]
-    pSubs<-pSubs[!is.na(pSubs)]
+  #for (n in 1:nplot){  #n<-1
+  #  i<-1
+  #  pSubs<-Subs[(1+(n-1)*8):(8+(n-1)*8)]
+  #  pSubs<-pSubs[!is.na(pSubs)]
     
-    for (s in pSubs) {   #s<-pSubs[1]
-      Pdat<-IPHC.cpue[IPHC.cpue$mngmt.area == s,]
-      if (s == pSubs[1]){
-        plot(Pdat$CPUE.mean ~ Pdat$Year, col=cols[i], 
-             ylim=c(0,max(IPHC.cpue$CPUE.hi95ci)), type="l",
-             ylab="CPUE", xlab="Year", main=Area)
-        Y1<-Pdat$CPUE.lo95ci; Y2<-Pdat$CPUE.hi95ci
-        polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-                col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-        i<-i+1
-      } else {
-        Y1<-Pdat$CPUE.lo95ci; Y2<-Pdat$CPUE.hi95ci
-        if (length(Y1)==1){}else {
-          polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
-                  col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
-          i<-i+1
-        }
+  #  for (s in pSubs) {   #s<-pSubs[1]
+  #    Pdat<-IPHC.cpue[IPHC.cpue$mngmt.area == s,]
+  #    if (s == pSubs[1]){
+  #      plot(Pdat$CPUE.mean ~ Pdat$Year, col=cols[i], 
+  #           ylim=c(0,max(IPHC.cpue$CPUE.hi95ci)), type="l",
+  #           ylab="CPUE", xlab="Year", main=Area)
+  #      Y1<-Pdat$CPUE.lo95ci; Y2<-Pdat$CPUE.hi95ci
+  #      polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
+  #              col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
+  #      i<-i+1
+  #    } else {
+  #      Y1<-Pdat$CPUE.lo95ci; Y2<-Pdat$CPUE.hi95ci
+  #      if (length(Y1)==1){}else {
+  #        polygon(c(Years,rev(Years)),c(Y1,rev(Y2)),
+  #                col=adjustcolor(cols[i],alpha.f=0.2),border=NA)
+  #        i<-i+1
+  #      }
         
-      }
-    }
-    i<-1
-    for (s in pSubs) {   #s<-Subs[2]
-      Pdat<-IPHC.cpue[IPHC.cpue$mngmt.area == s,]
-      lines(Pdat$CPUE.mean ~ Pdat$Year, col=cols[i], type="l",
-            lwd=1.5)
-      i<-i+1
-    }
-    legend(x="topleft", cex=0.8,
-           legend=c(pSubs), bty="n",
-           col=cols,text.col=cols)
-  }
+  #    }
+  #  }
+  #  i<-1
+  #  for (s in pSubs) {   #s<-Subs[2]
+  #    Pdat<-IPHC.cpue[IPHC.cpue$mngmt.area == s,]
+  #    lines(Pdat$CPUE.mean ~ Pdat$Year, col=cols[i], type="l",
+  #          lwd=1.5)
+  #    i<-i+1
+  #  }
+  #  legend(x="topleft", cex=0.8,
+  #         legend=c(pSubs), bty="n",
+  #         col=cols,text.col=cols)
+  #}
   
   return(IPHC.cpue)
 }
@@ -544,8 +578,9 @@ SE.subdistricts<- YEHA.fxn(Survey=Survey_non0, Area="SEdist",Deep=250, Shallow=0
 
 str(SE.subdistricts); unique(SE.subdistricts$mngmt.area)
 
-IPHC.index<-SE.subdistricts[SE.subdistricts$mngmt.area != "NSEI" & 
-                              SE.subdistricts$mngmt.area != "SSEI",NA]
+SE.subdistricts %>% filter(Year == 2023)
+
+IPHC.index<-SE.subdistricts #[SE.subdistricts$mngmt.area != "NSEI" & SE.subdistricts$mngmt.area != "SSEI",NA]
 str(IPHC.index)
 
 ggplot(IPHC.index, aes(x=Year)) +
@@ -567,8 +602,8 @@ ggplot(IPHC.index, aes(x=Year)) +
 
 ggsave(paste0("Figures/YE_IPHC_cpue_non0_boot_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
-#This output is used in the REMA model
-write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
+#This output was used in the REMA model; use the Tweedie model output now!
+#write.csv(IPHC.index,paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 
 #get average number of stations in each area 
 IPHC.index %>% group_by(mngmt.area) %>%
@@ -576,49 +611,51 @@ IPHC.index %>% group_by(mngmt.area) %>%
             min_no_stations = min(no.stations),
             max_no_stations = max(no.stations))
 
-IPHC.index_40p<-SE.subdistricts_40p[SE.subdistricts_40p$mngmt.area != "NSEI" & 
-                              SE.subdistricts_40p$mngmt.area != "SSEI",]
+# Code to check what filtering more stations does. Blocked out now and not necessary
+# but saved here if someone wants to revisit this. 
 
-ggplot(IPHC.index_40p, aes(x=Year)) +
-  geom_point(aes(y=CPUE.mean),size=2) +
-  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci),
-                col="black", alpha=0.5) +
-  facet_wrap(~mngmt.area) +
-  xlab("\nYear") +
-  ylab("Yelloweye CPUE n/hook") +
+#IPHC.index_40p<-SE.subdistricts_40p #[SE.subdistricts_40p$mngmt.area != "NSEI" &                               SE.subdistricts_40p$mngmt.area != "SSEI",]
+
+#ggplot(IPHC.index_40p, aes(x=Year)) +
+#  geom_point(aes(y=CPUE.mean),size=2) +
+#  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci),
+#                col="black", alpha=0.5) +
+#  facet_wrap(~mngmt.area) +
+#  xlab("\nYear") +
+#  ylab("Yelloweye CPUE n/hook") +
   #ylab("Density (yelloweye rockfish/kmsq)") +
-  scale_y_continuous(label=comma) +
-  scale_x_continuous(breaks=seq(1995,2025,5)) + 
-  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
-         panel.grid.minor = element_blank()) +
-  ggtitle("Yelloweye cpue in IPHC FISS, stations that encountered yelloweye at least 40% of years")
+#  scale_y_continuous(label=comma) +
+#  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+#  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+#         panel.grid.minor = element_blank()) +
+#  ggtitle("Yelloweye cpue in IPHC FISS, stations that encountered yelloweye at least 40% of years")
 
-ggsave(paste0("Figures/YE_IPHC_cpue_min40percentYE_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+#ggsave(paste0("Figures/YE_IPHC_cpue_min40percentYE_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 #This output is used in the REMA model if being more restrictive 
-write.csv(IPHC.index_40p,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
+#write.csv(IPHC.index_40p,paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
 
-comp<-rbind(IPHC.index %>% mutate(yelloweye_presence = "at least once"),
-            IPHC.index_40p %>% mutate(yelloweye_presence = "40% of years"))
+#comp<-rbind(IPHC.index %>% mutate(yelloweye_presence = "at least once"),
+#            IPHC.index_40p %>% mutate(yelloweye_presence = "40% of years"))
 
-ggplot(comp, aes(x=Year)) +
-  geom_point(aes(y=CPUE.mean, col = yelloweye_presence),
-             size=2, position = position_dodge(width=0.25)) +
-  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci, col=yelloweye_presence),
-                alpha=0.5,
-                position = position_dodge(width=0.25)) +
-  facet_wrap(~mngmt.area) +
-  xlab("\nYear") +
-  ylab("Yelloweye CPUE n/hook") +
+#ggplot(comp, aes(x=Year)) +
+#  geom_point(aes(y=CPUE.mean, col = yelloweye_presence),
+#             size=2, position = position_dodge(width=0.25)) +
+#  geom_errorbar(aes(ymin = CPUE.lo95ci, ymax= CPUE.hi95ci, col=yelloweye_presence),
+#                alpha=0.5,
+#                position = position_dodge(width=0.25)) +
+#  facet_wrap(~mngmt.area) +
+#  xlab("\nYear") +
+#  ylab("Yelloweye CPUE n/hook") +
   #ylab("Density (yelloweye rockfish/kmsq)") +
-  scale_y_continuous(label=comma) +
-  scale_x_continuous(breaks=seq(1995,2025,5)) + 
-  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
-         panel.grid.minor = element_blank(),
-         legend.position = "top") +
-  ggtitle("Yelloweye cpue in IPHC FISS")
+#  scale_y_continuous(label=comma) +
+#  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+#  theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
+#         panel.grid.minor = element_blank(),
+#         legend.position = "top") +
+#  ggtitle("Yelloweye cpue in IPHC FISS")
 
-ggsave(paste0("Figures/YE_IPHC_cpue_method_comparison_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
+#ggsave(paste0("Figures/YE_IPHC_cpue_method_comparison_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 
 ################################################################################
@@ -627,6 +664,9 @@ ggsave(paste0("Figures/YE_IPHC_cpue_method_comparison_", YEAR, ".png"), dpi=300,
 ################################################################################
 # We will still restrict stations to those that have encountered YE at least once
 # in the time series and not consider stations below 250 fathoms
+Survey_non0<-Survey %>% filter(Station %in% c(YE.stations) &
+                                 SEdist %in% c("EYKT","NSEO","CSEO","SSEO"))
+
 IPHC_tweed <- Survey_non0 %>% filter(AvgDepth.fm <= 250) %>% 
   group_by(Year,Station) %>%
   mutate(CPUE = h.adj*YE.obs/HooksObserved,
@@ -835,14 +875,21 @@ pred_cpue;preds
 
 #Put the standardized CPUE and SE into the data frame and convert to
 #backtransformed (bt) CPUE
+alpha <- 0.05  # for a 95% confidence interval on bycatch and discard estimates
+z <- qnorm(1 - alpha / 2)  # Z value for 95% CI
+
 std_dat_tweed %>% 
   mutate(fit = pred_cpue$fit,
          se = pred_cpue$se.fit,
-         upper = fit + (2 * se),
-         lower = fit - (2 * se),
+         lower_link = fit - z * se,
+         upper_link = fit + z * se,
+         lower = mod_std_tweed$family$linkinv(lower_link),
+         upper = mod_std_tweed$family$linkinv(upper_link),
+         #upper = fit + (2 * se),
+         #lower = fit - (2 * se),
          bt_cpue = exp(fit),
-         bt_upper = exp(upper),
-         bt_lower = exp(lower),
+         bt_upper = upper, #exp(upper),
+         bt_lower = lower, #exp(lower),
          bt_se = (bt_upper - bt_cpue) / 2  ,
          bt_cv = bt_se/bt_cpue
   ) -> std_dat_tweed
@@ -858,6 +905,28 @@ IPHC_tweed %>%
          lower = Lower,
          cv = (upper-lower)/1.96) -> fsh_sum_boot
 
+std_dat_tweed %>% 
+  select(Year, cpue = bt_cpue, upper = bt_upper, lower = bt_lower, SEdist) %>% 
+  mutate(CPUE = "Tweedie index") %>% data.frame() -> plot_dat
+
+plot_dat %>% data.frame() %>%
+  ggplot(aes(group = 1)) + #geom_ribbon(aes(Year, ymin = lower, ymax = upper)) +
+  geom_ribbon(aes(Year, ymin = lower, ymax = upper), fill = wes_palette("Darjeeling1")[c(5)],
+              colour = NA, alpha = 0.5) +
+  geom_point(aes(Year, cpue, colour = CPUE, shape = CPUE), size = 2, show.legend = F) +
+  geom_line(aes(Year, cpue, colour = CPUE, group = CPUE), size = 1) +
+  facet_wrap(~ SEdist, scales = "free") +
+  scale_colour_manual(values =  wes_palette("Darjeeling1")[c(5,4)],
+                      aesthetics = c("colour","fill"), name = "IPHC CPUE") +
+  labs(x = "Year", y = "FISS CPUE (round kg / hook)\n") +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 0.5)) + #c(0.85, 0.9)) +
+  expand_limits(y = 0)
+
+ggsave(paste0("Figures/IPHC_cpue_tweedie_",YEAR,".png"), dpi=300, height=6, width=6, units="in")
+
+#-------------------------------------------------------------------------------
+# Compare Tweedie and bootstrap index if you want... 
 boot_index <- IPHC.index %>% 
   mutate(SEdist = mngmt.area, fsh_cpue = WCPUE.mean, upper = WCPUE.hi95ci,
          lower = WCPUE.lo95ci, cv = (upper-lower)/1.96) %>%
