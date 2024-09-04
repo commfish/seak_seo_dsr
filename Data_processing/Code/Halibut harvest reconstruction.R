@@ -16,26 +16,32 @@ library(ggplot2)
 library(scales)
   }
 
-YEAR<-2023
+YEAR<-2024
 
 {#update this from here: https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007-2022
 HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T)
 unique(HA.Harv$year.landed) #1975-2020
+
 #Halibut fish ticket data:
 HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv") %>% 
-  filter(DOL.Year>2020)
-unique(HA.Harv.update$DOL.Year) #1975-2020
+  filter(DOL.Year>2020) #Filtered out 2020 to remove having duplicates after combining HA.Harv and HA.Harv.update
+unique(HA.Harv.update$DOL.Year) 
+
 #Halibut by IPHC area from web source data
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
+
 #Halibut harvest from IPHC data request 1982 - present
+#Submitted a data request for 2023 and 2024 data - LSC - using 2022 data for now
 HA.IPHCreq<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
 
 
 str(HA.IPHCweb)
 str(HA.IPHCreq)
 str(HA.Harv)
+HA.Harv$year.landed<-as.character(HA.Harv$year.landed)
 str(HA.Harv.update)
 HA.Harv.update$Year<-HA.Harv.update$DOL.Year
+HA.Harv.update$Year<-as.character(HA.Harv.update$Year)
 min(HA.Harv.update$Year)
 
 HA.Harv %>% mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
@@ -54,14 +60,16 @@ HA.Harv.update %>% mutate(Year=DOL.Year,
   dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.latest
 
 temp<-rbind(HA.Harv.old,HA.Harv.latest)
+unique(temp$Year)
 
 ggplot(temp,aes(Year,ha.mt,col=source)) + geom_line()+facet_wrap(~Mgt.Area)
 
+
 Halibut.harv.1975<-rbind(HA.Harv.old %>% 
                            filter(Year < min(HA.Harv.latest$Year)),HA.Harv.latest) %>%
-  group_by(Year,Mgt.Area) %>% 
-  summarise(HA.lbs = sum(ha.lbs),
-            HA.mt = sum(ha.mt))
+  dplyr::group_by(Year,Mgt.Area) %>% 
+  dplyr:: summarise(HA.lbs = sum(ha.lbs),
+                    HA.mt = sum(ha.mt))
 
 #SAVE this data for use in estimating historical bycatch
 
@@ -97,7 +105,7 @@ write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",m
 # added to the sheet Randy came up with (HA.req) and then saved for next year 
 
 #Data available on the web is the same as what was used for the last assessment
-#I put in a request for updated numbers.
+#I put in a request for updated numbers. - LSC SEPT 2024
 #HA.newreq<-read.csv(paste0("Data_processing/Data/Harvests/IPHC_harv_",YEAR-1,".csv"))
 HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2022.csv")
 
@@ -130,21 +138,21 @@ HA.web<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.
 #   dplyr::select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) ->HA.Harv.latest
 # 
 # temp<-rbind(HA.Harv.old,HA.Harv.latest)
-
-ggplot(temp,aes(Year,ha.mt,col=source)) + geom_line()+facet_wrap(~Mgt.Area)
-
-Halibut.harv.1975<-rbind(HA.Harv.old %>% 
-                           filter(Year < min(HA.Harv.latest$Year)),HA.Harv.latest) %>%
-  group_by(Year,Mgt.Area) %>% 
-  summarise(HA.lbs = sum(ha.lbs),
-            HA.mt = sum(ha.mt))
-
-ch98<-HA.Harv[HA.Harv$year.landed == 1998,]
-
-#SAVE this data for use in estimating historical bycatch
-
-write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1975$Year),"-",
-                                   max(Halibut.harv.1975$Year),".csv"))
+# 
+# ggplot(temp,aes(Year,ha.mt,col=source)) + geom_line()+facet_wrap(~Mgt.Area)
+# 
+# Halibut.harv.1975<-rbind(HA.Harv.old %>% 
+#                            filter(Year < min(HA.Harv.latest$Year)),HA.Harv.latest) %>%
+#   group_by(Year,Mgt.Area) %>% 
+#   summarise(HA.lbs = sum(ha.lbs),
+#             HA.mt = sum(ha.mt))
+# 
+# ch98<-HA.Harv[HA.Harv$year.landed == 1998,]
+# 
+# #SAVE this data for use in estimating historical bycatch
+# 
+# write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1975$Year),"-",
+#                                    max(Halibut.harv.1975$Year),".csv"))
 
 #STEP 1------------------------------------------------------------------------
 # get the contemporary data from IPHC request, get SEO data from there: HA.IPHCreq
@@ -445,3 +453,4 @@ YE.Sport<-YE.Sport[YE.Sport$species == 145,]
 
 
 str(HA.Harv)
+
