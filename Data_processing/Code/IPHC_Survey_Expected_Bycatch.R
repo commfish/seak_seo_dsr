@@ -718,6 +718,7 @@ write.csv(SEO.expBy,paste0("Data_processing/Data/SEO_expBy_",YEAR,".csv"))
 #=====================================================================
 # compare to landed bycatch
 Removals.subd.1<-read.csv("Data_processing/Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
+#This file is not in the github repo...so i don't know where it comes from. 
 Removals.subd<-read.csv("Data_processing/Data/SE_YE_known_removals_1980-2024.csv")  #YE reconstruction from most recent
 #2) pre-1980 removals from SEO as a whole... 
 # Removals.pre<-read.csv("Data/XXX.csv") #Waiting on Donnie; 
