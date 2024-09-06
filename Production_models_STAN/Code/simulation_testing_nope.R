@@ -480,9 +480,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_nope_B_I[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                             sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                                           "TRUE","FALSE")
-        results_nope_B_I[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_nope_B_I[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                           sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_nope_B_I[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_nope_B_I[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                                           sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                                          "TRUE","FALSE")
         results_nope_B_I[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_nope_B_I[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
@@ -608,9 +608,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_nope_I[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                         sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                                       "TRUE","FALSE")
-        results_nope_I[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_nope_I[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                       sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_nope_I[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_nope_I[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                                       sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                                      "TRUE","FALSE")
         results_nope_I[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_nope_I[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
@@ -742,9 +742,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                             sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                           "TRUE","FALSE")
-        results_ko[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_ko[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                             sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_ko[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_ko[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                             sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                            "TRUE","FALSE")
         results_ko[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
@@ -872,9 +872,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                   sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                                 "TRUE","FALSE")
-        results_ko_Best[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_ko_Best[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                 sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_ko_Best[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_ko_Best[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                                 sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                                "TRUE","FALSE")
         results_ko_Best[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko_Best[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
@@ -1003,9 +1003,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Best_Iest[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                   sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                                 "TRUE","FALSE")
-        results_ko_Best_Iest[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_ko_Best_Iest[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                 sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_ko_Best_Iest[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_ko_Best_Iest[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                                 sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                                "TRUE","FALSE")
         results_ko_Best_Iest[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko_Best_Iest[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
@@ -1135,9 +1135,9 @@ for (opts in harv_opts) { # opts <- harv_opts[1]
         results_ko_Iest[data_iter,paste0("SS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("Depl_",s)] > Stock_status_e[,s][1] & 
                                                                   sim_stats[data_iter,paste0("Depl_",s)] < Stock_status_e[,s][3],
                                                                 "TRUE","FALSE")
-        results_ko_Iest[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q",s)]) / sim_stats[data_iter,paste0("q",s)]
-        results_ko_Iest[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q",s)] > q_e[,s][1] & 
-                                                                 sim_stats[data_iter,paste0("q",s)] < q_e[,s][3],
+        results_ko_Iest[data_iter,paste0("qbias_",s)] <- (q_e[,s][2] - sim_stats[data_iter,paste0("q_",s)]) / sim_stats[data_iter,paste0("q",s)]
+        results_ko_Iest[data_iter,paste0("q_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("q_",s)] > q_e[,s][1] & 
+                                                                 sim_stats[data_iter,paste0("q_",s)] < q_e[,s][3],
                                                                "TRUE","FALSE")
         results_ko_Iest[data_iter,paste0("MSYbias_",s)] <- (MSY_e[,s][2] - sim_stats[data_iter,paste0("MSY_t_",s)]) / sim_stats[data_iter,paste0("MSY_t_",s)]
         results_ko_Iest[data_iter,paste0("MSYS_wi_bnds_",s)] <- ifelse(sim_stats[data_iter,paste0("MSY_t_",s)] > MSY_e[,s][1] & 
