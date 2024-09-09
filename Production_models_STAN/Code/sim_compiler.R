@@ -116,7 +116,7 @@ master3 %>% group_by(mod_name) %>%
                    prop_K_in_90CI = sum(K_wi_bnds_1 == TRUE)/iters,
                    mean_q_bias1 = sum(qbias_1)/iters,
                    var_q_bias1 = var(qbias_1),
-                   prop_q_in_90CI = "Bug in code!", #sum(q_wi_bnds_1 == TRUE)/iters, #FLAG!!! Bug in code and not recorded. Fixed 9/6/24pj 
+                   prop_qin_90CI = "Bug in code!", #sum(q_wi_bnds_1 == TRUE)/iters, #FLAG!!! Bug in code and not recorded. Fixed 9/6/24pj 
                    #mean_pe_bias1 = sum(pebias_1)/iters,
                    mean_abspe_bias1 = sum(abspebias_1)/iters,
                    var_abspe_bias1 = var(abspebias_1),
