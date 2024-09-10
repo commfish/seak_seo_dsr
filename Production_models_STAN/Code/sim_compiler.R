@@ -14,6 +14,7 @@
 library(stringr)
 library(ggplot2)
 library(dplyr)
+library(forcats)
 
 # Gather up the simulation results and link them to the simulation statistics: 
 
@@ -82,11 +83,11 @@ master3 <- master3 %>%
   mutate(prop_div = div_trans / (iterations * 3),
          model = as.factor(model),
          mod_name = ifelse(model %in% c("ko"),"Index only, OE = PE",#Index only, OE = PE",
-                           ifelse(model %in% c("ko_estB"),"Index & Biomass, Index OE = PE, Biomass OE independent",#"Index & Biomass, Index OE = PE, Biomass OE independent",
-                                  ifelse(model %in% c("ko_estB_estI"),"Index & Biomass, OE and PE independent",#"Index & Biomass, OE and PE independent",
-                                         ifelse(model %in% c("ko_estI"),"Index only, OE independent of PE",
-                                                ifelse(model %in% c("fit_nope_B_I"),"No PE, Index & Biomass",
-                                                       ifelse(model %in% c("fit_nope_I"),"No PE, Index only",NA))))))) %>%
+                           ifelse(model %in% c("ko_estB"),"Index & Biomass, Ind OE = PE, Bio OE not= PE",#"Index & Biomass, Index OE = PE, Biomass OE independent",
+                                  ifelse(model %in% c("ko_estB_estI"),"Index & Biomass, OE not= PE",#"Index & Biomass, OE and PE independent",
+                                         ifelse(model %in% c("ko_estI"),"Index only, OE not= PE",
+                                                ifelse(model %in% c("fit_nope_B_I"),"Index & Biomass, no PE",
+                                                       ifelse(model %in% c("fit_nope_I"),"Index only, no PE",NA))))))) %>%
   distinct()
 
 
@@ -132,10 +133,25 @@ master3 %>% group_by(mod_name) %>%
                    prop_Fmsy_in_90CI = sum(Fmsy_wi_bnds_1 == TRUE)/iters,
                    mean_SS_bias1 = sum(SSbias_1)/iters,
                    var_SS_bias1 = var(SSbias_1),
-                   prop_SS_in_90CI = sum(SS_wi_bnds_1 == TRUE)/iters) -> summary
+                   prop_SS_in_90CI = sum(SS_wi_bnds_1 == TRUE)/iters) %>%
+  arrange(fct_relevel(mod_name, c("Index only, no PE","Index only, OE = PE",
+                       "Index only, OE not= PE","Index & Biomass, no PE",
+                       "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                       "Index & Biomass, OE not= PE"))) -> summary
 
 View(summary)
 write.csv(summary,"Production_models_STAN/Output/Sim_test_results_Sept24.csv")
+
+master3 %>% 
+  mutate(abs_rbias1 = abs(rbias_1),
+         abs_rbias2 = abs(rbias_2),
+         abs_rbias3 = abs(rbias_3),
+         abs_Kbias1 = abs(Kbias_1),
+         abs_Kbias2 = abs(Kbias_2),
+         abs_Kbias3 = abs(Kbias_3),
+         abs_qbias1 = abs(qbias_1),
+         abs_qbias2 = abs(qbias_2),
+         abs_qbias3 = abs(qbias_3)) -> master3         
 
 ggplot(master3) +
   geom_boxplot(aes(mod_name,prop_div), fill="white",alpha = 1,
@@ -152,7 +168,10 @@ ggplot(master3) + # %>% filter(model == "ko")) +
   geom_point(aes(prop_div, rbias_1, col = harv_hist)) +
   geom_point(aes(prop_div, rbias_2, col = harv_hist)) +
   geom_point(aes(prop_div, rbias_3, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(x = prop_div, y = rbias_1, col = harv_hist, fill = harv_hist),
               method = "lm", formula = y ~ x) +
   #geom_smooth(aes(prop_div, rbias_1, col = harv_hist),
@@ -160,13 +179,33 @@ ggplot(master3) + # %>% filter(model == "ko")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in r") + xlab("Proportions of iterations with divergent transitions")
 
+ggplot(master3) + #  %>% filter(prop_div > 0)) + # %>% filter(model == "ko")) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  geom_point(aes(prop_div, abs_rbias1, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_rbias2, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_rbias3, col = harv_hist)) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
+  geom_smooth(aes(x = prop_div, y = abs_rbias1, col = harv_hist, fill = harv_hist),
+              method = "lm", formula = y ~ x) +
+  #geom_smooth(aes(prop_div, rbias_1, col = harv_hist),
+  #            method = 'loess', span = 1, se = FALSE) +
+  geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
+  ylab("degree of Bias in r") + xlab("Proportions of iterations with divergent transitions")
+
 ggplot(master3 %>% filter(prop_div > 0)) + # %>% filter(model == "ko")) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
   geom_point(aes(prop_div, rbias_1, col = harv_hist)) +
   geom_point(aes(prop_div, rbias_2, col = harv_hist)) +
   geom_point(aes(prop_div, rbias_3, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(x = prop_div, y = rbias_1, col = harv_hist, fill = harv_hist),
               method = "lm", formula = y ~ x) +
   #geom_smooth(aes(prop_div, rbias_1, col = harv_hist),
@@ -180,7 +219,10 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_point(aes(prop_div, Kbias_1, col = harv_hist)) +
   geom_point(aes(prop_div, Kbias_2, col = harv_hist)) +
   geom_point(aes(prop_div, Kbias_3, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(x = prop_div, y = Kbias_1, col = harv_hist, fill = harv_hist), 
               method = "lm", formula = y ~ x) +
   #geom_smooth(aes(prop_div, Kbias_1, col = harv_hist),
@@ -188,13 +230,33 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in K") + xlab("Proportions of iterations with divergent transitions")  
 
+ggplot(master3) + # %>% filter(prop_div > 0)) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  geom_point(aes(prop_div, abs_Kbias1, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_Kbias2, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_Kbias3, col = harv_hist)) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
+  geom_smooth(aes(x = prop_div, y = abs_Kbias1, col = harv_hist, fill = harv_hist), 
+              method = "lm", formula = y ~ x) +
+  #geom_smooth(aes(prop_div, Kbias_1, col = harv_hist),
+  #            method = 'loess', span = 1, se = FALSE) +
+  geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
+  ylab("degree of Bias in K") + xlab("Proportions of iterations with divergent transitions")
+
 ggplot(master3 ) + # %>% filter(prop_div > 0)) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
   geom_point(aes(prop_div, qbias_1, col = harv_hist)) +
   geom_point(aes(prop_div, qbias_2, col = harv_hist)) +
   geom_point(aes(prop_div, qbias_3, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(x = prop_div, y = qbias_1, col = harv_hist, fill = harv_hist),
               method = "lm", formula = y ~ x) +
   #geom_smooth(aes(prop_div, qbias_1, col = harv_hist),
@@ -202,13 +264,33 @@ ggplot(master3 ) + # %>% filter(prop_div > 0)) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in q") + xlab("Proportions of iterations with divergent transitions")  
 
+ggplot(master3) + # %>% filter(prop_div > 0)) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  geom_point(aes(prop_div, abs_qbias1, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_qbias2, col = harv_hist)) +
+  geom_point(aes(prop_div, abs_qbias3, col = harv_hist)) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
+  geom_smooth(aes(x = prop_div, y = abs_qbias1, col = harv_hist, fill = harv_hist), 
+              method = "lm", formula = y ~ x) +
+  #geom_smooth(aes(prop_div, Kbias_1, col = harv_hist),
+  #            method = 'loess', span = 1, se = FALSE) +
+  geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
+  ylab("degree of Bias in q") + xlab("Proportions of iterations with divergent transitions")
+
 ggplot(master3 ) + # %>% filter(prop_div > 0)) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
   geom_point(aes(true_tot_cont1, prop_div, col = harv_hist)) +
   geom_point(aes(true_tot_cont2, prop_div, col = harv_hist)) +
   geom_point(aes(true_tot_cont3, prop_div, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   #geom_smooth(aes(x = true_tot_cont1, y = prop_div, col = harv_hist, fill = harv_hist),
   #            method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_tot_cont1, prop_div, col = harv_hist, fill = harv_hist),
@@ -222,7 +304,10 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_point(aes(true_reb_cont1, prop_div, col = harv_hist)) +
   geom_point(aes(true_reb_cont2, prop_div, col = harv_hist)) +
   geom_point(aes(true_reb_cont3, prop_div, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   #geom_smooth(aes(x = true_reb_cont1, y = prop_div), method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_reb_cont1, prop_div, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
@@ -235,7 +320,10 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_point(aes(true_reb_len1, prop_div, col = harv_hist)) +
   geom_point(aes(true_reb_len2, prop_div, col = harv_hist)) +
   geom_point(aes(true_reb_len3, prop_div, col = harv_hist)) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   #geom_smooth(aes(x = true_reb_len1, y = prop_div), method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_reb_len1, prop_div, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
@@ -252,7 +340,10 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_point(aes(true_tot_cont1, rbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_tot_cont2, rbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_tot_cont3, rbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_tot_cont1, rbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   ylab("Bias in r") + xlab("Contrast in true biomass") +
@@ -265,7 +356,10 @@ ggplot(master3) + # %>% filter(prop_div > 0)) +
   geom_point(aes(true_reb_cont1, rbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_cont2, rbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_cont3, rbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_reb_cont1, rbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   ylab("Bias in r") + xlab("Biomass rebound from low biomass")+
@@ -278,7 +372,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len1, rbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_len2, rbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_len3, rbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_reb_len1, rbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   ylab("Bias in r") + xlab("Time between low biomass and end of time series") +
@@ -295,7 +392,10 @@ ggplot(master3) +
   geom_point(aes(true_tot_cont1, Kbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_tot_cont2, Kbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_tot_cont3, Kbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_tot_cont1, Kbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
@@ -308,7 +408,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_cont1, Kbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_cont2, Kbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_cont3, Kbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_reb_cont1, Kbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
@@ -321,7 +424,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len1, Kbias_1, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_len2, Kbias_2, col = harv_hist), alpha = 0.1) +
   geom_point(aes(true_reb_len3, Kbias_3, col = harv_hist), alpha = 0.1) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_smooth(aes(true_reb_len1, Kbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
@@ -338,7 +444,10 @@ ggplot(master3) +
   geom_point(aes(true_tot_cont3, qbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_tot_cont1, qbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in q") + xlab("Contrast in true biomass")
 
@@ -351,7 +460,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_cont3, qbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, qbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in q") + xlab("Biomass rebound from low biomass")
 
@@ -364,7 +476,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len3, qbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, qbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in q") + xlab("Time between low biomass and end of time series")
 
@@ -374,13 +489,19 @@ unique(master3$model)
 ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) + 
   scale_color_manual(values = cols) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
-  facet_wrap(~mod_name) + 
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) + 
   geom_violin(aes(as.factor(harv_hist), pebias_1))
 
 #check without extreme values:
 ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) + 
   scale_color_manual(values = cols) +
-  facet_wrap(~mod_name) + 
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_violin(aes(as.factor(harv_hist), pebias_1)) +
   geom_boxplot(aes(as.factor(harv_hist), pebias_1),width=.1) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) 
@@ -394,7 +515,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_tot_cont3, pebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_tot_cont1, pebias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in process error") + xlab("Contrast in true biomass") #+
 #  scale_y_log10(labels = function(x) format(x, big.mark = ",",
@@ -410,7 +534,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_reb_cont3, pebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, pebias_1, col = harv_hist),
               method = 'loess', span = 1, se = FALSE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in process error") + xlab("Biomass rebound from low biomass")
 
@@ -422,7 +549,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_reb_len3, pebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, pebias_1, col = harv_hist),
               method = 'loess', span = 1, se = FALSE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in process error") + xlab("Time between low biomass and end of time series")
 
@@ -431,7 +561,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
 
 ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) + 
   scale_color_manual(values = cols) + scale_fill_manual(values = cols) +
-  facet_wrap(~mod_name) + 
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_violin(aes(as.factor(harv_hist), abspebias_1)) +
   geom_boxplot(aes(as.factor(harv_hist), abspebias_1),width=.1) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) 
@@ -443,7 +576,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_tot_cont3, abspebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_tot_cont1, abspebias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in absolute process error (magnitude of process error)") + xlab("Contrast in true biomass") #+
 #  scale_y_log10(labels = function(x) format(x, big.mark = ",",
@@ -459,7 +595,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_reb_cont3, abspebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, abspebias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in absolute process error (magnitude of process error)") + xlab("Biomass rebound from low biomass")
 
@@ -471,7 +610,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(true_reb_len3, abspebias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, abspebias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in absolute process error (magnitude of process error)") + xlab("Time between low biomass and end of time series")
 
@@ -483,7 +625,10 @@ ggplot(master3 %>% filter(model != "fit_nope_B_I" & model != "fit_nope_I")) +
   geom_point(aes(abspebias_3, rbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(abspebias_1, rbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   ylab("Bias in r") + xlab("Bias in absolute process error (magnitude)")
 ## BRPS: MSY ## ----------------------------------------------------------------
 #Contrast
@@ -497,7 +642,10 @@ ggplot(master3) +
   #            method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_tot_cont1, MSYbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in MSY") + xlab("Contrast in true biomass")
 
@@ -511,7 +659,10 @@ ggplot(master3) +
   #geom_smooth(aes(x = true_reb_cont1, y = MSYbias_1, col = harv_hist, fill = harv_hist), method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_reb_cont1, MSYbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in MSY") + xlab("Biomass rebound from low biomass")
 
@@ -525,7 +676,10 @@ ggplot(master3) +
   #geom_smooth(aes(x = true_reb_len1, y = MSYbias_1, col = harv_hist, fill = harv_hist), method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_reb_len1, MSYbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in MSY") + xlab("Time between low biomass and end of time series")
 
@@ -541,7 +695,10 @@ ggplot(master3) +
   #            method = "lm", formula = y ~ x) +
   geom_smooth(aes(true_tot_cont1, Bmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Bmsy") + xlab("Contrast in true biomass")
 
@@ -553,7 +710,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_cont3, Bmsybias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, Bmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Bmsy") + xlab("Biomass rebound from low biomass")
 
@@ -565,7 +725,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len3, Bmsybias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, Bmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Bmsy") + xlab("Time between low biomass and end of time series")
 
@@ -578,7 +741,10 @@ ggplot(master3) +
   geom_point(aes(true_tot_cont3, Fmsybias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_tot_cont1, Fmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Fmsy") + xlab("Contrast in true biomass")
 
@@ -590,7 +756,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_cont3, Fmsybias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, Fmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Fmsy") + xlab("Biomass rebound from low biomass")
 
@@ -602,7 +771,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len3, Fmsybias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, Fmsybias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Fmsy") + xlab("Time between low biomass and end of time series")
 
@@ -615,7 +787,10 @@ ggplot(master3) +
   geom_point(aes(true_tot_cont3, SSbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_tot_cont1, SSbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Stock Status (B/B0)") + xlab("Contrast in true biomass")
 
@@ -627,7 +802,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_cont3, SSbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_cont1, SSbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Stock Status (B/B0)") + xlab("Biomass rebound from low biomass")
 
@@ -639,7 +817,10 @@ ggplot(master3) +
   geom_point(aes(true_reb_len3, SSbias_3, col = harv_hist), alpha = 0.1) +
   geom_smooth(aes(true_reb_len1, SSbias_1, col = harv_hist, fill = harv_hist),
               method = 'loess', span = 1, se = TRUE) +
-  facet_wrap(~mod_name) +
+  facet_wrap(~fct_relevel(mod_name, "Index only, no PE","Index only, OE = PE",
+                          "Index only, OE not= PE","Index & Biomass, no PE",
+                          "Index & Biomass, Ind OE = PE, Bio OE not= PE",
+                          "Index & Biomass, OE not= PE")) +
   geom_hline(yintercept = 0,linetype = "dashed", color = "red", size = 1) +
   ylab("Bias in Stock Status (B/B0)") + xlab("Time between low biomass and end of time series")
 
