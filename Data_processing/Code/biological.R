@@ -147,9 +147,9 @@ ggplot(agecomps %>%
 ## will rerun by length bin... 
 agecomps<-agecomps %>% 
   group_by(Year,GFMU, Sex) %>%
-  mutate(n=n()) %>%
+  dplyr::mutate(n=n()) %>%
   group_by(Age,Year,GFMU, Sex) %>%
-  mutate(count=n()) %>%
+  dplyr::mutate(count=n()) %>%
   mutate(proportion = count/n)
 
 unique(agecomps$Sex)
@@ -229,10 +229,10 @@ length(lendat$length[lendat$GFMU == "CSEO"])
 lendat.bin<-lendat %>% 
   #group_by(Year,Groundfish.Management.Area.Code, Sex) %>%
   group_by(Year,GFMU, Sex) %>%
-  mutate(bin.n=n()) %>%
+  dplyr::mutate(bin.n=n()) %>%
   #group_by(length_bin,Year,Groundfish.Management.Area.Code, Sex) %>%
   group_by(length_bin,Year,GFMU, Sex) %>%
-  mutate(bin.count=n()) %>%
+  dplyr::mutate(bin.count=n()) %>%
   mutate(bin.proportion = bin.count/bin.n) 
 
 
@@ -530,11 +530,11 @@ ggplot() +
 bind_rows(
   waa %>%
     group_by(Gear, Sex, age) %>% 
-    summarise(weight = mean(weight) %>% round(4)),
+    dplyr::summarise(weight = mean(weight) %>% round(4)),
   waa %>% 
     group_by(Gear, age) %>% 
-    summarise(weight = mean(weight) %>% round(4)) %>% 
-    mutate(Sex = "Combined")) -> emp_waa
+    dplyr::summarise(weight = mean(weight) %>% round(4)) %>% 
+    dplyr::mutate(Sex = "Combined")) -> emp_waa
 
 ggplot() +
   geom_point(data = emp_waa, # %>% filter(!is.na(Source)), 
@@ -571,7 +571,7 @@ Bio_lw_noOL %>%
   filter(!is.na(weight) & !is.na(age) & !is.na(Sex)) %>% 
   #filter(as.numeric(year) <= YEAR & age >= rec_age) %>% 
   group_by(Year, Sex, age) %>% 
-  summarise(weight = mean(weight) %>% round(4)) %>%  
+  dplyr::summarise(weight = mean(weight) %>% round(4)) %>%  
   ungroup() %>% 
   mutate(Year = as.character(Year),
          Age = factor(age),
@@ -671,7 +671,7 @@ lvb_m
 
 # save param estimates
 as_tibble(summary(lvb_f$vout)$parameters[,1:2]) %>% 
-  mutate(Parameter = c("l_inf", "k", "t0"),
+  dplyr::mutate(Parameter = c("l_inf", "k", "t0"),
          Sex = "Female") %>% 
   bind_rows(as_tibble(summary(lvb_m$vout)$parameters[,1:2]) %>% 
               mutate(Parameter = c("l_inf", "k", "t0"),
@@ -681,7 +681,7 @@ as_tibble(summary(lvb_f$vout)$parameters[,1:2]) %>%
                                                Function = "Length-based LVB") %>% 
   full_join(laa_sub %>% 
               group_by(Sex) %>% 
-              summarise(n = n())) -> lvb_pars
+              dplyr::summarise(n = n())) -> lvb_pars
 
 # Are there annual trends in length-at-age? First vonB curves by Year. I only
 # look at Linf here because vonB parameters are highly correlated. The following
@@ -748,7 +748,7 @@ multi <- multi %>%   #getting linf for each year with a bunch of dplyr steps...
   pivot_wider(names_from = Parameter, values_from = Estimate) %>% 
   pivot_longer(cols = -c(K1, t01, Sex), names_to = "Parameter", values_to = "Estimate") %>% 
   bind_cols(as_tibble(c(unique(laa_f$Year), unique(laa_m$Year)))) %>% 
-  rename(Year = value)
+  dplyr::rename(Year = value)
 
 # Deviations by year for Linf vonB 
 #dev.off() if not plotting may need to run this...
@@ -828,9 +828,9 @@ bind_rows(tidy(male_fit) %>% mutate(Sex = "Male"),
          Function = "Allometric - NLS") %>% 
   full_join(allom_sub %>% 
               group_by(Sex) %>% 
-              summarise(n = n()) %>% 
+              dplyr::summarise(n = n()) %>% 
               bind_rows(allom_sub %>% 
-                          summarise(n = n()) %>% 
+                          dplyr::summarise(n = n()) %>% 
                           mutate(Sex = "Combined"))) -> allom_pars
 
 ggplot(allom_sub, aes(length, weight, col = Sex, shape = Sex)) +
@@ -921,7 +921,7 @@ lvb_pars %>% bind_rows(
     mutate(Parameter = c("w_inf", "k", "t0"),
            Sex = "Combined") %>% 
     full_join(waa_sub %>% 
-                summarise(n = n()) %>% 
+                dplyr::summarise(n = n()) %>% 
                 mutate(Sex = "Combined")) %>% 
     mutate(Source = "Commercial fisheries",
            Years = paste0(min(waa_sub$year), "-", max(waa_sub$year)),
@@ -977,8 +977,8 @@ ggplot() +
   # expand_limits(y = 0) +
   labs(x = "\nAge", y = "Weight (kg)\n", linetype = "Sex", shape = "Sex")
 
-ggsave(paste0(YEAR+1,"/figures/compare_empirical_predicted_waa_", YEAR, ".png"), 
-       dpi=300, height=4, width=6, units="in")
+# ggsave(paste0(YEAR+1,"/figures/compare_empirical_predicted_waa_", YEAR, ".png"), 
+#        dpi=300, height=4, width=6, units="in")
 
 #--------------------------------------------------------------------------------
 # Maturity: this is based on sablefish model for starters... 
@@ -1335,13 +1335,13 @@ aa <- rec_age:plus_group
 Bio_lw_noOL %>% 
   filter(age %in% aa) %>% 
   ungroup() %>% 
-  select(Sex, age) %>% 
-  filter(Sex %in% c("Female", "Male")) %>% 
+  dplyr::select(Sex, age) %>% 
+  dplyr::filter(Sex %in% c("Female", "Male")) %>% 
   na.omit() %>% 
   droplevels() %>% 
-  count(Sex, age) %>% 
-  group_by(age) %>% 
-  mutate(proportion = round(n / sum(n), 2),
+  dplyr::count(Sex, age) %>% 
+  dplyr::group_by(age) %>% 
+  dplyr::mutate(proportion = round(n / sum(n), 2),
          Source = "fishery") %>% 
   filter(Sex == "Female") -> byage
 str(byage); view(byage)
@@ -1372,7 +1372,7 @@ length(unique(byage$age))
 
 bind_cols(  #1st year pot data does not have all ages... 
   byage,bind_rows(as_tibble(do.call(cbind, predage)) %>% 
-           mutate(source_check = "fishery")))-> byage
+                    dplyr::mutate(source_check = "fishery")))-> byage
   #do.call cbinds each vector in the predict() output list 
   #bind_rows(as_tibble(do.call(cbind, predage)) %>% 
   #            mutate(source_check = "fishery"),
@@ -1381,7 +1381,8 @@ bind_cols(  #1st year pot data does not have all ages...
   #          as_tibble(do.call(cbind, fsh_pot_predage)) %>% 
   #            mutate(source_check = "Pot fishery")) 
 
-view(byage); view(byage_simp)
+view(byage)
+view(byage_simp)#not sure what this is
 
 # plot
 ggplot(byage, aes(x = age)) +
@@ -1408,7 +1409,7 @@ Bio_lw_noOL %>%
   filter(Sex %in% c("Female", "Male")) %>% 
   na.omit() %>% 
   droplevels() %>% 
-  count(Sex, year) %>% 
+  dplyr::count(Sex, year) %>% 
   group_by(year) %>% 
   mutate(proportion = round(n / sum(n), 2),
          Source = "fishery") %>% 
@@ -1422,7 +1423,7 @@ Bio_lw_noOL %>%
   filter(Sex %in% c("Female", "Male")) %>% 
   na.omit() %>% 
   droplevels() %>% 
-  count(Sex, year) %>% 
+  dplyr::count(Sex, year) %>% 
   group_by(year) %>% 
   mutate(proportion = round(n / sum(n), 2),
          Source = "fishery") %>% 
@@ -1457,7 +1458,7 @@ missing_years<-cbind(Sex = rep("Female",nrow(missingyears)),
                         n = rep(0,nrow(missingyears)),
                         proportion = rep(NA,nrow(missingyears)),
                         Source = rep("fishery",nrow(missingyears))) %>%
- rename(year = ".")
+dplyr::rename(year = ".")
 byyear<-rbind(byyear,missing_years) %>% 
   arrange(year)
 #  arrange(factor(Source, levels = c("LL survey","LL fishery","Pot fishery")),
@@ -1490,6 +1491,7 @@ ggplot(data = byyear, aes(x = year)) +
   #scale_colour_manual(values = c("black", "grey")) +
   #scale_fill_manual(values = c("black", "grey")) +
   theme(legend.position = "none") -> byyear_plot
+byyear_plot
 
 library(cowplot)
 plot_grid(byage_plot, byyear_plot, align = c("h"), ncol = 1)
@@ -1518,19 +1520,19 @@ view(all_bio)
 
 # Age comps (sex-specific)
 all_bio %>% 
-  count(Source, Sex, year, age) %>%
+  dplyr::count(Source, Sex, year, age) %>%
   group_by(Source, Sex, year) %>% 
   mutate(proportion = round( n / sum(n), 5),
          tot_samps = sum(n)) %>% 
   bind_rows(all_bio %>% # Age comps (sexes combined)
-              count(Source, year, age) %>%
+              dplyr::count(Source, year, age) %>%
               group_by(Source, year) %>% 
               mutate(proportion = round( n / sum(n), 5),
                      Sex = "Sex combined",
                      tot_samps = sum(n))) -> agecomps  
 
 agecomps %>% group_by(year, Source, Sex) %>%
-  mutate(tot_samps2 = n()) %>% ungroup() -> agecomps2
+  dplyr::mutate(tot_samps2 = n()) %>% ungroup() -> agecomps2
 
 range(agecomps$proportion)
 range(agecomps$age)
@@ -1649,10 +1651,14 @@ ggsave(paste0("Figures/agecomp_bydatasource.png"),
 ## If I was running an ASA now I would combine the long line data and ditch the
 ## Jig and atypical fishery... 
 
-bind_rows(Bio_lw_noOL %>% filter(Project == "Commercial Longline Trip") %>%
-            mutate(Source = "LL fishery") %>% select(!!!cols), 
-          Bio_lw_noOL %>% filter(Project == "Commercial Halibut Longline") %>%
-            mutate(Source = "LL fishery") %>% select(!!!cols)) %>%
+bind_rows(Bio_lw_noOL %>% 
+            filter(Project == "Commercial Longline Trip") %>%
+            mutate(Source = "LL fishery") %>% 
+            select(!!!cols), 
+          Bio_lw_noOL %>% 
+            filter(Project == "Commercial Halibut Longline") %>%
+            mutate(Source = "LL fishery") %>% 
+            select(!!!cols)) %>%
   filter(Sex %in% c('Female', 'Male') & !is.na(age)) %>% 
   droplevels() %>% 
   mutate(age = ifelse(age >= plus_group, plus_group, age)) %>% 
@@ -1662,12 +1668,12 @@ unique(ll_bio$Source)
 
 # Age comps (sex-specific)
 ll_bio %>% 
-  count(Source, Sex, year, age) %>%
+  dplyr::count(Source, Sex, year, age) %>%
   group_by(Source, Sex, year) %>% 
   mutate(proportion = round( n / sum(n), 5),
          tot_samps = sum(n)) %>% 
   bind_rows(ll_bio %>% # Age comps (sexes combined)
-              count(Source, year, age) %>%
+              dplyr::count(Source, year, age) %>%
               group_by(Source, year) %>% 
               mutate(proportion = round( n / sum(n), 5),
                      Sex = "Sex combined",
@@ -1725,10 +1731,9 @@ ggplot(data = agecomps_ll %>% filter(tot_samps > 50),
   geom_point(shape = 21, fill = "black", colour = "black") +
   scale_size(range = c(0, 4)) +
   facet_wrap(~ Sex) +
-  labs(x = "\nYear", y = "Observed age\n") +
-  guides(size = FALSE)# +
-# scale_x_continuous(breaks = axisx$breaks, labels = axisx$labels) +
-# scale_y_continuous(breaks = axisy$breaks, labels = axisy$labels)
+  labs(x = "\nYear", y = "Observed Age\n") +
+  guides(size = FALSE)+
+  theme_classic()
 
 ggsave(paste0("Figures/bubble_combll_agecomp_byyear.png"), dpi=300, height=5, width=7.5, units="in")
 
@@ -1952,7 +1957,7 @@ lensum %>%
   facet_wrap(~ Sex) +
   # scale_x_continuous(breaks = axis$breaks, labels = axis$labels) +
   labs(x = NULL, y = "Mean\nfork\nlength\n(cm)") +
-  theme(axis.title.y = element_text(angle=0)) -> l
+  theme_classic(axis.title.y = element_text(angle=0)) -> l
 
 #quos() uses stand eval in dplyr, eval cols with nonstand eval using !!!
 cols <- quos(Source, year, Sex, age) 
