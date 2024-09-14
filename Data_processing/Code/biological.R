@@ -4,7 +4,7 @@
 ## Phil Joy
 #############################################################################
 
-library(tidyverse)
+{library(tidyverse)
 library(ggridges)
 library(ggplot2)
 library(fishmethods)
@@ -13,6 +13,7 @@ library(mosaic)
 library(ggpubr)
 library(cowplot)
 source("r_helper/Port_bio_function.R")
+}
 
 YEAR<-2024
 
@@ -108,6 +109,7 @@ YEAR<-2024
 }
 
 Port<-port.bio(YEAR)
+#All random sample from all of SEAK
 Port.rand<-Port[Port$Sample.Type=="Random",]
 
 agecomps<-Port[!is.na(Port$Sex) & !is.na(Port$Age),]
@@ -119,6 +121,7 @@ agecomps<-agecomps.rand
 #agecomps<-agecomps[agecomps$Project == "Halibut Longline" | agecomps$Project == "Commercial Longline Trip",]
 unique(agecomps$Groundfish.Management.Area.Code)
 unique(agecomps$GFMU)
+#This includes random samples in SEO
 agecomps<-agecomps[agecomps$GFMU == "NSEO" |
 			agecomps$GFMU == "SSEO" |
 			agecomps$GFMU == "CSEO" |
@@ -147,9 +150,9 @@ ggplot(agecomps %>%
 ## will rerun by length bin... 
 agecomps<-agecomps %>% 
   group_by(Year,GFMU, Sex) %>%
-  dplyr::mutate(n=n()) %>%
+  mutate(n=n()) %>%
   group_by(Age,Year,GFMU, Sex) %>%
-  dplyr::mutate(count=n()) %>%
+  mutate(count=n()) %>%
   mutate(proportion = count/n)
 
 unique(agecomps$Sex)
@@ -386,9 +389,75 @@ ggplot(data = agecomps,
 ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear.png",sep=""),
        dpi=900, height=5, width=7, units="in")
 
-#Length plots
+#################### Age bubble plots ########################################
+# Code from Adam St. Saviour
+# Bubble plot of SF annual AGE distribution
+# Count the frequency of each AGE per YEAR
+age_distribution <- agecomps %>%
+  group_by(Year, Age) %>%
+  summarize(count = n())
+
+# bubble plot of AGE distribution
+bubble_plot <- ggplot(age_distribution, aes(x = Year, y = Age, size = count)) +
+  geom_point(alpha = 0.3, color = 'black') +
+  scale_size_continuous(range =  c(1, 20), breaks = c(50,100)) +  # Adjust the size range and Count breaks in legend
+  theme_minimal() +
+  labs(title = "Yelloweye Rockfish Age Distribution of Commercial Harvest in SEO",
+       x = "Year",
+       y = "Age",
+       size = "Count") +
+  theme(plot.title = element_text(hjust = 0.5)); bubble_plot
+
+ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear2.png",sep=""),
+       dpi=900, height=5, width=7, units="in")
+
+age_distribution_sex <- agecomps %>%
+  group_by(Year, Age, Sex) %>%
+  summarize(count = n())
+
+bubble_plot_bysex <- ggplot(age_distribution_sex, aes(x = Year, y = Age, size = count)) +
+  geom_point(alpha = 0.3, color = 'black') +
+  scale_size_continuous(range =  c(1, 20), breaks = c(20,40)) +  # Adjust the size range and Count breaks in legend
+  facet_grid(~Sex)+
+  theme_minimal() +
+  labs(title = "Yelloweye Rockfish Age Distribution of Commercial Harvest in SEO by Sex",
+       x = "Year",
+       y = "Age",
+       size = "Count") +
+  theme(plot.title = element_text(hjust = 0.5)); bubble_plot_bysex
+
+
+ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear2_bysex.png",sep=""),
+       dpi=900, height=5, width=7, units="in")
+
+
+#Length plots - random samples from SEAK - including inside waters
 lendat %>% 
   filter(Year > 1983) %>% 
+  ggplot(aes(length, Year, group = Year, fill = Year)) + 
+  geom_density_ridges(aes(point_fill = Year, point_color = Year),
+                      alpha = 0.3, scale=1.5, jittered_points = FALSE,
+                      rel_min_height = 0.01, point_size=0.5) +
+  xlim(300, 900) + 
+  xlab("Length (mm)") + 
+  ylab(NULL) +
+  theme(legend.position = "none") + 
+  theme(text=element_text(size=20),
+        axis.text.x = element_text(size=10,angle=45, hjust=1),
+        axis.text.y = element_text(size=12)) +
+  facet_wrap(~  Sex) + 
+  facet_grid( ~ Sex)+	
+  scale_x_continuous(limits=c(300,900),breaks = c(seq(from=300, to=900, by=50))) +	#, labels = axisx$labels) +
+  scale_y_continuous(limits=c(1984,YEAR+2),breaks = c(seq(from=1984, to=(YEAR), by=2)))#scales::pretty_breaks(n=15)) 
+
+ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEAK","_ridgejitter_lengthcomp_byyear.png",sep=""),
+       dpi=900, height=8, width=5, units="in")
+
+#Same plot as above but filter out NSEI and SSEI
+
+lendat %>% 
+  filter(Year > 1983) %>% 
+  filter(!Groundfish.Management.Area.Code %in% c("SSEI","NSEI")) %>% 
   ggplot(aes(length, Year, group = Year, fill = Year)) + 
   geom_density_ridges(aes(point_fill = Year, point_color = Year),
                       alpha = 0.3, scale=1.5, jittered_points = FALSE,
