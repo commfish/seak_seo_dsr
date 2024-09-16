@@ -49,7 +49,7 @@ ggplot(Dens, aes(x=Year)) +
   ylab(bquote(Yelloweye~rockfish/km^2)) +
   #ylab("Density (yelloweye rockfish/kmsq)") +
   scale_y_continuous(label=comma) +
-  scale_x_continuous(breaks=seq(1995,2025,5)) + 
+  scale_x_continuous(breaks=seq(1995,2024,5)) + 
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
     panel.grid.minor = element_blank())
 ggsave(paste0("Figures/YE_Density_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
@@ -203,6 +203,8 @@ Port %>% group_by(GFMU,Year) %>%
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
   complete(Year = 1984:YEAR) -> Wt.smpl 
 
+#Wt.smpl <- drop_na(Wt.smpl)
+
 Wt.smpl$no.YE<-replace(Wt.smpl$no.YE,Wt.smpl$no.YE==0,NA)
 
 opts <- options(knitr.kable.NA = "-")            
@@ -211,14 +213,15 @@ table<-Wt.smpl %>% #group_by(Year) %>%
   #kable_paper("hover",full_width=F)
   kable_classic(full_width=F, html_font = "Times", position="center")
   #kable_classic_2(full_width=F, position = "left")
-webshot2::install_phantomjs()
+webshot::install_phantomjs()
 save_kable(table,"Figures/Weight_Table_SAFE14p1.pdf")
 #2024: can't get this pdf to run - need to come back to it
 
 #These are samples that have been randomly sampled only - includes directed fishery and bycatch
 unique(Port.rand$Project)
 
-Port.rand %>% group_by(GFMU,Year) %>% 
+Port.rand %>% 
+  group_by(GFMU,Year) %>% 
   filter(!is.na(GFMU),
          GFMU == "SSEO" | GFMU == "CSEO" | GFMU == "NSEO" | GFMU == "EYKT") %>% 
   summarise(mean.weight.kg = mean(Weight.Kilograms, na.rm=TRUE),
@@ -227,7 +230,12 @@ Port.rand %>% group_by(GFMU,Year) %>%
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
   complete(Year = 1984:YEAR) -> Wt.smpl.rand
 
+#Wt.smpl.rand <- drop_na(Wt.smpl.rand)
+
+#this output has non-random smaples
 write.csv(Wt.smpl,"Data_processing/Data/SEO_YE_mean_wts_all.csv")
+
+#this output has random samples
 write.csv(Wt.smpl.rand,"Data_processing/Data/SEO_YE_mean_wts_randomonly.csv")
 
 ggplot(data = Dens %>% filter(Year > 2007), 
@@ -252,7 +260,7 @@ Dens$var.Biomass.kg<-(Dens$YE_abund^2)*Dens$bootvar.YE.kg_rand+(Dens$mean.YE.kg_
 #Calculate coefficient of variation for Biomass
 Dens$Biomass.cv<-sqrt(Dens$var.Biomass.kg)/Dens$Biomass.kg
 
-#Cinvert biomass (kg) to metric tons
+#Convert biomass (kg) to metric tons
 Dens$Biomass.mt<-Dens$Biomass.kg/1000
 
 eg <-Dens[Dens$Subdistrict =="EYKT",]; head(eg); eg$mean.YE.kg
