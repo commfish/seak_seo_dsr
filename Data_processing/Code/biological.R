@@ -500,6 +500,34 @@ lendat %>%
   scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
   scale_y_continuous(breaks = c(seq(from=1984, to=YEAR, by=2)) )
 
+ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEAK","_ridgelabeled_lengthcomp_byyear.png",sep=""),
+       dpi=900, height=8, width=5, units="in")
+
+
+##SAMPLE SIZE LABEL OPTION - same plot but EXCL NSEI and SSEI for SEO plot
+lendat %>% 
+  filter(Year > 1983) %>% 
+  filter(!Groundfish.Management.Area.Code %in% c("SSEI","NSEI")) %>%
+  ggplot(aes(length, Year, group = Year, fill = Year)) + 
+  geom_density_ridges(aes(point_fill = Year, point_color = Year),
+                      alpha = 0.3, scale=2, #jittered_points = TRUE,
+                      rel_min_height = 0.01) +
+  xlim(300, 800) + 
+  xlab("Length (mm)") + 
+  ylab(NULL) +
+  theme(legend.position = "none") + 
+  theme(text=element_text(size=20),
+        axis.text.x = element_text(size=10,angle=45, hjust=1),
+        axis.text.y = element_text(size=12)) +
+  facet_wrap(~  Sex) + 
+  facet_grid( ~ Sex)+	#+
+  geom_label(data = lendat %>% 
+               group_by(Year), 
+             aes(y = Year, x = 775, 
+                 label = n), colour="black", fill="white", nudge_y=0.5, size=3)+
+  scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
+  scale_y_continuous(breaks = c(seq(from=1984, to=YEAR, by=2)) )
+
 ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_ridgelabeled_lengthcomp_byyear.png",sep=""),
        dpi=900, height=8, width=5, units="in")
 
