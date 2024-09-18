@@ -15,6 +15,8 @@ library(cowplot)
 source("r_helper/Port_bio_function.R")
 }
 
+#Biological data pulled on 9/18/2024 - LSC
+
 YEAR<-2024
 
 #setwd("D:/Groundfish Biometrics/Yelloweye/SAFE reports")
@@ -24,12 +26,7 @@ YEAR<-2024
   Port3<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
   Port4<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
   Port5<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-2024.csv")
-  
-  #This report has way more fields now - the original report has project code twice - 
-  #edited the oceanAK report to match Ports 1-4 saved in my personal folder in OceanAK.
-  
-  names(Port5)
-  names(Port4)
+
   
   Port<-rbind(Port1,Port2,Port3, Port4, Port5); nrow(Port)
   #str(Port)
@@ -256,8 +253,12 @@ plus_group<-100
 unique(Port$GFMU)
 gmus <- unique(Port$GFMU)[-c(5, 6)]
 
+unique(agecompdat$Sample.Type)
+unique(lendat$Sample.Type)
+
+
 for (i in gmus){  
-  i<-gmus[1]
+  i<-gmus[4]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
