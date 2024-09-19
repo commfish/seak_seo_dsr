@@ -253,7 +253,7 @@ plus_group<-100
 unique(Port$GFMU)
 gmus <- unique(Port$GFMU)[-c(5, 6)]
 
-unique(agecompdat$Sample.Type)
+unique(agecomps$Sample.Type)
 unique(lendat$Sample.Type)
 
 
@@ -2821,3 +2821,23 @@ statlen %>%
 
 ggsave(paste0("figures/lengthcomp_statarea_", YEAR, ".png"), 
        dpi=300, height=8, width=10, units="in")
+
+
+######################################################
+#Estimaitng M
+
+#Sullivan et al. 2022 used max age, metabolism and reproductive biology.
+
+# Maximum Age
+max_age <- max(Port.rand$Age, na.rm=TRUE); max_age
+max_age = 122
+
+#The mean top 5 ages in the sample
+avg_max_age <- Port.rand %>%
+  filter(!is.na(Age)) %>% 
+  arrange(Age) %>%
+  tail(5) %>% 
+  mutate(avg = mean(Age)) %>% 
+  select(avg);avg_max_age
+avg_max_age = 120
+
