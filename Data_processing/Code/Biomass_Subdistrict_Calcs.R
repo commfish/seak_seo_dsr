@@ -3,7 +3,7 @@
 ## Dec 2021
 ## For stock assessment
 ## Phil Joy
-## Last Updated 8/29/24 - LSC
+## Last Updated 9/23/24 - LSC
 #############################################################################################
 
 {library(dplyr)
@@ -55,7 +55,7 @@ ggplot(Dens, aes(x=Year)) +
 ggsave(paste0("Figures/YE_Density_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
 #===========================================================================================
 # 2) Get port sampling data for weights
-#last update of port sampling data was: 08/26/24 <-update this whenever you run this!!
+#last update of port sampling data was: 9/23/24 LSC <-update this whenever you run this!!
 
 {Port<-port.bio(2024)
 
@@ -203,8 +203,6 @@ Port %>% group_by(GFMU,Year) %>%
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
   complete(Year = 1984:YEAR) -> Wt.smpl 
 
-#Wt.smpl <- drop_na(Wt.smpl)
-
 Wt.smpl$no.YE<-replace(Wt.smpl$no.YE,Wt.smpl$no.YE==0,NA)
 
 opts <- options(knitr.kable.NA = "-")            
@@ -213,8 +211,8 @@ table<-Wt.smpl %>% #group_by(Year) %>%
   #kable_paper("hover",full_width=F)
   kable_classic(full_width=F, html_font = "Times", position="center")
   #kable_classic_2(full_width=F, position = "left")
-webshot::install_phantomjs()
-save_kable(table,"Figures/Weight_Table_SAFE14p1.pdf")
+# webshot::install_phantomjs()
+# save_kable(table,"Figures/Weight_Table_SAFE14p1.pdf")
 #2024: can't get this pdf to run - need to come back to it
 
 #These are samples that have been randomly sampled only - includes directed fishery and bycatch
@@ -230,9 +228,7 @@ Port.rand %>%
             no.YE = sum(!is.na(Weight.Kilograms))) %>% 
   complete(Year = 1984:YEAR) -> Wt.smpl.rand
 
-#Wt.smpl.rand <- drop_na(Wt.smpl.rand)
-
-#this output has non-random smaples
+#this output has non-random samples
 write.csv(Wt.smpl,"Data_processing/Data/SEO_YE_mean_wts_all.csv")
 
 #this output has random samples
@@ -275,7 +271,7 @@ ggplot(Dens, aes(x=Year)) +
                 col="black", alpha=0.5) +
   facet_wrap(~Subdistrict) +
   xlab("\nYear") +
-  ylab("yelloweye rockfish biomass (mt)") +
+  ylab("Yelloweye Rockfish Biomass (mt)") +
   #ylab("Density (yelloweye rockfish/kmsq)") +
   scale_y_continuous(label=comma) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
@@ -391,21 +387,33 @@ Biomass.sq %>% mutate(Bio.CSEO.mt = Biomass.CS/1000,
                       Bio.NSEO.lo90 = Bio.NSEO.mt-1.68*Bio.NSEO.cv*Bio.NSEO.mt,
                       Bio.SSEO.lo90 = Bio.SSEO.mt-1.68*Bio.SSEO.cv*Bio.SSEO.mt,) -> Biomass.sq
 
-#write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_subd_08292024.csv")
+write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_subd_09232024.csv")
 #===================================================================================
-xl<-expression()
+# xl<-expression()
 
-plot_ly(y=~c(Biomass.sq$Biomass_mt), x=~c(Biomass.sq$Year), type="line", 
-     ylim=c(5000,max(Biomass.sq$Biomass_mt_hi90)),
-     ylab=c("SEO yelloweye biomass (t)"),
-     xlab="Year")
-polygon(x=c(Biomass.sq$Year,rev(Biomass.sq$Year)),
-        y=c(Biomass.sq$Biomass_mt_lo90,rev(Biomass.sq$Biomass_mt_hi90)),
-        col="lightblue",border=F)
-lines(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="l",lwd=2, pch=18)
-points(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="p",cex=1.5, pch=19)
+# plot_ly(y=~c(Biomass.sq$Biomass_mt), x=~c(Biomass.sq$Year), type="line", 
+#      ylim=c(5000,max(Biomass.sq$Biomass_mt_hi90)),
+#      ylab=c("SEO yelloweye biomass (t)"),
+#      xlab="Year")
+# polygon(x=c(Biomass.sq$Year,rev(Biomass.sq$Year)),
+#         y=c(Biomass.sq$Biomass_mt_lo90,rev(Biomass.sq$Biomass_mt_hi90)),
+#         col="lightblue",border=F)
+# lines(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="l",lwd=2, pch=18)
+# points(Biomass.sq$Biomass_mt ~ Biomass.sq$Year, type="p",cex=1.5, pch=19)
+
+
+plot(Biomass.sq$Year, Biomass.sq$Biomass_mt, type = "n",
+     ylim = c(5000, max(Biomass.sq$Biomass_mt_hi90)),
+     xlab = "Year", ylab = "SEO yelloweye biomass (t)")
+polygon(x = c(Biomass.sq$Year, rev(Biomass.sq$Year)),
+        y = c(Biomass.sq$Biomass_mt_lo90, rev(Biomass.sq$Biomass_mt_hi90)),
+        col = "lightblue", border = NA)
+lines(Biomass.sq$Year, Biomass.sq$Biomass_mt, lwd = 2, pch = 18)
+points(Biomass.sq$Year, Biomass.sq$Biomass_mt, cex = 1.5, pch = 19)
+
 
 CurrentDate<-Sys.Date()
+
 write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_",CurrentDate,".csv"))
   
   
