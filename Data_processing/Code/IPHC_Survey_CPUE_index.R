@@ -27,20 +27,10 @@ library(wesanderson)
 library(RColorBrewer)
 library(tweedie)
 }
-#wd="C:/Users/pjjoy/Documents/Groundfish Biometrics/Yelloweye_Production_Models/"
-#setwd(wd)
-#getwd()
 
-source("r_helper/Port_bio_function.R")
+source(file = paste0(here::here(), "/r_helper/Port_bio_function.R"))
 
-#*******************************************************************************
-### NEED TO DO!!!!!!!! 7-12-23
-# 1) Add in hook saturation correction factor for both cpue and bycatch CHECK
-# 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it CHECK
-# 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
-#    Station locations move by 3nm year to year, so may be in and out of actual habitat #going with Tweedie estimator
-### TALKED TO PHIL ALL OF THIS WAS COMPLETED BEFORE THE CIE REVIEW!
-#*******************************************************************************
+################################################################################
 
 #IPHCfunction<-function(){
 {
@@ -371,6 +361,8 @@ ggplot(plot_stations %>% filter(Station %in% c(use_stations))) +
 #==============================================================================================
 ## Load the port samples that were downloaded from oceansAK; 
 # Need Yelloweye weights to get wcpue estimates
+YEAR <- 2024
+
 {
   Port<-port.bio(2024)
   str(Port)

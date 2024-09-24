@@ -32,26 +32,26 @@ library(RColorBrewer)
 library(tweedie)
 }
 
-source("Port_bio_function.R")
+source(file = paste0(here::here(), "/r_helper/Port_bio_function.R"))
 
 #*******************************************************************************
 #*******************************************************************************
 # RKE truncated this code and cleaned up so you only need to import the full data files from IPHC once and
 # avoid join issues 
 
-  HA.Harv<-read_csv("data/IPHC_raw/halibut_catch_data_rke.csv")
+HA.Harv<-read_csv("./Data_processing/Data/IPHC_raw/halibut_catch_data_rke.csv")
   unique(HA.Harv$year.landed)#1975-2024
  
-  BUT2C3A <- read_csv("data/IPHC_raw/Set and Pacific halibut data_rke.csv") %>% 
-    dplyr::rename_all(funs(make.names(.)))
+BUT2C3A <- read_csv("./Data_processing/Data/IPHC_raw/Set and Pacific halibut data_rke.csv") %>% 
+    dplyr::rename_all(~make.names(.))
 
-  YE2C3A <- read_csv("data/IPHC_raw/Non-Pacific halibut data_rke.csv") %>% 
-    dplyr::rename_all(funs(make.names(.)))
+YE2C3A <- read_csv("./Data_processing/Data/IPHC_raw/Non-Pacific halibut data_rke.csv") %>% 
+    dplyr::rename_all(~make.names(.))
   
 # RKE corrected EYKT bounds to 137-140 Longitude as that is the management area
   # Phil had 137-139 so it was exluding 1/3 of the area. Not sure if that was intentional or an error 
   # or if this change impacts the overall results at all 
-  Survey_prep <- BUT2C3A %>% 
+Survey_prep <- BUT2C3A %>% 
     full_join(YE2C3A, by=c("Stlkey","Station")) %>% 
     filter(IPHC.Stat.Area <= 200, 
            -MidLon.fished <= 140, 
@@ -76,7 +76,7 @@ source("Port_bio_function.R")
 
   #Bring in and join hook adjustment factor to control for hook saturation when calculating CPUE
   # Note from PJ: The data was already posted: https://www.iphc.int/data/fiss-survey-raw-survey-data/
-  hadj<-read_csv("data/IPHC_raw/iphc-2023-fiss-hadj-20231031_rke.csv") %>% 
+  hadj<-read_csv("./Data_processing/Data/IPHC_raw/iphc-2023-fiss-hadj-20231031_rke.csv") %>% 
     dplyr::rename_all(funs(make.names(.))) %>% 
     filter(IPHC.Reg.Area %in% c("2C", "3A"), 
            IPHC.StatArea <= 200)  %>%
@@ -106,7 +106,7 @@ str(Survey); head(Survey,10)
 str(HA.Harv)
 mean(Survey$AvgDepth.fm)
 
-write.csv(Survey,"data/IPHC_survey_1998-2024_rke.csv")
+write.csv(Survey,"./Data_processing/Data/IPHC_survey_1998-2024_rke.csv")
 
 #================================================================================
 # Look at some depth stuff and identify stations that have seen yelloweye...
@@ -198,13 +198,14 @@ hist(Station.sum$prop.0[Station.sum$prop.0<1], breaks=25)
 max(Station.sum$prop.0[Station.sum$prop.0<1])
 
 blanks.stations<-Station.sum$Station[Station.sum$mean.YEcpue == 0]
+All.stations <- Station.sum$Station
 YE.stations<-Station.sum$Station[Station.sum$mean.YEcpue != 0]
 YE.stations_10p<-Station.sum$Station[Station.sum$prop.0 < 0.9]
 YE.stations_20p<-Station.sum$Station[Station.sum$prop.0 < 0.8]
 YE.stations_25p<-Station.sum$Station[Station.sum$prop.0 < 0.75]
 YE.stations_40p<-Station.sum$Station[Station.sum$prop.0 < 0.6]
 
-length(YE.stations);length(YE.stations_10p);length(YE.stations_20p);length(YE.stations_25p);length(YE.stations_40p)
+length(All.stations);length(YE.stations);length(YE.stations_10p);length(YE.stations_20p);length(YE.stations_25p);length(YE.stations_40p)
 
 plot_stations<-st_as_sf(Station.sum,coords = c("Lon","Lat"))
 
@@ -441,6 +442,9 @@ colnames(Survey)
 
 # Note Oct 2023: Port function not set up for inside waters yet so just do outside for now: 
 #Survey_40p<-Survey %>% filter(Station %in% c(YE.stations_40p))
+Survey_all<-Survey %>% filter(Station %in% c(All.stations) &
+                                 SEdist %in% c("EYKT","NSEO","CSEO","SSEO"))
+
 Survey_non0<-Survey %>% filter(Station %in% c(YE.stations) &
                                  SEdist %in% c("EYKT","NSEO","CSEO","SSEO"))
 
@@ -476,7 +480,7 @@ ggplot(IPHC.index, aes(x=Year)) +
 ggsave(paste0("output/YE_IPHC_cpue_non0_boot_rke_", YEAR, ".png"), dpi=300,  height=5, width=5, units="in")
 
 #This output was used in the REMA model; use the Tweedie model output now!
-write.csv(IPHC.index,paste0("data/IPHC_raw/IPHC.cpue.SEO_non0_rke_",YEAR,".csv"))
+write.csv(IPHC.index,paste0(here::here(), "/Data_processing/Data/IPHC_raw/IPHC.cpue.SEO_non0_rke_",YEAR,".csv"))
 
 #get average number of stations in each area 
 IPHC.index %>% group_by(mngmt.area) %>%
@@ -846,5 +850,5 @@ IPHC_cpue_indices<-left_join(IPHC_cpue_indices,IPHC.index %>% mutate(Year = as.f
                 select(Year,SEdist = mngmt.area,no.stations),by=c("Year","SEdist"))
 
 # SAVE all the indices for used in assessment models
-write.csv(IPHC_cpue_indices,paste0("data/IPHC_raw/IPHC.cpue.SEO_tweed_boot_rke_",YEAR,".csv"))
+write.csv(IPHC_cpue_indices,paste0("./Data_processing/Data/IPHC.cpue.SEO_tweed_boot_rke_",YEAR,".csv"))
 

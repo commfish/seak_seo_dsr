@@ -34,11 +34,13 @@ library("ggplot2")
 library("ggpubr")
 library("kableExtra")}
 
-YEAR<-2023
+YEAR<-2024
+
+cbpalette <- c("#009E73", "#0072B2", "#E69F00", "#56B4E9", "#D55E00", "#CC79A7","#F0E442", "black", "grey")
 
 #ROV biomass .. check date tag to get most recent
 bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2024-08-30.csv")
-str(bio_new)
+#str(bio_new)
 str(bio)
 
 bio<-bio %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
@@ -46,11 +48,14 @@ bio<-bio %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
 
 #IPHC longline survey CPUE 
 # using all survey stations where yelloweye have been seen at least once: 
-ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
+#ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 #Or.. use more restrictive... this using stations where YE seen at least 40% of the time: 
 #ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
 
-ind<-ind %>% select(strata = mngmt.area, year = Year, cpue = CPUE.mean, cv = CPUE.cv)
+# use Tweedie model output following CIE review recommendations
+ind<-read.csv(paste0("./Data_processing/Data/IPHC.cpue.SEO_tweed_boot_rke_2023.csv"))
+
+ind <-ind %>% filter(CPUE == "Tweedie index") %>% select(strata = SEdist, year = Year, cpue, cv)
 
 #allmods<-read.csv("Data/SEO_YE_Biomass_all_models.csv")# %>% 
 #sq<-read.csv("Data/SEO_YE_Biomass_subd_100722.csv")
@@ -113,8 +118,10 @@ cowplot::plot_grid(plots22_1$biomass_by_strata + facet_wrap(~strata, ncol = 1),
                    nrow = 1)
 plots22_1$total_predicted_cpue # note that total cpue is not available because nominal cpue is not summable
 plots22_1$total_predicted_biomass
+
 #------------------------------------------------------------------------
-# Model 22.2 single (1) process error, unique strata q values, 
+# Model 22.2 ----
+# single (1) process error, unique strata q values, 
 # one extra variance term for biomass estimates
 in22_2<-prepare_rema_input(model_name = '22.2',
                            multi_survey = TRUE,  #0 or 1? 
@@ -147,6 +154,157 @@ cowplot::plot_grid(plots22_2$biomass_by_strata + facet_wrap(~strata, ncol = 1),
                    nrow = 1)
 plots22_2$total_predicted_cpue # note that total cpue is not available because nominal cpue is not summable
 plots22_2$total_predicted_biomass
+
+get_osa_residuals(m22_2)
+
+ggsave(file.path(paste0(here::here(), "/REMA/Figures/biomass_by_strata_22_2.png")), plot = plots22_2$biomass_by_strata, height = 0.6*7, width = 7, units = "in")
+
+ggsave(file.path(paste0(here::here(), "/REMA/Figures/cpue_by_strata_22_2.png")), plot = plots22_2$cpue_by_strata, height = 0.6*7, width = 7, units = "in")
+
+ggsave(file.path(paste0(here::here(), "/REMA/Figures/total_predicted_biomass_22_2.png")), plot = plots22_2$total_predicted_biomass, height = 0.6*7, width = 7, units = "in")
+
+
+write.csv(output22_2$total_predicted_biomass, file = paste0(here::here(), "/REMA/Output/REMA_total_predicted_biomass_22_2.csv"))
+
+# plots for SAFE
+
+tidy_22_2 <- tidy_rema(m22_2)
+
+p1 <- plot_rema(tidy_22_2)$biomass_by_strata + 
+  ggtitle(label = "Model fits to the ADF&G survey data",
+          subtitle = "ROV survey biomass strata") + 
+  geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci),
+              col = cbpalette[4], fill = cbpalette[4], alpha = 0.4) +
+  geom_line() +
+  geom_point(aes(x = year, y = obs)) +
+  geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+  theme_bw()
+
+p1
+
+ggsave(p1, file = paste0(here::here(), "/REMA/Figures/2024/adfg_survey_fits_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+
+
+p2 <- plot_rema(tidy_22_2)$cpue_by_strata + 
+  ggtitle(label = "Model fits to the IPHC survey data",
+          subtitle = "IPHC survey strata") + 
+  geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci),
+              col = cbpalette[4], fill = cbpalette[4], alpha = 0.4) +
+  geom_line() +
+  geom_point(aes(x = year, y = obs)) +
+  geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+  theme_bw()
+
+p2
+
+ggsave(p2, file = paste0(here::here(), "/REMA/Figures/2024/iphc_survey_fits_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+
+p3 <- plot_rema(tidy_22_2)$total_predicted_biomass + 
+  #ggtitle(label = "Total predicted biomass") + 
+  geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci),
+              col = cbpalette[4], fill = cbpalette[4], alpha = 0.4) +
+  geom_line() +
+  #geom_point(aes(x = year, y = obs)) +
+  #geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci))
+  xlab("Year") +
+  ylab("SEO yelloweye biomass (t)") +
+  scale_x_continuous(breaks = seq(1994, 2024, 4)) +
+  theme_bw()
+
+p3
+
+ggsave(p3, file = paste0(here::here(), "/REMA/Figures/2024/est_biomass_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+
+p4 <- cowplot::plot_grid(plot_rema(tidy_22_2)$biomass_by_strata + 
+                     ggtitle(label = "Model fits to the ADF&G survey biomass") +
+                     geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci),
+                                 col = cbpalette[4], fill = cbpalette[4], alpha = 0.4) +
+                     geom_line() +
+                     geom_point(aes(x = year, y = obs)) +
+                     geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+                     xlab("Year") +
+                     ylab("Biomass (t)") +
+                     theme_bw() +
+                     facet_wrap(~strata, ncol = 4),
+                   plot_rema(tidy_22_2)$cpue_by_strata + 
+                     ggtitle(label = "Model fits to the IPHC survey CPUE") +
+                     geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci),
+                                 col = cbpalette[4], fill = cbpalette[4], alpha = 0.4) +
+                     geom_line() +
+                     geom_point(aes(x = year, y = obs)) +
+                     geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+                     xlab("Year") +
+                     ylab("IPHC setline survey CPUE") +
+                     theme_bw() + facet_wrap(~strata, ncol = 4),
+                   nrow = 2)
+
+p4
+
+ggsave(p4, file = paste0(here::here(), "/REMA/Figures/2024/fits_22_2.png"), width = 10, height = 4, units = "in", bg = "white")
+
+
+# standardized index plots
+
+
+# Calculation of OFL and ABC ----
+
+# for Tier 5, F_OFL is set equal to M, which in the past was 0.02 but for this year is 0.044
+# F_ABCmax = 0.75*M = 0.015
+
+F_OFL <- 0.044
+F_ABCmax <- 0.75*F_OFL
+
+OFL_ABC <- output22_2$total_predicted_biomass %>% 
+  filter(year == 2024) %>%
+  mutate(ABCmax = F_ABCmax * pred, OFL = F_OFL * pred, F.OFL = F_OFL, F.ABCmax = F_ABCmax)
+
+write.csv(OFL_ABC, file = paste0(here::here(), "/REMA/Output/REMA_ref_pts_22_2.csv"))
+
+# parameter estimates
+
+par.est <- tidy_22_2$parameter_estimates %>%
+  mutate(across(where(is.numeric), ~ round(., 8)))
+
+write.csv(par.est, file = paste0(here::here(), "/REMA/Output/REMA_param_est_22_2.csv"))
+
+
+#------------------------------------------------------------------------
+# Model 22.7 ----
+# single (1) process error, unique strata q values, 
+#  extra cv only on CPUE index, not on biomass estimates
+
+in22_7<-prepare_rema_input(model_name = '22.7',
+                           multi_survey = TRUE,  #0 or 1? 
+                           biomass_dat = bio,
+                           cpue_dat = ind,
+                           extra_biomass_cv = #list(assumption="extra_cv", #NULL,
+                             NULL,
+                                                   #pointer_extra_biomass_cv = c(1,1,1,1)), #"extra_cv",
+                           extra_cpue_cv = list(assumption="extra_cv",  #NULL
+                                                pointer_extra_cpue_cv = c(1,1,1,1)),
+                           PE_options = list(pointer_PE_biomass = c(1, 1, 1, 1)),
+                           q_options = list(pointer_q_cpue = c(1,2,3,4)))
+
+names(in22_7)
+
+m22_7 <- fit_rema(in22_7)
+check_convergence(m22_7)
+output22_7 <- tidy_rema(m22_7)  #output from model and return estimates and clean data frames..
+names(output22_7)
+print(output22_7$total_predicted_biomass,n = 30)
+
+output22_7$biomass_by_cpue_strata
+# can ignore because not relevant
+output22_7$parameter_estimates
+
+plots22_7 <- plot_rema(output22_7, biomass_ylab = 'ROV biomass', cpue_ylab = 'IPHC setline survey CPUE')
+plots22_7$biomass_by_strata
+plots22_7$cpue_by_strata
+cowplot::plot_grid(plots22_7$biomass_by_strata + facet_wrap(~strata, ncol = 1),
+                   plots22_7$cpue_by_strata + facet_wrap(~strata, ncol = 1),
+                   nrow = 1)
+plots22_7$total_predicted_cpue # note that total cpue is not available because nominal cpue is not summable
+plots22_7$total_predicted_biomass
 
 #-----------------------------------------------------------------------------
 # As per Sept 2022 Plan Team instructions, rerunning models without IPHC CPUE data...
@@ -182,6 +340,9 @@ cowplot::plot_grid(plots22_4$biomass_by_strata + facet_wrap(~strata, ncol = 1),
                    nrow = 1)
 #plots22_4$total_predicted_cpue # note that total cpue is not available because nominal cpue is not summable
 plots22_4$total_predicted_biomass
+
+print(output22_4$total_predicted_biomass, n = 31)
+
 #------------------------------------------------------------------------
 # Model 22.2 single (1) process error, one extra variance term for biomass estimates
 in22_5<-prepare_rema_input(model_name = '22.5',

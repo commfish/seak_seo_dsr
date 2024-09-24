@@ -1,12 +1,14 @@
 ##Function for loading port sampling bio data
 
-port.bio<-function(YEAR=2024){
+port.bio<-function(YEAR){
 
 Port1<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1980-1989.csv")
 Port2<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
 Port3<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
 Port4<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
 Port5<-read.csv(paste0("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-",YEAR,".csv",sep=""))
+#Port5<-read.csv(paste0("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-",YEAR,".csv",sep="")) %>% select(-c("Delivery",  "Delivery.Code" ,"Sex","Description", "Age.Type","Age.Type.Code","Otolith.Condition","Otolith.Condition.Code","Comments")) %>%
+  #mutate(Project.Code.1 = NA, Girth.Millimeters = NA)
 
 Port<-rbind(Port1,Port2,Port3, Port4, Port5)
 #str(Port)
