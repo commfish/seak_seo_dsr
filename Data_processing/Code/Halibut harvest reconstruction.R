@@ -7,7 +7,7 @@
 ## Because long term halibut data management areas do not align with ADFG
 ## management units, there is some extrapolation that include propagation of
 ## error
-## This is the most latest version of the code updated last 8.30.24 - LSC
+## This is the most latest version of the code updated last 9/23/24 - LSC
 ################################################################################
 {library(plyr)
 library(dplyr)
@@ -23,11 +23,13 @@ HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.cs
 unique(HA.Harv$year.landed) #1975-2020
 
 #Halibut fish ticket data:
-HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_8.30.24.csv") %>% 
+HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_9.23.24.csv") %>% 
   filter(DOL.Year>2020) #Filtered out 2020 to remove having duplicates after combining HA.Harv and HA.Harv.update
 unique(HA.Harv.update$DOL.Year) 
+unique(HA.Harv)
 
 #Halibut by IPHC area from web source data
+#Survey data 1888-2020
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
 
 #Halibut harvest from IPHC data request 1982 - present
