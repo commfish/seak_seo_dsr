@@ -6,6 +6,7 @@
 ## Phil Joy
 ##
 ## Background stuff on these calculations in Discards.Rproj in Yelloweye/Unreported Discards
+##  Last updates 9/24/24 - LSC
 #################################################################################
 {library(dplyr)
 library(boot)
@@ -156,7 +157,7 @@ ggplot(data = Survey %>% filter(Year > 2015,
 # SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 #I am not sure where this data comes from - it's not in the "Halibut harvest reconstruction" code
 #Going to use the data from 2022 for now - LSC
-SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-2022.csv"), header=T)
+SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-2023.csv"), header=T)
 
 #notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
 # there is something.  
