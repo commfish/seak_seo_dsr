@@ -720,8 +720,9 @@ write.csv(SEO.expBy,paste0("Data_processing/Data/SEO_expBy_",YEAR,".csv"))
 
 #=====================================================================
 # compare to landed bycatch
-Removals.subd.1<-read.csv("Data_processing/Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
-#This file is not in the github repo...so i don't know where it comes from. 
+#Removals.subd.1<-read.csv("Data_processing/Data/SEsubdistrict_YE_removals.csv")  #YE reconstruction from Rhea
+#This file is not in the github repo...so i don't know where it comes from. It's not getting used in the code
+#below - the output here is from YE Harvest reconstruction_2024.R
 Removals.subd<-read.csv("Data_processing/Data/SE_YE_known_removals_1980-2024.csv")  #YE reconstruction from most recent
 #2) pre-1980 removals from SEO as a whole... 
 # Removals.pre<-read.csv("Data/XXX.csv") #Waiting on Donnie; 
@@ -732,11 +733,11 @@ Removals.subd %>% filter (Mgt.Area != "SEO" & Mgt.Area != "SSEI" & Mgt.Area != "
 #            tot.hal.by = sum(tot.hal.by))-> Removals.subd
 
 
-str(Removals.subd.1); str(Removals.subd)
+#str(Removals.subd.1)
+str(Removals.subd)
 
 unique(Removals.subd$Year)
 
-Removals.subd$mngmt.area<-Removals.subd$Subdistrict
 Removals.subd$mngmt.area<-Removals.subd$Mgt.Area
 
 Tst<-SEO.expBy %>% left_join(Removals.subd, by=c("Year","mngmt.area"))
@@ -773,10 +774,12 @@ ggsave(paste0("Figures/exp_and_landed_bycatch_in_halibut_fishery_by_ma_", YEAR, 
 #*GET SEO scale data
 #*******************************************************************************
 #*#IPHC records:
-SEOHal1<-read.csv("Data_processing/Data/SEO_Halibut_removals_1888-2022.csv", header=T)
+SEOHal1<-read.csv("Data_processing/Data/SEO_Halibut_removals_1888-2023.csv", header=T)
+
 # Fish ticket records:
 # SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) %>%
 #   filter(Mgt.Area == "CSEO" | Mgt.Area == "SSEO" | Mgt.Area == "NSEO" | Mgt.Area == "EYKT") 
+
 SEOHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) %>%
   filter(Mgt.Area == "CSEO" | Mgt.Area == "SSEO" | Mgt.Area == "NSEO" | Mgt.Area == "EYKT") 
 
@@ -802,6 +805,7 @@ str(SEOHal3)
 SEOHal1 %>% filter(Year %in% seq(1970,1985,1))
 SEOHal2 %>% filter(Year %in% seq(1970,1985,1))
 
+#This will rewrite the .csv files that was called in line 161
 SEOHal<-rbind(SEOHal1 %>% select(-X) %>%
                 filter(Year < min(SEOHal3$Year)),  #favoring fish ticket data here... 
               SEOHal3)
