@@ -32,7 +32,7 @@ Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
 
 oldSurv<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR-1,".csv"))
 
-yr<-2020
+yr<-2023
 smp<-sample_n(oldSurv %>% filter(Year == yr),1)
 smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
 smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
@@ -126,7 +126,7 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
 colnames(Survey)
 
 ggplot(data = Survey %>% filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x = Year)) +
-  geom_line(aes(y = mean.YE.kg, col = SEdist), size = 1) +
+  geom_line(aes(y = mean.YE.kg, col = SEdist), linewidth = 1) +
   geom_ribbon(aes(ymin = mean.YE.kg - (sqrt(var.YE.kg)), 
                   ymax = mean.YE.kg + (sqrt(var.YE.kg)), 
                   fill = SEdist),  alpha = 0.2) +
@@ -148,16 +148,17 @@ ggplot(data = Survey %>% filter(Year > 2015,
 #Deal with Rhea's subdistrict data (halibut_catch_data.csv) and Randy's halibut harvest
 # reconstruction (halibut_SEO_catch_RPderivation.csv)
 
+#The outputs below are not used in this code....don't want to remove them in case they are relevant - LC
+
 #SubHal<-read.csv("Data_processing/Data/Harvests/halibut_catch_data.csv", header=T) #old data from methods development
 #SubHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
 
 #str(SubHal)
 #str(SubHal2)
 
-# SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
-#I am not sure where this data comes from - it's not in the "Halibut harvest reconstruction" code
-#Going to use the data from 2022 for now - LSC
-SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-2023.csv"), header=T)
+
+#This output is from Halibut harvest reconstruction.R (no underscores!)
+SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 
 #notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
 # there is something.  
@@ -168,6 +169,7 @@ SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-2023.csv
 
 Halibut<-function(){
  # HA.Harv<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
+#This output is from Halibut harvest reconstruction.R (no underscores!)
   # HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
   HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) #fish ticket data
   LL<-HA.Harv #[HA.Harv$gear.description == "Longline",]
