@@ -28,14 +28,17 @@ YEAR <- 2024
 #*******************************************************************************
 
 #get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
-Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+# Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
+# 
+# oldSurv<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR-1,".csv"))
 
-oldSurv<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR-1,".csv"))
+#this comes from Rhea's version of the index where she cleaned up the code a bit.
+Survey <- read.csv("Data_processing/Data/IPHC_survey_1998-2024_rke.csv")
 
-yr<-2023
-smp<-sample_n(oldSurv %>% filter(Year == yr),1)
-smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
-smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
+# yr<-2023
+# smp<-sample_n(oldSurv %>% filter(Year == yr),1)
+# smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
+# smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
 
 str(Survey); head(Survey,10)
 # str(HA.Harv)
@@ -145,30 +148,16 @@ ggplot(data = Survey %>% filter(Year > 2015,
 #  geom_vline(aes(xintercept = mean(O32.Pacific.halibut.weight, na.rm=T), col=as.factor(Year)))
 #=============================================================================
 # Load halibut harvests by subdistrict to calculate expected bycatch values;
-#Deal with Rhea's subdistrict data (halibut_catch_data.csv) and Randy's halibut harvest
-# reconstruction (halibut_SEO_catch_RPderivation.csv)
-
-#The outputs below are not used in this code....don't want to remove them in case they are relevant - LC
-
-#SubHal<-read.csv("Data_processing/Data/Harvests/halibut_catch_data.csv", header=T) #old data from methods development
-#SubHal2<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
-
-#str(SubHal)
-#str(SubHal2)
-
 
 #This output is from Halibut harvest reconstruction.R (no underscores!)
 SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 
-#notes: look at Rhea and Randy' data to check for discrepancies... contact Rhea if
-# there is something.  
-#Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
+#notes: Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
 #function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
 
 #get halibut harvest from fishticket data...
 
 Halibut<-function(){
- # HA.Harv<-read.csv("Data/Harvests/halibut_catch_data.csv", header=T)
 #This output is from Halibut harvest reconstruction.R (no underscores!)
   # HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
   HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) #fish ticket data
@@ -194,6 +183,7 @@ Halibut<-function(){
   plot(Hcheck$Year, Hcheck$hal)
   return(Hali)
 }
+
 Hali<-Halibut()
 str(Hali)
 ggplot(Hali %>% filter(SEdist %in% c("EYKT","NSEO","CSEO","SSEO")), aes(x=Year, y = HA.mt)) + 
@@ -426,6 +416,13 @@ str(Survey)
 
 #create a function to select the management area and the depth brackets 
 # to calculate WCPUE and expected bycatch.
+
+# Survey: Data frame containing survey data.
+# Area: Defines the area for which to calculate metrics (e.g., "SEdist" or "In.Out").
+# Deep: Maximum depth for filtering data.
+# Shallow: Minimum depth for filtering data.
+# nboot: Number of bootstrap iterations for estimating confidence intervals.
+# Hali: Data frame containing halibut catch data.
 
 YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Shallow=0, 
                    nboot=1000, Hali=Hali){   #specify which halibut data set to use!!!
@@ -795,7 +792,7 @@ for (i in 1:length(ys)){  #i<-1
   j<-j+1
 }
 
-#SEOHal<-SEOHal3
+# SEOHal<-SEOHal3
 
 unique(SEOHal$Year)
 str(SEOHal1)
@@ -804,8 +801,8 @@ str(SEOHal3)
 
 SEOHal1 %>% filter(Year %in% seq(1970,1985,1))
 SEOHal2 %>% filter(Year %in% seq(1970,1985,1))
+SEOHal3 %>% filter(Year %in% seq(1970,1985,1))
 
-#This will rewrite the .csv files that was called in line 161
 SEOHal<-rbind(SEOHal1 %>% select(-X) %>%
                 filter(Year < min(SEOHal3$Year)),  #favoring fish ticket data here... 
               SEOHal3)
