@@ -258,7 +258,7 @@ unique(lendat$Sample.Type)
 
 
 for (i in gmus){  
-  i<-gmus[4]
+  i<-gmus[1]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
@@ -286,7 +286,7 @@ for (i in gmus){
     
     #Length plots
     lendat %>% 
-      filter(GFMU == i & Year > 1983) %>% 
+      filter(GFMU == i & Year > 1983) %>% #change to 1980 for CSEO
       ggplot(aes(length, Year, group = Year, fill = Year)) + 
       geom_density_ridges(aes(point_fill = Year, point_color = Year),
                           alpha = 0.3, scale=1.5, jittered_points = TRUE,
@@ -308,7 +308,7 @@ for (i in gmus){
     
     ##SAMPLE SIZE LABEL OPTION 
     lendat %>% 
-      filter(GFMU == i & Year > 1983) %>% 
+      filter(GFMU == i & Year > 1983) %>% #change to 1980 for CSEO
       ggplot(aes(length, Year, group = Year, fill = Year)) + 
       geom_density_ridges(aes(point_fill = Year, point_color = Year),
                           alpha = 0.3, scale=2, #jittered_points = TRUE,
@@ -327,7 +327,7 @@ for (i in gmus){
                  aes(y = Year, x = 775, 
                      label = n), colour="black", fill="white", nudge_y=0.5, size=3)+
       scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
-      scale_y_continuous(breaks = c(seq(from=1984, to=YEAR, by=2)) )
+      scale_y_continuous(breaks = c(seq(from=1983, to=YEAR, by=2)) )
     
     ggsave(paste0("Figures/Bio_plots_",YEAR,"/",i,"_ridgelabeled_lengthcomp_byyear.png",sep=""),
            dpi=900, height=8, width=5, units="in")
