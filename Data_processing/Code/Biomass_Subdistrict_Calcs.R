@@ -101,12 +101,12 @@ for (i in Years){    #i<-Years[1]
     #weights by expanding the range of years both backward and forward.
     
     k<-0
-    while (Nw < 75 & i-k >= min(Port.rand$Year) ){         #go back as far as needed to get 150 weights... 
+    while (Nw < 300 & i-k >= min(Port.rand$Year) ){         #go back as far as needed to get 150 weights... 
       k<-k+1
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i,])   #P[P$Year == 1990:2002,]
     }
     m<-0
-    while (Nw < 75 & i+m <= max(Port.rand$Year)) {                        #go forward if you failed to find enough weights... 
+    while (Nw < 300 & i+m <= max(Port.rand$Year)) {                        #go forward if you failed to find enough weights... 
       m<-m+1                                                        
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i+m,])   #P[P$Year == 1986,]
     }
@@ -128,12 +128,12 @@ for (i in Years){    #i<-Years[1]
     Nw<-nrow(P %>% filter(Year == i, !is.na(Weight.Kilograms)))
     
     k<-0
-    while (Nw < 75 & i-k >= min(Port.direct$Year) ){         #go back as far as needed to get 150 weights... 
+    while (Nw < 300 & i-k >= min(Port.direct$Year) ){         #go back as far as needed to get 150 weights... 
       k<-k+1
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i,])   #P[P$Year == 1990:2002,]
     }
     m<-0
-    while (Nw < 75 & i+m <= max(Port.direct$Year)) {                        #go forward if you failed to find enough weights... 
+    while (Nw < 300 & i+m <= max(Port.direct$Year)) {                        #go forward if you failed to find enough weights... 
       m<-m+1                                                        
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i+m,])   #P[P$Year == 1986,]
     }
@@ -154,12 +154,12 @@ for (i in Years){    #i<-Years[1]
     Nw<-nrow(P %>% filter(Year == i, !is.na(Weight.Kilograms)))
     
     k<-0
-    while (Nw < 75 & i-k >= min(Port.hal$Year) ){         #go back as far as needed to get 150 weights... 
+    while (Nw < 300 & i-k >= min(Port.hal$Year) ){         #go back as far as needed to get 150 weights... 
       k<-k+1
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i,])   #P[P$Year == 1990:2002,]
     }
     m<-0
-    while (Nw < 75 & i+m <= max(Port.hal$Year)) {                        #go forward if you failed to find enough weights... 
+    while (Nw < 300 & i+m <= max(Port.hal$Year)) {                        #go forward if you failed to find enough weights... 
       m<-m+1                                                        
       Nw<-nrow(P[P$Year >=i-k & P$Year <= i+m,])   #P[P$Year == 1986,]
     }
@@ -277,7 +277,8 @@ ggplot(Dens, aes(x=Year)) +
   scale_x_continuous(breaks=seq(1995,2025,5)) + 
   theme (axis.text.x = element_text(angle = 45, vjust=1, hjust=1),
          panel.grid.minor = element_blank())
-ggsave(paste0("Figures/YE_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+#ggsave(paste0("Figures/YE_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+ggsave("Figures/YE_Biomass_MA_10.25.24.png", dpi=300,  height=4, width=4, units="in")
 
 #plot biomass and density in same plot...
 # work in progress... difficulty with secondary axis that is not worth the time right now... 
@@ -301,7 +302,8 @@ ggplot(Dens, aes(x=Year)) +
          axis.text.y.right = element_text(color = "black"),
          panel.grid.minor = element_blank())
 
-ggsave(paste0("Figures/YE_Density_&_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+#ggsave(paste0("Figures/YE_Density_&_Biomass_MA_", YEAR, ".png"), dpi=300,  height=4, width=4, units="in")
+ggsave("Figures/YE_Density_&_Biomass_MA_10.25.24.png", dpi=300,  height=4, width=4, units="in")
 
 #************************************************************************************
 #*
@@ -370,7 +372,7 @@ Biomass.sq$Biomass_mt<-Biomass.sq$Biomass/1000
 Biomass.sq$Biomass_mt_lo90<-Biomass.sq$Biomass_mt-Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 Biomass.sq$Biomass_mt_hi90<-Biomass.sq$Biomass_mt+Biomass.sq$Biomass_mt*1.68*Biomass.sq$Biomass.cv
 
-#write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_08292024.csv")
+write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_status_quo_10252024.csv")
 
 #plot it for SAFE report
 head(Biomass.sq)
@@ -387,7 +389,7 @@ Biomass.sq %>% mutate(Bio.CSEO.mt = Biomass.CS/1000,
                       Bio.NSEO.lo90 = Bio.NSEO.mt-1.68*Bio.NSEO.cv*Bio.NSEO.mt,
                       Bio.SSEO.lo90 = Bio.SSEO.mt-1.68*Bio.SSEO.cv*Bio.SSEO.mt,) -> Biomass.sq
 
-write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_subd_09232024.csv")
+write.csv(Biomass.sq,"Data_processing/Data/SEO_YE_Biomass_status_quo_subd_102524.csv")
 #===================================================================================
 # xl<-expression()
 
@@ -414,7 +416,7 @@ points(Biomass.sq$Year, Biomass.sq$Biomass_mt, cex = 1.5, pch = 19)
 
 CurrentDate<-Sys.Date()
 
-write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_",CurrentDate,".csv"))
+write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_nonstatusquo_",CurrentDate,".csv"))
   
   
 ggplot(Biomass.sq, aes(x=Year)) +
