@@ -416,7 +416,8 @@ points(Biomass.sq$Year, Biomass.sq$Biomass_mt, cex = 1.5, pch = 19)
 
 CurrentDate<-Sys.Date()
 
-write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_nonstatusquo_",CurrentDate,".csv"))
+#write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_nonstatusquo_",CurrentDate,".csv"))
+write.csv(Dens,paste0("Data_processing/Data/SEO_YE_Biomass_subdistrict_",CurrentDate,".csv"))
   
   
 ggplot(Biomass.sq, aes(x=Year)) +
