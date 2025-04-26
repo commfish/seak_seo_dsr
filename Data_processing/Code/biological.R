@@ -15,9 +15,9 @@ library(cowplot)
 source("r_helper/Port_bio_function.R")
 }
 
-#Biological data pulled on 9/18/2024 - LSC
+#Biological data pulled on 4/25/2025 - LSC
 
-YEAR<-2024
+YEAR<-2025
 
 #setwd("D:/Groundfish Biometrics/Yelloweye/SAFE reports")
 
@@ -25,7 +25,7 @@ YEAR<-2024
   Port2<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
   Port3<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
   Port4<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
-  Port5<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-2024.csv")
+  Port5<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-2025.csv")
 
   
   Port<-rbind(Port1,Port2,Port3, Port4, Port5); nrow(Port)
@@ -258,7 +258,7 @@ unique(lendat$Sample.Type)
 
 
 for (i in gmus){  
-  i<-gmus[1]
+  i<-gmus[5]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
