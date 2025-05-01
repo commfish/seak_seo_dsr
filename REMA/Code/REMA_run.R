@@ -5,7 +5,7 @@
 ################################################################################
 #If REMA package need to be loaded, here it is: 
 # install.packages("devtools")
-devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vignettes = TRUE)
+#devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vignettes = TRUE)
 
 #From Jane Sullivan 9-1-2023:
 #If you estimate additional observation errors in your model, good news! You can now visualize how the additional estimated observation error relates to the assumed observation error based on the design-based estimator.   
@@ -26,20 +26,20 @@ devtools::install_github("afsc-assessments/rema", dependencies = TRUE, build_vig
 (rema_examples <- file.path(rema_path, 'example_scripts'))
 list.files(rema_examples)
 
-{library("rema")
+library("rema")
 library("scales")
 library("viridis")
 library("dplyr")
 library("ggplot2")
 library("ggpubr")
-library("kableExtra")}
+library("kableExtra")
 
 YEAR<-2024
 
 cbpalette <- c("#009E73", "#0072B2", "#E69F00", "#56B4E9", "#D55E00", "#CC79A7","#F0E442", "black", "grey")
 
 #ROV biomass .. check date tag to get most recent
-bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2024-08-30.csv")
+bio<-read.csv("Data_processing/Data/SEO_YE_Biomass_subdistrict_2024-10-28.csv")
 #str(bio_new)
 str(bio)
 
@@ -51,11 +51,16 @@ bio<-bio %>% select(strata = Subdistrict, year = Year, biomass = Biomass.mt,
 #ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_non0_",YEAR,".csv"))
 #Or.. use more restrictive... this using stations where YE seen at least 40% of the time: 
 #ind<-read.csv(paste0("Data_processing/Data/IPHC.cpue.SEO_min40percentYE_",YEAR,".csv"))
+# with non0 stations and bootstrap index for comparison
+ind<-read.csv(paste0(here::here(), "/Data_processing/Data/IPHC.cpue.SEO_non0_2022methods_plusHADJ_kghook_lon_2024.csv"))
+ind <-ind %>% select(strata = SEdist, year = Year, cpue = WCPUE.bootmean, cv = WCPUE.cv)
 
 # use Tweedie model output following CIE review recommendations
-ind<-read.csv(paste0("./Data_processing/Data/IPHC.cpue.SEO_tweed_boot_rke_2023.csv"))
+# also use all IPHC survey stations < 250 fathoms, following CIE review recommendations
+#ind<-read.csv(paste0("./Data_processing/Data/IPHC.cpue.SEO_tweed_boot_cas_2024.csv"))
+#ind<-read.csv(paste0("./Data_processing/Data/IPHC.cpue.SEO_tweed_boot_rke_102824.csv"))
 
-ind <-ind %>% filter(CPUE == "Tweedie index") %>% select(strata = SEdist, year = Year, cpue, cv)
+#ind <-ind %>% filter(CPUE == "Tweedie index") %>% select(strata = SEdist, year = Year, cpue, cv)
 
 #allmods<-read.csv("Data/SEO_YE_Biomass_all_models.csv")# %>% 
 #sq<-read.csv("Data/SEO_YE_Biomass_subd_100722.csv")
@@ -140,7 +145,7 @@ m22_2 <- fit_rema(in22_2)
 check_convergence(m22_2)
 output22_2 <- tidy_rema(m22_2)  #output from model and return estimates and clean data frames..
 names(output22_2)
-print(output22_2$total_predicted_biomass,n = 30)
+print(output22_2$total_predicted_biomass,n = 31)
 
 output22_2$biomass_by_cpue_strata
 # can ignore because not relevant
@@ -164,9 +169,9 @@ ggsave(file.path(paste0(here::here(), "/REMA/Figures/cpue_by_strata_22_2.png")),
 ggsave(file.path(paste0(here::here(), "/REMA/Figures/total_predicted_biomass_22_2.png")), plot = plots22_2$total_predicted_biomass, height = 0.6*7, width = 7, units = "in")
 
 
-write.csv(output22_2$total_predicted_biomass, file = paste0(here::here(), "/REMA/Output/REMA_total_predicted_biomass_22_2.csv"))
+write.csv(output22_2$total_predicted_biomass, file = paste0(here::here(), "/REMA/Output/REMA_total_predicted_biomass_22_2_2022methods_plusHADJ_kghook.csv"))
 
-# plots for SAFE
+# plots for SAFE ----
 
 tidy_22_2 <- tidy_rema(m22_2)
 
@@ -178,11 +183,12 @@ p1 <- plot_rema(tidy_22_2)$biomass_by_strata +
   geom_line() +
   geom_point(aes(x = year, y = obs)) +
   geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+  ylab("SEO yelloweye biomass (t)") +
   theme_bw()
 
 p1
 
-ggsave(p1, file = paste0(here::here(), "/REMA/Figures/2024/adfg_survey_fits_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+ggsave(p1, file = paste0(here::here(), "/REMA/Figures/2024/adfg_survey_fits_22_2_nomCPUE.png"), width = 6, height = 4, units = "in", bg = "white")
 
 
 p2 <- plot_rema(tidy_22_2)$cpue_by_strata + 
@@ -193,11 +199,12 @@ p2 <- plot_rema(tidy_22_2)$cpue_by_strata +
   geom_line() +
   geom_point(aes(x = year, y = obs)) +
   geom_errorbar(aes(x = year, ymin = obs_lci, ymax = obs_uci)) +
+  ylab("CPUE (kg per hook)") +
   theme_bw()
 
 p2
 
-ggsave(p2, file = paste0(here::here(), "/REMA/Figures/2024/iphc_survey_fits_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+ggsave(p2, file = paste0(here::here(), "/REMA/Figures/2024/iphc_survey_fits_22_2_nomCPUE.png"), width = 6, height = 4, units = "in", bg = "white")
 
 p3 <- plot_rema(tidy_22_2)$total_predicted_biomass + 
   #ggtitle(label = "Total predicted biomass") + 
@@ -213,7 +220,7 @@ p3 <- plot_rema(tidy_22_2)$total_predicted_biomass +
 
 p3
 
-ggsave(p3, file = paste0(here::here(), "/REMA/Figures/2024/est_biomass_22_2.png"), width = 6, height = 4, units = "in", bg = "white")
+ggsave(p3, file = paste0(here::here(), "/REMA/Figures/2024/est_biomass_22_2_nomCPUE.png"), width = 6, height = 4, units = "in", bg = "white")
 
 p4 <- cowplot::plot_grid(plot_rema(tidy_22_2)$biomass_by_strata + 
                      ggtitle(label = "Model fits to the ADF&G survey biomass") +
@@ -240,10 +247,128 @@ p4 <- cowplot::plot_grid(plot_rema(tidy_22_2)$biomass_by_strata +
 
 p4
 
-ggsave(p4, file = paste0(here::here(), "/REMA/Figures/2024/fits_22_2.png"), width = 10, height = 4, units = "in", bg = "white")
+ggsave(p4, file = paste0(here::here(), "/REMA/Figures/2024/fits_22_2_nomCPUE.png"), width = 10, height = 4, units = "in", bg = "white")
 
 
-# standardized index plots
+# standardized index plots ----
+
+# first standardize each survey time series to its mean
+sur.1 <- in22_2$biomass_dat %>%
+  rename("obs_index" = "biomass") %>%
+  mutate(index = "Biomass index") %>%
+  rbind(in22_2$cpue_dat %>%
+          rename("obs_index" = "cpue") %>%
+          mutate(index = "CPUE index")) %>%
+  group_by(index, strata) %>%
+  mutate(mean_index = mean(obs_index, na.rm = T), sd_index = sd(obs_index, na.rm = T)) %>%
+  mutate(std_index = (obs_index - mean_index) / sd_index) %>%
+  mutate(std_l95 = std_index * exp(-1.96 * sqrt(log(1 + cv^2))),
+         std_u95 = std_index * exp(1.96 * sqrt(log(1 + cv^2))))
+
+# plot surveys on one plot ----
+
+sur.1.plot <- ggplot(sur.1, aes(x = year, y = std_index, color = index)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(x = year, ymin = std_l95, ymax = std_u95, color = index), width = 0) +
+  scale_color_manual(values = c(cbpalette[2], cbpalette[3])) +
+  xlab("Year") +
+  ylab("Standardized index") + 
+  labs(color="Index") +
+  geom_hline(yintercept = 0, color = "grey", linetype = "dashed") +
+  scale_x_continuous(breaks = seq(min(sur.1$year), max(sur.1$year), by = 5)) + 
+  theme_bw() +
+  facet_wrap(~strata, ncol = 2)
+
+ggsave(plot = sur.1.plot, 
+       filename = paste0(here::here(), "/REMA/Figures/2024/stand_indices.png"), 
+       width = 7, 
+       height = 7 * (4/6), units = "in",
+       bg = "white")
+
+# version with larger text for presentation
+
+sur.1.plot.pres <- ggplot(sur.1, aes(x = year, y = std_index, color = index)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(x = year, ymin = std_l95, ymax = std_u95, color = index), width = 0) +
+  scale_color_manual(values = c(cbpalette[2], cbpalette[3])) +
+  xlab("Year") +
+  ylab("Standardized index") + 
+  labs(color="Index") +
+  geom_hline(yintercept = 0, color = "grey", linetype = "dashed") +
+  scale_x_continuous(breaks = seq(min(sur.1$year), max(sur.1$year), by = 5)) + 
+  theme_bw() +
+  theme(legend.title=element_blank()) +
+  theme(legend.text = element_text(size = 20)) +
+  theme(strip.text = element_text(size = 20)) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~strata, ncol = 2)
+
+ggsave(plot = sur.1.plot.pres, 
+       filename = paste0(here::here(), "/REMA/Figures/2024/stand_indices_pres.png"), 
+       width = 9, 
+       height = 7, units = "in",
+       bg = "white")
+
+
+# compare to previous assessment's biomass trajectory ----
+
+biomass.prev <- read.csv(paste0(here::here(), "/REMA/Output/REMA_total_predicted_biomass_22_2_2022.csv"))
+
+compare.prev <- output22_2$total_predicted_biomass %>%
+  mutate(model = "22.2 - 2024") %>%
+  select(model, year, pred, pred_lci, pred_uci) %>%
+  rbind(biomass.prev %>%
+          mutate(model = "22.2 - 2022"))
+
+cp.plot <- ggplot(compare.prev) +
+  geom_line(aes(x = year, y = pred, group = model, color = model)) +
+  geom_ribbon(aes(x = year, ymin = pred_lci, ymax = pred_uci, group = model, fill = model), alpha = 0.25) +
+  scale_color_manual(values = c(cbpalette[1], cbpalette[2])) +
+  scale_fill_manual(values = c(cbpalette[1], cbpalette[2])) +
+  xlab("Year") +
+  ylab("Estimated biomass (t)") + 
+  labs(color="Model", fill = "Model") +
+  scale_x_continuous(breaks = seq(min(sur.1$year), max(sur.1$year), by = 2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme_bw()
+
+ggsave(cp.plot, file = paste0(here::here(), "/REMA/Figures/2024/est_biomass_compare.png"), width = 6, height = 4, units = "in", bg = "white")
+
+ggsave(cp.plot, file = paste0(here::here(), "/REMA/Figures/2024/est_biomass_compare_pres.png"), width = 8, height = 4, units = "in", bg = "white")
+
+# compare the IPHC CPUE index used in the previous assessment with the index used in this assessment ----
+
+# CV = SD / mean
+# SD = CV * mean
+# SE = SD / sqrt(n)
+
+cpue.prev <- read.csv(paste0(here::here(), "/Data_processing/Data/IPHC.cpue.SEO_non0_2022.csv")) %>%
+  rename("CPUE" = "Mean") %>%
+  mutate(model = "22.2 - 2022") %>%
+  mutate(SE = (CV * CPUE) / sqrt(no.stations)) %>%
+  mutate(lower = CPUE + SE * qnorm(0.05 / 2), upper = CPUE + SE * qnorm(1 - 0.05 / 2)) %>%
+  select(c(Year, Stratum, CPUE, CV, upper, lower, model))
+cpue.curr <- read.csv(paste0(here::here(), "/Data_processing/Data/IPHC.cpue.SEO_non0_2022methods_2024.csv")) %>%
+  select(Year, Stratum = SEdist, CPUE = CPUE.bootmean, CV = CPUE.cv, upper, lower) %>%
+  #filter(CPUE == "Tweedie index") %>%
+  #select(c(Year, SEdist, cpue, cv, upper, lower)) %>%
+  #rename("Stratum" = "SEdist", "CPUE" = "cpue", "CV" = "cv") %>%
+  mutate(model = "22.2 - 2024")
+
+cpue.compare <- rbind(cpue.prev, cpue.curr)
+
+cpue.plot <- ggplot(cpue.compare) +
+  geom_point(aes(x = Year, y = CPUE, group = model, color = model)) +
+  geom_ribbon(aes(x = Year, ymin = lower, ymax = upper, group = model, fill = model), alpha = 0.25) +
+  scale_color_manual(values = c(cbpalette[1], cbpalette[2])) +
+  scale_fill_manual(values = c(cbpalette[1], cbpalette[2])) +
+  xlab("Year") +
+  ylab("CPUE") + 
+  labs(color="Model", fill = "Model") +
+  theme_bw() +
+  facet_wrap(~Stratum, ncol = 2)
 
 
 # Calculation of OFL and ABC ----
@@ -259,6 +384,11 @@ OFL_ABC <- output22_2$total_predicted_biomass %>%
   mutate(ABCmax = F_ABCmax * pred, OFL = F_OFL * pred, F.OFL = F_OFL, F.ABCmax = F_ABCmax)
 
 write.csv(OFL_ABC, file = paste0(here::here(), "/REMA/Output/REMA_ref_pts_22_2.csv"))
+
+nonYE.ofl <- 26
+nonYE.abc <- 20
+tot.DSR.ofl <- nonYE.ofl + OFL_ABC$OFL
+tot.DSR.maxabc <- nonYE.abc + OFL_ABC$ABCmax
 
 # parameter estimates
 

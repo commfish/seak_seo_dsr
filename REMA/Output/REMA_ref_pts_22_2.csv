@@ -1,0 +1,2 @@
+"","model_name","variable","year","pred","pred_lci","pred_uci","ABCmax","OFL","F.OFL","F.ABCmax"
+"1","22.2","tot_biomass_pred",2024,18451.8635563366,14732.1442605163,23110.774825506,608.911497359108,811.881996478811,0.044,0.033

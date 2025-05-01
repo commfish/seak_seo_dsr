@@ -1,0 +1,1623 @@
+---
+title: "14. Assessment of the Demersal Shelf Rockfish Stock Complex in the Gulf of Alaska"
+author: |
+  | \normalsize Caitlin A. Stern$^{1,2}$, Laura Coleman$^1$, Rhea Ehresmann$^1$, Kristen Omori$^3$, 
+  | \normalsize Philip J. Joy$^1$, Christine M. Hinds$^1$, and Bridget Ferriss$^3$
+  | \normalsize $^1$Alaska Department of Fish and Game 
+  | \normalsize $^2$caitlin.stern@alaska.gov 
+  | \normalsize $^3$NOAA Fisheries 
+date: "`r format(Sys.time(), '%B %Y')`"
+output:
+  bookdown::pdf_document2:
+    fig_caption: true
+    includes: null
+    toc: no
+header-includes:
+   - \usepackage{caption}
+   - \usepackage{booktabs}
+   - \usepackage{multirow}
+   - \usepackage{array}
+   - \usepackage{pdflscape}
+   - \newcommand{\blandscape}{\begin{landscape}}
+   - \newcommand{\elandscape}{\end{landscape}}
+   - \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+
+---
+
+\pagenumbering{arabic}
+
+```{r global_options, include=FALSE, echo = FALSE, message = FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(fig.width = 12, fig.height = 7, fig.align = "left", echo = FALSE, warning = FALSE, message = FALSE,  dpi=300)
+
+```
+
+```{r, load_packages, echo = FALSE, include = FALSE}
+
+library(xtable)
+library(tidyverse)
+#library(kableExtra)
+#library(huxtable)
+
+options(xtable.comment = FALSE)
+
+# set year, palette
+cur_yr <- 2024 
+pre_yr <- cur_yr - 1
+pre2_yr <- cur_yr - 2
+cbpalette <- c("#009E73", "#0072B2", "#E69F00", "#56B4E9", "#D55E00", "#CC79A7","#F0E442", "black", "grey")
+
+```
+
+
+```{r define, echo = FALSE, include = FALSE}
+
+# bring in biomass time series
+
+biomass <- read.csv(paste0(here::here(), "/REMA/Output/REMA_total_predicted_biomass_22_2.csv"))
+
+# bring in reference points and parameter estimates
+
+ref.pts <- read.csv(paste0(here::here(), "/REMA/Output/REMA_ref_pts_22_2.csv"))
+par.est <- read.csv(paste0(here::here(), "/REMA/Output/REMA_param_est_22_2.csv"))
+
+# define values for tables and text
+
+nonYE.ofl <- 26
+nonYE.abc <- 20
+
+M.value <- ref.pts %>% select(F.OFL) %>% pull()
+YE.biomass <- ref.pts %>% select(pred) %>% pull()
+YE.biomass.lci <- ref.pts %>% select(pred_lci) %>% pull()
+YE.biomass.uci <- ref.pts %>% select(pred_uci) %>% pull()
+f.ofl <- ref.pts %>% select(F.OFL) %>% pull()
+maxf.abc <- ref.pts %>% select(F.ABCmax) %>% pull()
+buffer.prop <- 0.2
+f.abc <- maxf.abc * (1 - buffer.prop)
+ye.ofl <- ref.pts %>% select(OFL) %>% pull()
+ye.maxabc <- ref.pts %>% select(ABCmax) %>% pull()
+ye.recabc <- ye.maxabc * (1 - buffer.prop)
+dsr.ofl <- ye.ofl + nonYE.ofl
+dsr.maxabc <- ye.maxabc + nonYE.abc
+dsr.recabc <- ye.recabc + nonYE.abc
+dsr.rectac <- dsr.recabc - 7 # 7 tons is the estimated subsistence harvest, which is subtracted from the ABC to get the TAC
+past.abc <- 283
+abc.per.diff <- ((dsr.recabc - past.abc) / past.abc) * 100
+
+# reference points with last assessment's M = 0.02
+ye.ofl.02 <- YE.biomass * 0.02
+ye.maxabc.02 <- YE.biomass * 0.02 * 0.75
+ye.recabc.02 <- ye.maxabc.02 * (1 - buffer.prop)
+dsr.ofl.02 <- ye.ofl.02 + nonYE.ofl
+dsr.maxabc.02 <- ye.maxabc.02 + nonYE.abc
+dsr.recabc.02 <- ye.recabc.02 + nonYE.abc
+
+# last assessment's reference points
+ye.ofl.prev <- 350
+ye.maxabc.prev <- 263
+ye.biomass.prev <- 17511
+
+# percent change in biomass estimate from last assessment
+ye.biomass.per.ch <- (YE.biomass - ye.biomass.prev) / ye.biomass.prev
+ye.maxabc.per.ch <- (ye.maxabc - ye.maxabc.prev) / ye.maxabc.prev
+
+# yearly percent changes in estimated biomass
+
+biomass.pc <- biomass %>% 
+  mutate(per_ch = (pred - lag(pred))/ lag(pred))
+
+#plot(biomass.pc$year, biomass.pc$per_ch)
+
+```
+
+```{r table-data, include = FALSE}
+
+# bring in data sets for tables
+
+# SEO DSR dockside weights
+dockside.wts <- read.csv(paste0(here::here(), "/Data_processing/Data/SEO_YE_mean_wts_randomonly.csv")) %>%
+  select(-X)
+
+dockside.wts.eykt <- dockside.wts %>% filter(GFMU == "EYKT")
+dockside.wts.nseo <- dockside.wts %>% filter(GFMU == "NSEO")
+dockside.wts.cseo <- dockside.wts %>% filter(GFMU == "CSEO")
+dockside.wts.sseo <- dockside.wts %>% filter(GFMU == "SSEO")
+
+dockside.wts.2 <- full_join(dockside.wts.eykt, dockside.wts.nseo, by = "Year") %>%
+  full_join(dockside.wts.cseo, by = "Year") %>%
+  full_join(dockside.wts.sseo, by = "Year") %>%
+  filter(Year > 1983)
+
+# SEO DSR total harvest data
+seo.harvest <- read.csv(paste0(here::here(), "/Data_processing/Data/catchlimits_table2024 110424.csv")) %>%
+  rowwise() %>%
+  mutate(Total = sum(Directed, Incidental, UnreportedDiscard, Research, Recreational, Subsistence, na.rm = TRUE)) %>%
+  #select(-X) %>%
+  rename(`Unreported discards` = UnreportedDiscard) %>%
+  select(Year, Research, Directed, Incidental, `Unreported discards`, Recreational, Subsistence, Total, ABC, OFL, TAC)
+
+# for catch table in summary for plan team
+curyr.harvest.tot <- seo.harvest %>% filter(Year == cur_yr) %>% pull(Total)
+curyr.harvest.com <- seo.harvest %>% filter(Year == cur_yr) %>% mutate(Commercial = sum(Directed, Incidental, `Unreported discards`, na.rm = TRUE)) %>% pull(Commercial)
+curyr.harvest.rec <- seo.harvest %>% filter(Year == cur_yr) %>% pull(Recreational)
+curyrlag1.harvest.tot <- seo.harvest %>% filter(Year == cur_yr - 1) %>% pull(Total)
+curyrlag1.harvest.com <- seo.harvest %>% filter(Year == cur_yr - 1) %>% mutate(Commercial = sum(Directed, Incidental, `Unreported discards`, na.rm = TRUE)) %>% pull(Commercial)
+curyrlag1.harvest.rec <- seo.harvest %>% filter(Year == cur_yr - 1) %>% pull(Recreational)
+
+# IPHC CPUE
+
+iphc.cpue <- read.csv(paste0(here::here(), "/Data_processing/Data/IPHC.cpue.SEO_tweed_boot_rke_102824.csv")) %>%
+  filter(CPUE == "Tweedie index") %>%
+  select(-c(X, upper, lower, CPUE))
+
+iphc.cpue.eykt <- iphc.cpue %>% filter(SEdist == "EYKT")
+iphc.cpue.nseo <- iphc.cpue %>% filter(SEdist == "NSEO")
+iphc.cpue.cseo <- iphc.cpue %>% filter(SEdist == "CSEO")
+iphc.cpue.sseo <- iphc.cpue %>% filter(SEdist == "SSEO")
+
+iphc.cpue.2 <- full_join(iphc.cpue.eykt, iphc.cpue.nseo, by = "Year") %>%
+  full_join(iphc.cpue.cseo, by = "Year") %>%
+  full_join(iphc.cpue.sseo, by = "Year")
+
+# GAM results
+gam <- read.csv(paste0(here::here(), "/Rhea's New IPHC CPUE Run/output/GAM_model_comparison.csv")) %>%
+  select(-X) %>%
+  mutate("Model formula" = case_when(
+    model == "global" ~ "CPUE $\\sim$ Year * Management unit + s(Depth, k=4) + s(Soak time, k=4) + te(Longitude, Latitude)",
+    model == "depth+latlon" ~ "CPUE $\\sim$ Year * Management unit + s(Depth, k=4) + te(Longitude, Latitude)",
+    model == "depth+soak" ~ "CPUE $\\sim$ Year * Management unit + s(Depth, k=4) + s(Soak time, k=4)",
+    model == "soak+latlon" ~ "CPUE $\\sim$ Year * Management unit + s(Soak time, k=4) + te(Longitude, Latitude)",
+    model == "latlon" ~ "CPUE $\\sim$ Year * Management unit + te(Longitude, Latitude)",
+    model == "depth" ~ "CPUE $\\sim$ Year * Management unit + s(Depth, k=4)",
+    model == "soak" ~ "CPUE $\\sim$ Year * Management unit + s(Soak time, k=4)",
+    model == "m0" ~ "CPUE $\\sim$ Year * Management unit"
+  )) %>%
+  rename("AIC" = aic, "Deviance explained" = dev_exp, "R-squared" = rsq) %>%
+  select("Model formula", AIC, "Deviance explained", "R-squared")
+
+# commercial landings
+
+comm.land1 <- read.csv(paste0(here::here(), "/Data_processing/Data/cfspecies_table_2024.csv")) %>%
+  mutate(Species = case_when(
+    species == 138 ~ "Copper rockfish",
+    species == 145 ~ "Yelloweye rockfish",
+    species == 146 ~ "Canary rockfish",
+    species == 147 ~ "Quillback rockfish",
+    species == 148 ~ "Tiger rockfish",
+    species == 149 ~ "China rockfish",
+    species == 150 ~ "Rosethorn rockfish"
+  )) %>%
+  select(-c(X, species)) %>%
+  pivot_longer(cols = X2015:X2024, names_to = "Year") %>%
+  group_by(Year) %>%
+  mutate(Total = case_when(
+    Species == "Yelloweye rockfish" ~ sum(value),
+    Species != "Yelloweye rockfish" ~ NA)) %>%
+  mutate(percent = case_when(
+    Species == "Yelloweye rockfish" ~ value/sum(value),
+    Species != "Yelloweye rockfish" ~ NA)) %>%
+  ungroup()
+
+comm.land1a <- comm.land1 %>%
+  filter(Species == "Yelloweye rockfish") %>%
+  select(Year, Total) %>%
+  mutate(Species = "Total") %>%
+  rename(value = Total)
+
+comm.land1b <- comm.land1 %>%
+  filter(Species == "Yelloweye rockfish") %>%
+  select(Year, percent) %>%
+  mutate(Species = "Percent yelloweye") %>%
+  rename(value = percent)
+
+comm.land <- bind_rows(comm.land1 %>% select(-c(Total, percent)), comm.land1a, comm.land1b) %>%
+  pivot_wider(id_cols = Species, names_from = Year, values_from = value) 
+
+  
+
+```
+
+
+This report may be cited as:  
+Stern, C.A., L. Coleman, R. Ehresmann, K. Omori, P.J. Joy, C.M. Hinds, and B. Ferriss. 2024. Assessment of the Demersal Shelf Rockfish Stock Complex in the Gulf of Alaska. North Pacific Fishery Management Council, Anchorage, AK. Available from https://www.npfmc.org/library/safe-reports/
+
+\setcounter{table}{0}
+\renewcommand{\thetable}{14.\arabic{table}}
+
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{14.\arabic{figure}}
+
+# Executive summary {-}
+
+The Gulf of Alaska (GOA) demersal shelf rockfish (DSR) stock complex consists of seven species (yelloweye, quillback, copper, rosethorn, China, canary, and tiger rockfish) that are managed jointly, with a full stock assessment occurring on a biennial cycle in even years. The DSR stock complex is managed as separate stock complexes in two management areas: the Southeast Outside (SEO) Subdistrict and the combined Western GOA, Central GOA, and West Yakutat (WG/CG/WY) area. Separate management of these two areas enables monitoring of catch for each stock complex individually and is thought to be appropriate given how little is known about DSR stock structure in the GOA, the risk of disproportionate harvest in one area were the stock complexes to be managed with a single overfishing level (OFL) and acceptable biological catch (ABC), and the fact that directed DSR fisheries exist in SEO while all catch of DSR species in the WG/CG/WY area is incidental. The DSR species in the WG/CG/WY area were previously allocated to the GOA Other Rockfish stock complex, but discussion and research determined that the DSR species differed from the other species in that stock complex in biology, habitat use, and catch gear type, motivating the move to a separate assessment and management plan. The 2024 assessment is the first to conduct a single GOA-wide DSR assessment. The DSR stock complex in the WG/CG/WY is managed under single area harvest specifications using a Tier 6 maximum catch methodology. The SEO area is composed of four management units: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO). Yelloweye rockfish (*Sebastes ruberrimus*) in SEO are managed as a Tier 5 stock, where $F_{OFL} = M$ (natural mortality) and maximum $F_{ABC} = 0.75 * M$. The other species in the complex in SEO are managed as Tier 6. The recommended ABC and OFL for yelloweye rockfish in this year’s assessment are based on model 22.2, the model accepted for harvest specifications by the Plan Team and the SSC in 2022 (Joy *et al.* 2022; NPFMC 2022). Model 22.2 is a spatially-stratified, two-survey random effects (REMA) model fit to the Alaska Department of Fish and Game (ADF&G) submersible and remotely operated vehicle (ROV) survey biomass estimates as well as catch per unit effort (CPUE; in kg per hook) estimates of yelloweye rockfish in the International Pacific Halibut Commission (IPHC) longline survey, with an extra observation error term estimated for the biomass estimates. The Bayesian state-space surplus production model (SS-SPM) first presented in 2022 continues to be developed as a research model but is not presented here.
+
+## Summary of changes in assessment inputs {-}
+
+### Changes in the input data {-}
+
+1. Management region-specific commercial fishery average weights were updated through September 2024 and catch information was updated through October 2024 (Tables \@ref(tab:dockside-wts) and \@ref(tab:total-catch)). 
+
+2. Relative abundance estimates from the ADF&G ROV survey were updated with new survey data for NSEO from 2022 and EYKT from 2023. Only EYKT was surveyed in 2023, and none of the four management units were surveyed in 2024. 
+
+3. Catch-per-unit-effort of yelloweye rockfish in the IPHC longline survey in kg per hook for the four management units in SEO was updated through 2023; 2024 survey data are not yet available.
+
+4. The total catch estimates for the DSR species in WG/CG/WY come from NOAA (National Oceanic and Atmospheric Administration) Fisheries Alaska Regional Office (AKRO) blend estimates and Catch Accounting System (CAS) data available beginning in 1991. 
+
+### Changes in the assessment methodology {-}
+
+1. The yelloweye rockfish natural mortality value used in the assessment was changed to $M=0.044$, calculated by Sullivan *et al.* (2022a) using a maximum age of 122 years from the ADF&G Age Determination Unit. The previously used value was $M=0.02$ (Joy *et al.* 2022). This change in $M$ is deemed necessary because the $M=0.044$ value is well supported by recent analysis, consistent with the West Coast yelloweye rockfish stock assessment accepted by the Pacific Fishery Management Council, and recommended by Center for Independent Experts (CIE) review: the range of yelloweye rockfish $M$ values calculated by Sullivan *et al.* (2022a) is 0.044 to 0.052, the West Coast yelloweye rockfish stock assessment uses $M = 0.044$ (Gertseva and Cope 2017), and a 2023 CIE review of this assessment suggested using Hamel's (2015) method for deriving $M$ (Cook 2023), which produces $M=0.044$ when using the maximum age of 122 years cited above.
+
+2. As recommended by one of the CIE reviewers (Ono 2023), we standardized the IPHC survey CPUE time series using a General Additive Model (GAM) with the Tweedie distribution to accommodate zero inflation. This is a change from the methodology used to generate the CPUE index in 2022, which involved averaging CPUE across qualifying stations in each management area and calculating the CV by bootstrapping across stations (Joy *et al.* 2022). Using an approach that can deal with zero inflation also allowed us to include all IPHC survey stations within the appropriate depth range for yelloweye rockfish in the analysis; the reviewer had noted the problems with filtering out survey stations with zeros (Ono 2023). Accordingly, in contrast to the 2022 assessment, we did not exclude survey stations within the appropriate depth range at which a yelloweye rockfish had never been recorded. Following the CIE reviewer's recommendations (Ono 2023), we used CPUE in weight (kg) rather than in numbers. The resulting standardized CPUE index is used as a secondary index of abundance in model 22.2 (Table \@ref(tab:iphc-cpue)).
+
+3. The assessment now includes the DSR species in the WG/CG/WY management area. These DSR species previously belonged to the GOA Other Rockfish stock complex and are assessed using the same Tier 6 methodology as the GOA Other Rockfish stock complex, i.e., using the sum of the maximum catch from 2013 to 2022 for each species.
+
+
+## Summary of results {-}
+
+### Western GOA, Central GOA, and West Yakutat {-}
+
+The **recommended ABC for the 2025 fishery is 271 t and the OFL is 361 t** for the DSR stock complex in the WG/CG/WY. All species in the stock complex are assigned as Tier 6, thus, using the maximum catch during a reliable time series is a precautionary approach for the complex. The authors do not recommend reductions below the max ABC. Note that table values normally sourced from the previous assessment are missing because the DSR stock complex in the WG/CG/WY was assessed as part of the GOA Other Rockfish stock complex until this year. 
+
+```{r manage-quant-wcwy, results = "asis"}
+
+mqw.col1 <- c("Quantity", "Tier", "OFL (t)", "maxABC (t)", "ABC (t)", NA, "Status", "Overfishing")
+mqw.col2 <- c(2024, "n/a", "n/a", "n/a", "n/a", "As determined *last* year for:", "2023", NA)
+mqw.col3 <- c(2025, "n/a", "n/a", "n/a", "n/a", NA, 2024, "n/a")
+mqw.col4 <- c(2025, 6, 361, 271, 271, "As determined *this* year for:", 2024, NA)
+mqw.col5 <- c(2026, 6, 361, 271, 271, NA, 2025, "n/a")
+
+mqw.tab <- data.frame(cbind(mqw.col1, mqw.col2, mqw.col3, mqw.col4, mqw.col5)) 
+#names(mqw.tab) <- c("", "As estimated or \\textit{specified} \\\\*last* year for:", "", "As estimated or **recommended** *this* year for:", "")
+
+#a_header <- construct_header(mqw.tab, grp_names = c("", "As estimated or specified last year for:", "As estimated or recommended this year for:"), span = c(1,2,2))
+
+#tab <- xtable(mqw.tab, add.to.row = a_header, hline.after = F, caption = "ABC and OFL recommendations for the DSR complex in Western GOA, Central GOA, and West Yakutat for 2025-2026.", label = "tab:manage-quant-wcwy")
+
+#print(tab, caption.placement = "top", include.rownames = FALSE, sanitize.text.function=function(x){x})
+
+#kable(mqw.tab, booktabs = TRUE, caption = "", align = "c", col.names = NULL) %>%
+  #add_header_above(c("", "As estimated or specified last year for:" = 2, "As estimated or recommended this year for:" =2)) %>%
+  #kable_styling(latex_options = "hold_position")
+
+#mqw.tab.hux <- as_hux(mqw.tab) %>%
+  #insert_row("", "As estimated or specified last year for:", "", "As estimated or recommended this year for:", "", after = 0) %>%
+  #merge_cells(1, 2:3) %>%
+  #merge_cells(1, 4:5) %>%
+  #filter(!row_number() %in% c(1))
+
+#mqw.tab.hux
+
+```
+
+
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{As estimated or} &
+      \multicolumn{2}{c}{As estimated or} \\
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{\textit{specified last} year for:} &
+      \multicolumn{2}{c}{\textit{recommended this} year for:} \\
+\textbf{Quantity} & 2024 & 2025 & 2025 & 2026 \\ 
+  \hline
+  Tier & n/a & n/a & 6 & 6 \\ 
+  OFL (t) & n/a & n/a & \textbf{361} & \textbf{361} \\ 
+  maxABC (t) & n/a & n/a & 271 & 271 \\ 
+  ABC (t) & n/a & n/a & \textbf{271} & \textbf{271} \\
+  \hline
+  \multirow{1}{*}{} &
+      \multicolumn{2}{c}{As determined \textit{last} year for:} &
+      \multicolumn{2}{c}{As determined \textit{this} year for:} \\
+  \textbf{Status} & 2022 & 2023 & 2023 & 2024 \\ 
+  \hline
+  Overfishing &  & n/a &  & n/a \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+
+
+### Southeast Outside {-}
+
+```{r manag-quants-seo, results = "asis"}
+
+mq.col1 <- c(NA, "Quantity", "$M$ (natural mortality", "Tier", "Yelloweye Biomass (t)", "$F_{OFL} (F = M)$", "$maxF_{ABC}$", "$F_{ABC}$", "DSR OFL (t)", "DSR max ABC (t)", "Recommended ABC (t)", "Status", NA, "Overfishing")
+mq.col2 <- c("As estimated or *specified last* year for:", pre_yr, 0.02, 5, 17511, 0.02, 0.015, 0.01275, 376, 283, 244, "As determined last year for:", pre_yr - 2, "No")
+mq.col3 <- c(NA, cur_yr, 0.02, 5, NA, 0.02, 0.015, 0.01275, 376, 283, 244, NA, pre_yr - 1, "n/a")
+mq.col4 <- c("As estimated or *recommended this* year for:", cur_yr + 1, M.value, 5, YE.biomass, f.ofl, maxf.abc, f.abc, dsr.ofl, dsr.maxabc, dsr.recabc, "As determined last year for:", cur_yr - 1, "No")
+mq.col5 <- c(NA, cur_yr + 2, M.value, 5, NA, f.ofl, maxf.abc, f.abc, dsr.ofl, dsr.maxabc, dsr.recabc, NA, cur_yr, "n/a")
+
+mq.tab <- data.frame(cbind(mq.col1, mq.col2, mq.col3, mq.col4, mq.col5))
+
+```
+
+For the 2025 fishery, **the OFL is `r format(dsr.ofl, nsmall = 0, big.mark = ",", digits = 1)` t and the recommended ABC is `r format(dsr.recabc, nsmall = 0, big.mark = ",", digits = 1)` t** for DSR rockfish, including both the Tier 5 yelloweye rockfish stock and the Tier 6 species in the complex. This ABC is a `r format(abc.per.diff, nsmall = 0, big.mark = ",", digits = 1)`% increase from the 2022 ABC of 283 t. Reference values for DSR rockfish are summarized in the first table below. The stock was not subject to overfishing in 2023.
+
+Management quantities are displayed individually for yelloweye rockfish in SEO and for the Tier 6 DSR species in SEO in the second and third tables, respectively. The authors recommend a `r buffer.prop * 100`% reduction from the maximum ABC (maxABC) for yelloweye rockfish based on the risk table analysis. 
+
+Although estimated yelloweye rockfish biomass increased by `r format(ye.biomass.per.ch*100, nsmall = 0, big.mark = ",", digits = 1)`% from the previous assessment, the yelloweye rockfish maxABC increased by `r format(ye.maxabc.per.ch*100, nsmall = 0, big.mark = ",", digits = 1)`% from the previous assessment, due to the change in the value of $M$ from 0.02 to 0.044.
+
+There are no changes to the management of the Tier 6 DSR species and recommended harvests remain the same as in previous versions of this assessment (Wood *et al.* 2021; Joy *et al.* 2022). The ABC and OFL values for yelloweye rockfish and for the Tier 6 DSR species are added together to obtain the values in the first table for all SEO DSR. 
+
+\begin{table}[ht]
+\caption*{Summary for all SEO DSR species:}
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{As estimated or} &
+      \multicolumn{2}{c}{As estimated or} \\
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{\textit{specified last} year for:} &
+      \multicolumn{2}{c}{\textit{recommended this} year for:} \\
+\textbf{Quantity} & 2024 & 2025 & 2025 & 2026 \\ 
+  \hline
+  $M$ (natural mortality rate) & 0.02 & 0.02 & `r M.value` & `r M.value` \\ 
+  Tier & 5/6 & 5/6 & 5/6 & 5/6 \\ 
+  Yelloweye biomass (t) & 17,511 & 17,511 & `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` & `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` \\ 
+  OFL (t) & 376 & 376 & \textbf{`r format(dsr.ofl, nsmall = 0, big.mark = ",", digits = 1)`} & \textbf{`r format(dsr.ofl, nsmall = 0, big.mark = ",", digits = 1)`} \\ 
+  maxABC (t) & 283 & 283 & `r format(dsr.maxabc, nsmall = 0, big.mark = ",", digits = 1)` & `r format(dsr.maxabc, nsmall = 0, big.mark = ",", digits = 1)` \\ 
+  ABC (t) & 283 & 283 & \textbf{`r format(dsr.recabc, nsmall = 0, big.mark = ",", digits = 1)`} & \textbf{`r format(dsr.recabc, nsmall = 0, big.mark = ",", digits = 1)`} \\
+  \hline
+  \multirow{1}{*}{} &
+      \multicolumn{2}{c}{As determined \textit{last} year for:} &
+      \multicolumn{2}{c}{As determined \textit{this} year for:} \\
+  \textbf{Status} & 2022 & 2023 & 2023 & 2024 \\ 
+  \hline
+  Overfishing & No & n/a & No & n/a \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+
+\begin{table}[ht]
+\caption*{Summary for SEO yelloweye rockfish only:}
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{As estimated or} &
+      \multicolumn{2}{c}{As estimated or} \\
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{\textit{specified last} year for:} &
+      \multicolumn{2}{c}{\textit{recommended this} year for:} \\
+\textbf{Quantity} & 2024 & 2025 & 2025 & 2026 \\ 
+  \hline
+  $M$ (natural mortality rate) & 0.02 & 0.02 & `r M.value` & `r M.value` \\ 
+  Tier & 5 & 5 & 5 & 5 \\ 
+  Yelloweye biomass (t) & 17,511 & 17,511 & `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` & `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` \\ 
+  $F_\mathit{OFL}$ & $F = M = 0.02$ & $F = M = 0.02$ & $F = M =$ `r f.ofl` & $F = M = $ `r f.ofl` \\ 
+  $maxF_\mathit{ABC}$ & $0.75M = 0.015$ & $0.75M = 0.015$ & $0.75M = $ `r maxf.abc` & $0.75M = $ `r maxf.abc` \\ 
+  $F_\mathit{ABC}$ & 0.01275 & 0.01275 & `r f.abc` & `r f.abc` \\
+  OFL (t) & 350 & 350 & \textbf{`r format(ye.ofl, nsmall = 0, big.mark = ",", digits = 1)`} & \textbf{`r format(ye.ofl, nsmall = 0, big.mark = ",", digits = 1)`} \\ 
+  maxABC (t) & 263 & 263 & `r format(ye.maxabc, nsmall = 0, big.mark = ",", digits = 1)` & `r format(ye.maxabc, nsmall = 0, big.mark = ",", digits = 1)` \\ 
+  ABC (t) & 263 & 263 & \textbf{`r format(ye.recabc, nsmall = 0, big.mark = ",", digits = 1)`} & \textbf{`r format(ye.recabc, nsmall = 0, big.mark = ",", digits = 1)`} \\
+  \hline
+  \multirow{1}{*}{} &
+      \multicolumn{2}{c}{As determined \textit{last} year for:} &
+      \multicolumn{2}{c}{As determined \textit{this} year for:} \\
+  \textbf{Status} & 2022 & 2023 & 2023 & 2024 \\ 
+  \hline
+  Overfishing & No & n/a & No & n/a \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+
+\begin{table}[ht]
+\caption*{Summary for SEO Tier 6 DSR species only:}
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{As estimated or} &
+      \multicolumn{2}{c}{As estimated or} \\
+\multirow{1}{*}{} &
+      \multicolumn{2}{c}{\textit{specified last} year for:} &
+      \multicolumn{2}{c}{\textit{recommended this} year for:} \\
+\textbf{Quantity} & 2024 & 2025 & 2025 & 2026 \\ 
+  \hline
+  Tier & 6 & 6 & 6 & 6 \\ 
+  OFL (t) & 26 & 26 & \textbf{26} & \textbf{26} \\ 
+  maxABC (t) & 20 & 20 & 20 & 20 \\ 
+  ABC (t) & 20 & 20 & \textbf{20} & \textbf{20} \\
+  \hline
+  \multirow{1}{*}{} &
+      \multicolumn{2}{c}{As determined \textit{last} year for:} &
+      \multicolumn{2}{c}{As determined \textit{this} year for:} \\
+  \textbf{Status} & 2022 & 2023 & 2023 & 2024 \\ 
+  \hline
+  Overfishing &  & n/a &  & n/a \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\clearpage
+
+
+### Area apportionment {-}
+
+Harvests are not apportioned by area for the DSR stock complex in the WG/CG/WY. For the DSR stock complex in SEO, the State of Alaska manages DSR in the Eastern Gulf of Alaska (EGOA) regulatory area with Council oversight and any further apportionment of the management area OFL and ABC within SEO is at the discretion of the State. 
+
+## Summary for Plan Team {-}
+
+\begin{table}[ht]
+\centering
+\caption*{Summary for the DSR complex in Southeast Outside.} 
+\label{tab:pt-sum-seo}
+\begin{tabular}{lllllllll}
+  \hline
+  \textbf{Species} & \textbf{Year} & \textbf{Biomass} & \textbf{OFL} & \textbf{ABC} & \textbf{TAC} & \textbf{Commercial} & \textbf{Recreational} & \textbf{Total} \\ 
+  & & & & & & \textbf{catch} & \textbf{mortality} & \textbf{catch} \\ 
+  \hline
+   DSR & `r cur_yr - 1` & 17,511 & 376 & 283 & 276 & `r round(curyrlag1.harvest.com, 0)` & `r round(curyrlag1.harvest.rec, 0)` & `r round(curyrlag1.harvest.tot, 0)` \\ 
+   & `r cur_yr` & 17,511 & 376 & 283 & 276 & `r round(curyr.harvest.com, 0)` & `r round(curyr.harvest.rec, 0)` & `r round(curyr.harvest.tot, 0)` \\ 
+   & `r cur_yr + 1` &  `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` & `r format(dsr.ofl, nsmall = 0, big.mark = ",", digits = 1)` & `r format(dsr.recabc, nsmall = 0, big.mark = ",", digits = 1)` & - & - & - & - \\ 
+   & `r cur_yr + 2` & `r format(YE.biomass, nsmall = 0, big.mark = ",", digits = 1)` & `r format(dsr.ofl, nsmall = 0, big.mark = ",", digits = 1)` & `r format(dsr.recabc, nsmall = 0, big.mark = ",", digits = 1)` & - & - & - & - \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+## Responses to SSC and Plan Team comments in general {-}
+
+*The SSC continues to support a three category risk table with categories normal, increased, and extreme, and requests that the category descriptions be revised to cover the range covered by the original table.* (SSC, Dec. 2023)
+
+We have revised the risk table for this assessment to include only three categories.
+
+*When risk scores are reported, the SSC requests that a brief justification for each score be provided, even when that score indicates no elevated risk.* (SSC, Dec. 2023)
+
+As requested, we provide justifications for risk scores.
+
+
+## Responses to SSC and Plan Team comments specific to this assessment {-}
+
+*The Council recommends moving the seven demersal shelf rockfish (DSR) species which currently occur in the ‘other rockfish’ complex (i.e., those occurring to the west of EY/SEO) into a separate DSR complex for WG/CG/WY during the 2024 Plan Team cycle for implementation in the 2025 fisheries. This change would result in ABCs and OFLs being spatially apportioned in the following ways: Other Rockfish: One Gulf-wide OFL with three separate ABCs for WG/CG, WY, EY/SEO. DSR: Two stock complexes with separate OFLs and ABCs for WG/CG/WY and EY/SEO.* (Council, Oct. 2023)
+
+In accordance with the recommendation, this is a GOA-wide DSR assessment covering the two DSR stock complexes with separate OFLs and ABCs for WG/CG/WY and EY/SEO.
+
+*The Team supports the author's recommended model (Model 22.2; two survey with an observation error term) and the recommended transition from Tier 4 to Tier 5 for the yelloweye rockfish component of the complex. The recommended random effects model smooths across years with missing data which is useful given the infrequent (3–4 year) survey schedule for this assessment.* (GOA GPT, Nov. 2022)
+
+We continue using model 22.2 and Tier 5 for the yelloweye rockfish component of the SEO DSR stock complex in this assessment.
+
+*The Team commended the authors’ work to update the assessment and looks forward to additional work on yield/per recruit, aggregation of data across the SEO sections, and further exploration of IPHC survey bycatch data.* (GOA GPT, Nov. 2022)
+
+Due to a recent transition in authorship, little of this work has received attention, but we plan to address these recommendations in future.
+
+*The Team recommended that the author consult the catch accounting group at the Alaska Regional Office for the best way to estimate historical yelloweye rockfish discards in the halibut fishery and resulting catch estimates.* (GOA GPT, Sept. 2022)
+
+The authors plan to follow up on this line of investigation in the near future.
+
+*The Team recommended that the author, after consultation with the SSC, pursue a CIE-type review of this assessment in the next 2 years.* (GOA GPT, Sept. 2022)
+
+The CIE review took place in 2023 and reviewers (Cook 2023; Ono 2023; Stokes 2023) provided many useful insights that helped to improve this assessment.
+
+\clearpage
+
+# Introduction {-}
+
+The Gulf of Alaska (GOA) demersal shelf rockfish (DSR) stock complexes consist of seven nearshore, bottom-dwelling rockfish species in the genus *Sebastes* (yelloweye, quillback, copper, rosethorn, canary, China, and tiger rockfish) in two management regions. The GOA DSR are managed on a biennial cycle with separate harvest specifications for the Southeast Outside (SEO; NMFS area 650) Subdistrict and Western GOA/Central GOA/West Yakutat (WG/CG/WY; NMFS area 610-640). In 2023, a spatial management decision was made to remove the DSR species that previously belonged to the GOA Other Rockfish stock complex and combine SEO and WG/CG/WY into a single GOA-wide DSR assessment document for the 2024 assessment cycle, with separate harvest recommendations for the DSR stock complex each area. In SEO, yelloweye rockfish is managed as a Tier 5 species, while the remaining DSR species are managed as Tier 6. All DSR species in the WG/CG/WY are currently managed as Tier 6. For purposes of this report, emphasis is placed on yelloweye rockfish, as it is the dominant species in both the WG/CG/WY and SEO (Table \@ref(tab:comm-land); O’Connell and Brylinsky 2003).
+
+## Biology and distribution {-}
+
+Rockfish of the genus *Sebastes* are found in temperate waters of the continental shelf off North America. At least thirty-five species of *Sebastes* occur in the GOA, including the seven DSR nearshore, bottom-dwelling rockfish species. These DSR species are located on the continental shelf, reside on or near the bottom, and are generally associated with rugged, rocky habitat (O'Connell and Carlile 1993).
+
+Rockfish of the genus *Sebastes* are physoclistous (closed swim bladder) making them susceptible to embolism mortality when brought to the surface from depth. All DSR species exhibit slow growth, late maturity, and extreme longevity (Archibald *et al.* 1981; Haldorson and Love 1991; Love *et al.* 2002). Estimates of natural mortality are consequently low (e.g., $M = 0.057$ for quillback rockfish in California; Langseth *et al.* 2021). These species of fish are very susceptible to over-exploitation and are slow to recover once driven below the level of sustainable yield (Leaman and Beamish 1984; Francis 1985) and acceptable exploitation rates are assumed to be very low (Dorn 2000).
+
+## Stock structure {-}
+
+Recent research concluded that the species that were previously managed under the GOA Other Rockfish stock complex in WG/CG/WY should be managed separately as two stock complexes (Tribuzio *et al.* 2017; Cleaver *et al.* 2022). The DSR species are caught in different fishery gear types, occupy different habitat, and have different fine-scale spatial distributions compared to the “slope” rockfish sub-group in the GOA Other Rockfish stock complex (Omori *et al.* 2021; Omori and Thorson 2022). The DSR species are primarily caught in fixed-gear fisheries in near-shore and shallower waters, while the slope rockfish species are primarily caught in trawl gear farther offshore and often in deeper water. Biological differences between the two rockfish groups also support the separation of the complexes into two Gulf-wide groups. As a result of the recent research and investigation into the membership of the stock complexes, a decision was reached by the Plan Team (PT), Scientific and Statistical Committee (SSC), and Council to separate the Other Rockfish and DSR species into two stock complexes, with the DSR species in two distinct areas, SEO and WG/CG/WY. The change to move the DSR species out of the Other Rockfish stock complex and manage them separately will be implemented for the 2025 fisheries. Further information can be found in the 2023 GOA Other Rockfish SAFE (Omori *et al.* 2023).  
+
+Little information about genetic structure in GOA yelloweye rockfish is available. Siegle and colleagues (2013) found that yelloweye rockfish in Southeast Alaska showed significant genetic differentiation from conspecifics in the Strait of Georgia, but not from any of the other sampling locations, which spanned the outer coasts of Oregon, Washington, and British Columbia. Andrews and colleagues (2018), using one yelloweye rockfish sample from Southeast Alaska, found evidence of genetic differentiation between yelloweye rockfish from the inland waters of the Puget Sound/Strait of Georgia Basin and yelloweye rockfish from the outer coast; in addition to Southeast Alaska, outer coast sampling locations included British Columbia, Washington, Oregon, and California. To our knowledge, no published investigations of yelloweye rockfish genetic structure within the GOA exist. Genetic analyses using yelloweye rockfish samples collected at fine spatial scales are needed to evaluate stock structure in the GOA; given the results from previous work, samples should be collected from both outer coastal and inland marine waters. The limited movements of yelloweye rockfish could lead to serial depletion of localized areas if overharvest occurs, as was the case in Aleutian Islands blackspotted/rougheye rockfish (Spencer and Rooper 2016).  
+
+## Life history information {-}
+
+Rockfish in the genus *Sebastes* are considered viviparous although maternal contributions vary among species (Boehlert and Yoklavich 1984; Boehlert *et al.* 1986; Love *et al.* 2002; Dick *et al.* 2017). Rockfish are iteroparous and have internal fertilization with several months separating copulation, fertilization, and parturition (Love *et al.* 2002). Within the DSR complex, parturition occurs from February through September, with most species extruding larvae in spring. Yelloweye rockfish extrude larvae over an extended time period, with the peak period of parturition occurring in April and May in Southeast Alaska (O’Connell 1987). Some species of *Sebastes* have been reported to brood multiple times within a year off the coast of California, though no incidence of multiple brooding has been recorded in Southeast Alaska (Love *et al.* 1990; O’Connell 1987). Juveniles are typically found in nearshore areas of high relief with vertical walls and abundant algae and kelp (Love *et al.* 2002; Love 2011), but other characteristics of early life history for yelloweye rockfish and other DSR species are poorly understood. Yelloweye rockfish from British Columbia reach size- and age-at-50% maturity at 54 cm and 22 years for males and 46 cm and 19 years for females (Love *et al.* 2002). Yelloweye rockfish reach age-at-50% maturity at 16 years for females and 15 years for males in both Prince William Sound (PWS) and the Northern Gulf of Alaska (NGOA) (Arthur 2020). Female yelloweye rockfish reach length-at-50% maturity at 47 cm in the NGOA and 41 cm in PWS, while male yelloweye rockfish reach length-at-50% maturity at 44 cm in the NGOA and 41 cm in PWS (Arthur 2020). In Southeast Alaska, yelloweye rockfish begin recruiting to the commercial fishery at age-8. 
+
+# Fishery and management history {-}
+
+## Management units {-}
+
+Prior to 1992, the DSR complex was recognized in the Fishery Management Plan (FMP) only in the waters east of 137$^\circ$ W. longitude. In 1992, the DSR complex was recognized in East Yakutat (EYKT) Section and management of DSR extended westward to 140$^\circ$ W. longitude. This area is referred to as SEO and comprises four management units: EYKT, Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) (Figure \@ref(fig:seo-map)). In the SEO, the State of Alaska and the National Marine Fisheries Service (NMFS) manage DSR jointly. The two internal state waters subdistricts, Northern Southeast Inside (NSEI) and Southern Southeast Inside (SSEI) are managed entirely by the State of Alaska and are not included in this stock assessment. See Appendix B in Joy *et al.* (2022) for a detailed description of historical DSR management changes. 
+
+The DSR species were added to the GOA Other Rockfish stock complex in 2013 in the WG/CG/WY management areas. However, recent research on the stock structure of ‘slope’ and ‘demersal shelf’ rockfish species was conducted concurrently with the discussion on the spatial management for these non-target rockfish species (see above ‘Stock Structure’ section). In 2023, the Council supported the motion to remove the seven DSR species from the GOA Other Rockfish stock complex into a separate DSR stock complex for WG/CG/WY (Tribuzio *et al.* 2017, Cleaver *et al.* 2022). Thus, there will be separate harvest specifications for DSR in the WG/CG/WY and SEO areas for the 2025 fisheries. The SEO area will continue to be jointly managed by NMFS and the State of Alaska, while the WG/CG/WY area will be managed by NMFS. The species belonging to the DSR stock complex in the WG/CG/WY will be managed as Tier 6, relying on a stable catch history to inform management. Fisheries catch and associated harvest specifications for the WG/CG/WY management area can be found in Table \@ref(tab:wgcgwy-catch-specs).
+
+## Description of SEO directed commercial fishery {-}
+
+The directed commercial fishery for DSR began in 1979 as a small, shore-based, hook and line fishery in Southeast Alaska. This fishery was prosecuted nearshore, with fishing occurring primarily inside the 110 m depth contour. The early directed fishery targeted the entire DSR complex, which at that time also included silvergray, bocaccio, and redstripe rockfish (see Appendix B in Joy *et al.* 2022). The hook and line fishery evolved into a longline fishery primarily targeting yelloweye rockfish and fished between the 90 m and the 200 m depth contours. Yelloweye rockfish accounted for 95 to 97% (by weight) of the total DSR catch from 2015 to 2024 (Table \@ref(tab:comm-land)). Quillback rockfish are the next most common species landed in the complex, accounting for 2 to 4% of the landed catch, by weight, between 2015 and 2024 in SEO (Table \@ref(tab:comm-land)). The directed fishery is prosecuted almost exclusively by longline gear. Although snap-on longline gear was originally used in this fishery, most vessels use conventional (fixed-hook) longline gear. Markets for this product are domestic fresh markets and fish are generally brought in whole, bled, and iced. Processors typically do not accept fish delivered more than three days after being caught. In SEO, regulations stipulate one season only for directed fishing for DSR, opening 5 January (unless closed by emergency order) and continuing until the allocation is landed or until the day before the start of the individual fishing quota (IFQ) halibut season to prevent overharvest of DSR, whichever comes first. The directed DSR fleet requested a winter fishery, as the ex-vessel price is highest at that time. 
+
+Directed commercial fishery landings have often been constrained by other fishery management actions. In 1992, the directed DSR fishery was allotted a separate halibut prohibited species cap (PSC) and is therefore no longer affected when the PSC is met for other longline fisheries in the GOA. In 1993, the directed fishery was closed early due to an unanticipated increase in DSR incidental catch during the halibut fishery. Since then, the annual incidental catch of DSR has been projected because the directed fishery occurs before the Pacific halibut fishery, which typically starts in mid-March.
+
+Directed DSR fisheries are opened only if there is sufficient quota available after estimating DSR mortality in other commercial fisheries. The directed fishery in NSEO has been closed since 1995; the total allocation for this management area has not been sufficient to prosecute an orderly fishery. The directed commercial DSR fisheries in the CSEO and SSEO management areas were not opened in 2005 because it was estimated that total mortality in the recreational fishery was significant and combined with the directed commercial fishery would likely result in exceeding the TAC. No directed fisheries occurred in 2006 or 2007 in SEO as ADF&G took action in two areas; one, to enact management measures to keep the catch of DSR in the recreational fishery to the levels mandated by the Board of Fisheries (BOF), and two, to compare the estimations of predicted incidental catch in the halibut fishery to the actual commercial landings in the halibut fishery under full retention regulations. From 2008–2014, there was sufficient quota to hold directed commercial fisheries in at least two of the four SEO management areas. Due to increasing concerns for stock health, localized depletion, and increased fishing pressure, ADF&G only opened one management area per year. From 2015–2017, only EYKT was opened, in 2018 only CSEO, and in 2019 only SSEO was open to directed fishing. The directed DSR fishery was closed to harvest in all management areas in 2020 due to stock health concerns and remains closed.
+
+## SEO DSR mortality in other fisheries {-}
+
+DSR have been taken as incidental catch in domestic longline fisheries, particularly the halibut fishery, for over 100 years. Some incidental catch was also landed by foreign longline and trawl vessels targeting slope rockfish in the EGOA from the late 1960s through the early 1980s (Table \@ref(tab:foreign-catch)). Other sources of DSR incidental commercial catch include the lingcod, Pacific cod, sablefish, and salmon fisheries; however, the halibut longline fishery is the most significant contributor to the incidental mortality of DSR. Full retention requirements in which fishers are required to retain and report all DSR caught in SEO were passed by the North Pacific Fishery Management Council (NPFMC) in 1998; however, these requirements did not go into effect until 2005. Under the full retention regulation, fishers are required to retain and report all DSR caught in federal waters; any poundage above the 10% incidental catch allowance for DSR may be donated or kept for personal use but may not enter commerce. The intention was to create a disincentive for targeting incidental catch of DSR in other fisheries. In July of 2000, the State of Alaska enacted a parallel regulation requiring DSR landed in state waters of Southeast Alaska to be retained and reported on fish tickets. Proceeds from the sale of DSR in excess of legal bycatch allowances are forfeited to the State of Alaska. The authors are currently reevaluating how to account for unobserved discards in the commercial halibut longline fishery; the current approach is to apply an assumed unreported incidental catch rate of 15% as a buffer, based on round pounds of DSR landed on fish tickets in the commercial halibut longline fishery.
+
+The DSR mortality anticipated in the halibut longline fishery is deducted from the total commercial TAC before a directed fishery can be prosecuted. From 2006 to 2011, the amount of DSR incidental catch in the halibut longline fishery was estimated using the IPHC stock assessment survey data to determine the weight ratio of yelloweye rockfish to halibut by depth and area. The yelloweye rockfish/halibut weight ratio by strata was applied to the IPHC halibut catch limit by strata. For a complete description of estimating the incidental catch of DSR in the halibut fishery prior to 2011, refer to Brylinsky *et al.* (2009). Between 2012 and 2019, a ratio of DSR to halibut landed in the halibut longline fishery was calculated, by management area, and applied to the estimated halibut quota to project DSR incidental mortality. The results of this analysis showed that on an annual basis, the commercial fleet incidental catch rate was consistent (8 to 10%) over a five-year period, while the IPHC survey incidental catch rate was highly variable by stratum and year (ranging from 3 to 20%). 
+
+## SEO commercial fishery catch history {-}
+
+Catch data prior to 1992 are problematic due to changes in the DSR species assemblage, as well as the lack of a directed fishery permit card prior to 1990 for CSEO, SSEO, and NSEO, and prior to 1992 for EYKT. Thus, the time series of domestic landings of DSR from SEO shown in Table \@ref(tab:total-catch) and Figures \@ref(fig:dsr-comm-catch), \@ref(fig:dsr-comm-inccatch), \@ref(fig:dsr-catch-sector), and \@ref(fig:tac-catch) spans 1992 to the present. The directed DSR catch in SEO was above 350 t in the early 1990s. Since 1998, directed landings have been below 250 t, and since 2005, have been less than 130 t. During the years reported, total harvest peaked at 980 t in 1994, and directed harvest peaked at 383 t in 1994. Unreported discard mortality from incidental catch of DSR associated with the halibut longline fishery was estimated in 2021 and is included in Table \@ref(tab:total-catch). These estimates are preliminary and are undergoing review that will be completed prior to the next full assessment. Unreported incidental catch mortality in other non-directed fisheries is unknown and not currently estimated. 
+
+A Pacific ocean perch (POP) trawl fishery in the GOA developed in the early 1960s with large effort by the U.S.S.R and Japanese fleets. At the height of the fishery in 1965, the catches of all rockfish, including POP, exceeded 370,000 mt. Catches declined following this peak until foreign fishing was banned in the GOA in 1987. During the early period of this foreign fishery (1961–1974), catches of rockfish were often reported in crude management groups, including POP or “other rockfish”, with no differentiation among species. With implementation of a fishery observer program in 1975 and 1977 onward, species composition, including POP and yelloweye rockfish, of foreign catches became available (Table \@ref(tab:foreign-catch)).
+
+## Other removals {-}
+
+Other removals (subsistence, research, and recreational) for DSR in SEO are documented in Table \@ref(tab:total-catch). In July 2009, the ADF&G Division of Subsistence published the results of a study that estimated the subsistence harvest of rockfish in four Alaskan communities, one of which was Sitka (Turek *et al.* 2009). The ADF&G Division of Subsistence conducted a call-out survey of “high harvesting households” to obtain additional information on the species composition of subsistence-caught rockfish. This survey revealed that 58% of the rockfish harvested are nonpelagic species, predominantly quillback rockfish (52%). These “high harvesting households” fished predominantly in the Sitka Local Area Management Plan (LAMP) area. The nonpelagic subsistence harvest is reported in numbers of fish by location (northern southeast, southern southeast, and the Sitka LAMP area); these data are converted to weight using the average weights provided from creel sampled recreational harvest. For 2015 estimates, the voluntary mail survey indicated 9,116 rockfish (not defined by species) had been taken in the EGOA subsistence fisheries (with the exception of the fish reported from the Sitka LAMP area, it cannot be determined how many DSR were caught in SEO versus internal state waters). No mail surveys have been conducted since 2015 due to lack of funding; therefore, average harvest from 2010–2015 was used as an estimate of total anticipated harvest from 2016–present (7 t), which is deducted from the ABC prior to allocating the TAC for the commercial and recreational fisheries. 
+
+Small research catches of yelloweye rockfish in occur during the annual IPHC longline survey (Table \@ref(tab:total-catch)). Research catch data are based on yelloweye rockfish reported on fish tickets from the IPHC survey due to full retention requirements. These are deducted, by management area, from the commercial TAC. 
+
+Minor catches of DSR species occur in Prince William Sound (PWS, NMFS Area 649) from federally managed fisheries (Table \@ref(tab:wgcgwy-pws)). These catches do not count against the DSR ABC/TAC. Catch occurring in PWS remains low but will continue to be monitored.
+
+## Recreational fishery removals {-}
+
+Regulation currently allocates 16% of the DSR TAC for SEO to the recreational fishery after deduction of the estimated subsistence harvest. The recreational fishery allocation includes estimated harvest and release mortality. Release mortality was estimated at 90% for guided and unguided anglers prior to the required use of a deep-water release device, implemented for guided anglers in 2013. During 2013 to 2016, unguided angler release mortality was reduced to 80% due to a small percentage of anglers following the guided angler deep water release mandate. During 2017, 2018, and 2019, release mortality was stepped down to 70%, 60% and 50% respectively as the practice of deep-water releasing rockfish became more prevalent. Release mortality has been estimated at 20% for the guided angler sector since 2013 and the unguided angler sector since 2020, at which time the use of a deep-water release device became required for all anglers (and all species of rockfish) (Hochhalter and Reed 2011; GMT 2014; Tydingco *et al.* 2021; Chadwick *et al.* 2017). Prior to 2006, the daily bag limit in the Southeast Alaska recreational fishery for nonpelagic (DSR and slope or other) rockfish was three to five fish, depending upon the area fished, and there were no annual limits on any rockfish species. Additional restrictions also limited the number of yelloweye rockfish that could be retained as part of the three to five fish bag limit. Since then, the BOF has established management provisions that the department could implement on an annual basis to manage the recreational fishery to stay within the allocation. This resulted in more restrictive rockfish regulations over time and culminated in a closure to DSR harvest in 2020 and 2021. Recreational fishery regulations for DSR in SEO in 2024 were as follows:
+
+1. Retention of DSR was restricted to resident anglers only and included a 1 fish daily bag/possession limit, excluding yelloweye rockfish.
+
+2. Guides and crew members were not allowed to retain DSR rockfish when clients were on board the vessel.
+
+3. All recreational fishing vessels in SEO were required to have in possession, and utilize, a deep-water release device to return and release rockfish to the depth of capture or to at least 30.5 m (100 ft) in depth.
+
+In addition, since 1 January 2013, all nonpelagic rockfish released from a charter vessel are required to be released with a deep-water release device at the depth of capture or at a depth of at least 30.5 m (100 ft) in depth. All charter vessels are required to have at least one functional deep water release device on board, have it readily available for use while anglers are fishing, and present it for inspection upon request by ADF&G or enforcement personnel. 
+
+Beginning 1 January 2020, all recreational fishing vessels fishing in salt waters of Southeast Alaska are required to have in possession, and utilize, a deep-water release device to return and release rockfish to the depth of capture or at least 30.5 m (100 ft) in depth. All vessels are required to have at least one functioning deep-water release device onboard while recreational fisheries are taking place in salt waters.
+
+## Fishery catch and discard for DSR in WG/CG/WY {-}
+
+There is no directed fishery for DSR in WG/CG/WY, but these species can be retained as incidental catch. The DSR species are predominantly caught in the Central GOA from both trawl and fixed gear (Table \@ref(tab:wgcgwy-catch-specs); Figure \@ref(fig:wgcgwy-dsr-catch) A). While trawl gear accounts for ~30% of the catch on average in the combined WG/CG/WY, the majority of the trawl catch comes from the rockfish program in the Central GOA. Overall, fixed gear (i.e., hook-and-line, jig, and pot) catches the most DSR species on average (~70%) in the GOA (Figure \@ref(fig:wgcgwy-dsr-catch) A). Yelloweye rockfish comprises the vast majority of the catch in all GOA management areas, averaging 91% of the total DSR catch (Figure \@ref(fig:wgcgwy-dsr-catch) B). Quillback rockfish, the second most frequently caught species, amounts to 7%, while the remaining DSR species comprise <2.5% of the total DSR catch.
+
+Since 2003, the total discard rate for DSR species in the WG/CG/WY area has ranged from 10% to 50% (Table \@ref(tab:wgcgwy-discard)). The discard rate is variable by gear type and year; neither gear type has a discard rate consistently higher than the other. The fixed gear discard rate ranges from 2% to 61% with an average of 32%, while the trawl gear discard rate ranges from 4% to 72% with an average of 31%. A full retention requirement went into effect for the hook-and-line catcher vessels in 2020, but it is unclear whether there has been a consistent decrease in discard rates. Discard rates, particularly from the catcher vessels, will continue to be tracked.
+
+
+
+# Data {-}
+
+## Fishery data {-}
+
+### Southeast Outside {-}
+
+Samples are collected from directed and incidental commercial fishery landings at port to obtain life history information such as length, weight, sex, and age (Carlile 2005). Length frequency distributions are not particularly useful in identifying individual strong year classes because individual growth levels off at about age 30 (O’Connell and Funk 1987). Sagittal otoliths are collected for aging. The break and burn technique is used for distinguishing annuli (Chilton and Beamish 1982). Radiometric age validation has been conducted for yelloweye rockfish otoliths collected in Southeast Alaska (Andrews *et al.* 2002). Radiometry of the disequilibrium of $^{210}Pb$ and $^{226}Ra$ was used as the validation technique. Although there was some subjectivity in these techniques, general agreement between growth-zone-derived ages and radiometric ages was good with a low coefficient of variation. In addition, Andrews and colleagues (2002) concluded strong support for age that exceeds 100 years from their observation that as growth-zone-derived ages approached and exceeded 100 years, the sample ratios of $^{210}Pb$ and $^{226}Ra$ approached equilibrium with a ratio equal to 1. The maximum published age for yelloweye rockfish is 118 years (O’Connell and Funk 1987), but one specimen sampled from SSEO in 2013 was aged at 122 years. 
+
+Data sources for the recreational fishery include the ADF&G statewide harvest survey (SWHS), mandatory charter logbooks, and the Marine Harvest Studies (MHS) program involving interview and biological sampling data from dockside surveys in major ports throughout Southeast Alaska. The SWHS is an annual mail survey sent to a stratified random sample of approximately 45,000 households containing resident and nonresident licensed anglers. The survey provides estimates of harvest and catch (kept plus released) in numbers of fish, for all rockfish species combined. Up to three questionnaires may be mailed to unresponsive households. Responses are coded by mailing, allowing adjustments for nonresponse bias. Estimates are provided for SWHS reporting areas, which closely mirror ADF&G recreational management areas. 
+
+Logbooks have been mandatory for the charter (guided angler) fishery since 1998. Before 2006, charter logbook data was reported for pelagic and nonpelagic rockfish assemblages. Since 2006, logbooks have required reporting of the numbers of pelagic rockfish, yelloweye rockfish, and all other nonpelagic species (non-yelloweye DSR and slope species) kept and released by each individual angler. Charter operators are also required to report the primary ADF&G statistical area for each boat trip. 
+
+Creel survey sampling under the MHS program is conducted at public access sites in major ports throughout Southeast Alaska as well as some private docks and lodges. Biological data were not collected by creel samplers beyond species composition of recreational-caught rockfish prior to 2006, however length and weight data were collected in 2006 and 2007 to estimate length-weight functions for each species. Only species composition and length have been collected since 2008. The numbers of rockfish kept and released per boat-trip have been collected by DSR species since 2006. The creel survey interviews also include reporting of the primary statistical area fished for each boat trip.
+
+The method of estimating recreational removals for Southeast Alaska changed in 2021 from the prior method using the SWHS guided and unguided angler harvest estimates, and release rates from charter logbook guided anglers as a proxy for unguided anglers.
+
+Final estimates of DSR recreational fishery removals used a combination of data from the SWHS, MHS program creel survey, and charter logbook. Prior to 2021, the SWHS estimates of total rockfish harvest by guided and unguided anglers by area was used as the baseline harvest estimate to apportion species composition information from onsite creel surveys. The new method was retrospectively applied to the time series of 1998 to the present and involves utilizing the ADF&G charter logbook harvest and release data as the guided angler total rockfish removal estimate, and then estimating the total rockfish removals for each Commercial Fisheries Management Unit (CFMU) by increasing the guided angler estimate by the ratio of SWHS guided angler versus total SWHS harvest and release (Howard *et al.* 2020). DSR removals for each CFMU are apportioned from species composition information using MHS creel survey data (Howard *et al.* 2020; Jaenicke *et al.* 2019), which is also the sole source of estimates of average weight. Species compositions of releases are assumed to be the same as those of harvests.
+
+To assign average weights by DSR species (yelloweye rockfish and the other six DSR species) by fishery type, year, and area, we used the following decision tree for pooling data:
+
+Time period from 2006 to the present:
+
+1.	If a sufficient sample size of $\ge$ 50 lengths were collected by species by year by area by fishery type, then that average weight was used.
+
+2.	If there were $<$ 50 sampled lengths by year (2006 - 2019) by area by fishery type, then a pooling of estimated weight data for the period for 2006 to 2019 by fishery type or by all angler types combined was conducted to reach the 50 fish minimum sample size.
+
+3.	If there were $<$ 50 sampled lengths by year (2020 - 2023) by area by fishery type, then a pooling of estimated weight data for the period for 2015 to 2019 by fishery type or by all angler types combined was conducted to reach the 50 fish minimum sample size.
+
+Time period from 1998 to 2005 (prior to the collection of biological data):
+
+1.	The average weights from 2006 to 2010 were pooled by fishery type by area if the sample size was $\ge$ 50 lengths. 
+
+2.	If there were $<$ 50 sampled lengths by year by area by fishery type, then the pooling of estimated weight data for the period for 2006 to 2019 by all angler types combined was done to reach the 50 fish minimum sample size.
+
+
+### Western GOA, Central GOA, and West Yakutat {-}
+
+Fishery catch statistics for DSR species are available by AKRO blend estimates and Catch Accounting System (CAS) beginning in 1991 for all GOA management areas. Table \@ref(tab:wgcgwy-catch-specs) presents the time series of estimated catch of DSR species combined including unidentified demersal rockfish in each the management area in the GOA and combined WG/CG/WY area. The CAS estimates do not include the state managed fisheries. In 2013, the observer restructuring went into effect, which expanded observer coverage; thus, species specific catch estimates since 2013 are available. 
+
+## Survey data {-}
+
+Detailed information on the methods used for yelloweye rockfish density estimates from submersible surveys (1988–2009), yelloweye rockfish density estimates from remotely operated vehicle (ROV) surveys (2012–2023), estimation of distance from transect line and fish length, video review and quality control, and evaluation of distance sampling assumptions can be found in Joy *et al.* (2022).
+
+### Submersible and ROV surveys {-}
+
+To assess SEO yelloweye rockfish density and biomass, ADF&G began conducting a fishery-independent, habitat-based stock assessment for DSR using visual survey techniques to record yelloweye rockfish observations in 1989. The surveys were designed to estimate yelloweye rockfish density using distance sampling methodology (Buckland *et al.* 1993, 2015; Thomas *et al.* 2010), the results of which could be used to estimate abundance and biomass. Distance sampling methodology allows for the estimation of fish density based on the number of fish observed and their distance from the transect line. This is subsequently converted to biomass by multiplying density estimates by the average weight of yelloweye rockfish landed in the commercial fishery and the estimated area of the yelloweye rockfish habitat (O’Connell and Carlile 1993; Brylinsky *et al.* 2009). The DSR stock assessment surveys rotated among management areas on a quadrennial basis due to time and budget constraints. 
+
+Prior to 2010, ADF&G employed a manned submersible to conduct surveys which involved counting fish on one side of the submersible and estimating distances from the transect line visually. In 2012, ADF&G transitioned to using an ROV for visual surveys given the unavailability of a cost-effective and appropriate submersible. The ROV provided the department an improved surveying vehicle that allowed more accurate estimation of distances from the transect line using stereoscopic methods, more accurate viewing of the transect line itself, and a means to estimate fish length. Although the survey vehicle has changed, the basic methodology to perform the stock assessment for the DSR complex remained unchanged. Dive locations for these surveys are selected by randomly placing dives within the habitat delineated for yelloweye rockfish based on historical fishery data and estimated yelloweye rockfish habitat. A Deep Ocean Engineering, Phantom HD2+2 ROV was used as the survey vehicle until 2023 (this ROV was the property of the ADF&G Division of Commercial Fisheries in Homer, AK; product names appearing in this document are included for completeness, and do not imply an endorsement by the Alaska Department of Fish and Game). Due to limited funding and lack of a capable ROV, the ROV program was suspended after 2023. 
+
+#### Designated yelloweye rockfish habitat (DYRH) delineation {-}
+
+The sampling area within each management unit (the DYRH) was established based on characteristics of known yelloweye rockfish habitat, ADF&G sonar data, spatial data from the directed DSR commercial fishery, and National Oceanic and Atmospheric Administration (NOAA) charts. The size of the DYRHs has evolved over time as new sonar surveys have been conducted and new data collected. The DYRHs were last updated in 2010 (Green *et al.* 2015) and methods are reviewed here for completeness. 
+
+The DYRHs were established by combining three data sources: 1) ADF&G sonar data, 2) areas identified in the directed DSR commercial fishery logbook data, and 3) substrate information from NOAA charts. Yelloweye rockfish are generally found in rocky habitat, and submersible surveys between 1992 and 2009 occurring between depths of 2 to 144 fathoms (4 to 263 meters) demonstrated that 90% of yelloweye rockfish observations occurred between 35 and 100 fathoms (64 to 183 m) (O’Connell and Carlile 1993; Brylinsky *et al.* 2009). Surveyed seafloor has been classified into habitat type by the Moss Landing Marine Laboratories’ Center for Habitat Studies using bathymetry, backscatter, and direct observations from the Delta submersible and reduced to substrate induration categories of soft, mixed, or hard (Greene *et al.* 1999). Seafloor identified as hard substrate was considered yelloweye rockfish habitat and served as the basis of the DYRH designation (O’Connell and Carlile 1993, Brylinsky *et al.* 2009, Appendix B in Joy *et al.* 2022).  
+
+Adding to the baseline area established with sonar data, longline set locations from the directed DSR fishery with CPUE $\ge$ 0.04 yelloweye rockfish per hook were included. When set locations were only noted by their start positions, the point was buffered by 0.8 km to create a circular polygon.  When both start and end locations of the commercial set were noted (as was most common) a polygon was created by buffering the entire set by 0.5 km. These buffering distances were chosen based on observed travel of four tagged yelloweye rockfish in the Pacific Northwest (Green *et al.* 2015). The buffered polygons determined by the commercial fishery data were considered continuous and merged with neighboring polygons if $<$ 0.9 km apart.  Of those designated areas, those that were $\ge$ 2.3 km in length (the minimum size necessary to allow two, non-overlapping transects) were included in the DYRHs. 
+
+In the NSEO management area, commercial fishery logbook data was more limited than the other management areas and the DYRH established by sonar data was augmented using NOAA charts. Features designated as coral, rock, or hard seafloor on NOAA charts were buffered by 0.8 km in ArcGIS and included in the DYRH if between 64 m and 180 m deep.
+
+Total yelloweye rockfish habitat has been estimated for SEO at 3,892 km$^2$. The Fairweather Grounds DYRH in EYKT management area is comprised of 739 km$^2$, 68% of which is derived from sonar; the NSEO DYRH is 442 km$^2$ with 25% derived from sonar, the CSEO DYRH is composed of 1,661 km$^2$ with 27% derived from sonar, and the SSEO DYRH is 1,056 km$^2$ with 30% defined by sonar (Figure \@ref(fig:dyrh), Green *et al.* 2015, Appendix C in Joy *et al.* 2022). 
+
+#### Density and biomass estimates {-}
+
+The density of yelloweye rockfish in the DYRH was estimated by fitting a detection function to the data (the distance of each fish from the transect line) that describes the probability a fish is observed given its distance from the transect line.  The detection function was used to estimate the density of fish within the width of the transect strip that is determined by the maximum distance that fish are observed from the transect line.  Because the transects are simple random samples of the DYRH, the density estimated within the transect strips are regarded as an unbiased estimate of fish density within the DYRH (Buckland *et al.* 2015). Analyses were conducted in R (R Core Team, 2024) and density was estimated using the package [*Distance*](https://CRAN.R-project.org/package=Distance). In *Distance*, density is estimated as $\hat{D}=\frac{n\hat{f}(0)}{2L}$ and the probability of detection evaluated at the origin of the transect line is $\hat{f}(0) = \frac{1}{\mu}=\frac{1}{wP_a}$, where $n$ is the number of subadult and adult yelloweye rockfish observed, $L$ is the total transect line length, $\mu$ is the effective width of the transect strip, $w$ is the width of the transect strip, and $P_a$ is the probability of observing an object in the defined area. Adult and subadult yelloweye rockfish were included in the density estimates but juveniles were not. 
+
+For a given study area, several candidate models were fit to the distance data. Candidate models included different detection functions (uniform, half-normal and hazard rate) with various adjustment terms (cosine, simple polynomial, and Hermite polynomial adjustments) that describe the probability of a fish being detected based on its distance from the transect line. Beginning in 2018, two covariates, life stage (adult or subadult) and depth, were examined to determine if detection probabilities were influenced by these factors and thus whether these factors were worth including in the model (Thomas *et al.* 2010). All models were run with the full data set and with a data set that is truncated to exclude 5% of observations furthest from the transect line. All models were examined visually to identify implausible detection functions that compare poorly to the histograms of the distance data. Goodness-of-fit was also examined with $\chi^2$ tests (Thomas *et al.* 2010) and implausible detection function models eliminated from consideration. 
+
+To determine whether to truncate the data, the goodness-of-fit tests were used to compare the truncated and non-truncated data sets for each model. Truncation of distance data frequently results in better fit of the data by eliminating long tails in the detection function that may require extra adjustment terms and reduces precision for little gain (Thomas *et al.* 2010). Truncated data were considered the default choice unless the majority of models demonstrated there was adequate fit without a loss of precision. Once a determination was made regarding the truncation of data, detection models were ranked based on Akaike Information Criterion (AIC) value where the best fit results in the lowest AIC value (and thus a $\Delta$AIC value of 0). The model with the best fit was used to estimate density.  
+
+The total yelloweye rockfish biomass for the management area was estimated as the product of density in an area, average weight of rockfish sampled in ports (Table \@ref(tab:dockside-wts)), and size of the DYRH (O’Connell and Carlile 1993; Appendix C in Joy *et al.* 2022). In the past, average weights were taken from the directed DSR fishery until it was closed, after which the authors used the weight of fish sampled in the halibut fishery (Green *et al.* 2015; Wood *et al.* 2021). For consistency, the revised methods presented here used the average weight of all randomly sampled yelloweye rockfish taken in all commercial fisheries (comprised mostly of the directed fishery and halibut bycatch). A second revision was to set a minimum sample size of 300 fish for generating annual weight estimates. In many years there were fewer than 300 samples available for each management unit and when this was the case, past year’s samples were used to bring the sample size above the threshold (Table \@ref(tab:dockside-wts)). Biomass variance was calculated by combining the variance of the mean weight and fish density according to standard multiplicative rules. It is important to note here that the size of the DYRH does not have a variance component and the variance of the biomass estimates very likely underrepresents uncertainty in the estimate. 
+
+Density estimates were variable during the early years of submersible research, with more consistency present since the adoption of the ROV. Overall density estimates indicated some decline in most management areas over the course of the time series but appear to have leveled off or display a slight upward trend in recent years (Table \@ref(tab:sub-dat)). The EYKT density estimates showed a decline from 2003 to 2017 before increasing over 2017 to 2023. The CSEO area also exhibited a decrease in density from 2003 to 2012, followed by an increase in 2016 and relatively stable density estimates in 2018 and 2022. SSEO experienced a decline in density from 1999 to 2013, before showing increasing density over 2013 to 2020. Only four density estimates are available for the NSEO of which three have been completed since the adoption of the ROV; these estimates suggest relatively stable density during 1994 to 2018, and increased density in 2022. For a more complete description of previous submersible estimates, refer to Brylinsky *et al.* (2009).
+
+
+### International Pacific Halibut Commission (IPHC) surveys {-}
+
+Since 1998, the IPHC has conducted longline surveys at set stations to assess halibut abundance and biology and collect data on bycatch species (https://www.iphc.int). In this assessment, the IPHC survey data was used to estimate the CPUE of yelloweye rockfish in each of the SEO subdistricts based on the kg of fish per hook at survey stations less than 250 fathoms (457 m) in depth; yelloweye rockfish are largely absent from stations that sample at greater depth. For each survey station $i$, the raw CPUE of yelloweye rockfish was calculated as $CPUE_{ye,i} = (c_i/h_i)*a_i*w_{ye}$, where $c_i$ is the observed catch of yelloweye rockfish at station $i$, $h_i$ is the number of observed effective hooks at station $i$, $a_i$ is the hook adjustment factor for station $i$, and $w_{ye}$ is the mean weight of yelloweye rockfish sampled portside in kg. The hook adjustment factor corrects CPUE estimates for hook saturation and competition and is calculated by the IPHC (Webster 2021). 
+
+To standardize the raw CPUE data, we fitted general additive models (GAM) using the R package *mcgv* (Wood 2017) with the REML smoothing parameter estimation method, specifying the Tweedie distribution (using the *tweedie* R package; Dunn 2017) to account for zero inflation in the time series, as is considered good practice in CPUE modeling (Hoyle *et al.* 2024). We examined multiple candidate models before choosing the model with the lowest AIC value and highest deviance explained (Table \@ref(tab:gam-results)). All models included a term for the interaction between year and SEO management unit to produce standardized CPUE estimates by year and management unit. The selected model also included a smooth term for depth, a smooth term for soak time, and a tensor product smooth term for latitude and longitude. We used this model to estimate standardized CPUE values.
+
+Standardized CPUE values are overall similar to raw values but standardization smooths some year-to-year variation (Figure \@ref(fig:cpue-index-compare)). The standardized CPUE index values are shown in Table \@ref(tab:iphc-cpue) and used as a CPUE index in model 22.2.
+
+## Other data {-}
+
+No other data sources are currently used in the assessment. Age and length compositions are available and may be used in an age-structured model in future (Figures \@ref(fig:lcomp-cseo) - \@ref(fig:acomp-sseo)).
+
+# Analytic approach {-}
+
+## DSR in WG/CG/WY {-}
+
+The DSR species in the WG/CG/WY are all assigned as Tier 6 species. These species are managed using a maximum catch from a ‘reliable catch history’ as defined by the NPFMC for Tier 6 species. Similar to the Tier 6 species in the GOA Other Rockfish stock complex (Omori *et al.*, 2023), the DSR species use the accepted Model 23.1, which expanded the reliable catch history time series from 2013 to 2022. The OFL is obtained by taking the sum of the maximum catch within each GOA management area for each species over the ‘reliable catch history time series’ (i.e., 2013 to 2022), where the OFL = sum of the maximum catch and ABC = 0.75 * OFL. 
+
+## Non-yelloweye DSR in SEO {-}
+
+All of the DSR species in SEO other than yelloweye rockfish are assigned to Tier 6. The OFL for these species is calculated by taking the sum of the maximum catch in the SEO for each species during 2010 to 2014; this time period is used because catch data from all three fisheries (commercial, recreational, and subsistence) are available for those years (Table \@ref(tab:catch-tier6)). The ABC is calculated as 0.75 * OFL. 
+
+## Assessment history for SEO yelloweye rockfish {-}
+
+For many years, the method used for the yelloweye rockfish stock assessment entailed applying assumed mortality rates to estimates of biomass that likely underestimated uncertainty and may have been biased (Brylinsky *et al.* 2009; Green *et al.* 2015). To hedge against the uncertainty surrounding the biomass estimates, the assessment authors took a conservative approach by using the lower 90% confidence interval of biomass estimates to establish OFL and ABC values.  
+
+An age-structured assessment model was developed in 2015 but issues of fit, stability and uncertainty prevented  its adoption (Green *et al.* 2015). In particular, the model’s density and abundance trends exhibited high sensitivity to natural mortality estimates and a lack of recruitment signals. Owing to turnover in assessment authorship, the model has not undergone further development since that time.
+
+The random effect (RE) models developed by NOAA staff (Hulson *et al.* 2021) have become a common assessment tool for data limited stocks and are applied to numerous Pacific rockfish assessments in the GOA and BSAI. These models are random effects time-series models that account for process error and observation error in the data, smooth biomass estimates over time and accommodate data gaps in time series with sporadic surveys. These models were applied to the SEO yelloweye rockfish stock in 2013 and again in 2015 but were not adopted over the status-quo method of setting harvest limits (Green *et al.* 2015). In both years, the assessment authors sought to apply harvest rules to the lower 90% confidence interval of the RE model estimates given the uncertainty in biomass estimates underpinning the model. The first attempt to use the RE model in 2013 produced much lower harvest restrictions than the previously accepted methods and the assessment authors requested more time to evaluate the results. The 2015 application of the RE model led to much larger estimates of variance and lower biomass estimates than the previously accepted methods and was not adopted (Green *et al.* 2015).
+
+The 2022 assessment presented an updated application of the RE model to the SEO yelloweye rockfish stock (Joy *et al.* 2022). The original RE models were expanded to include multiple strata (the REM model) and thus provide a more statistically sound way of integrating biomass estimates from the four management areas to make inferences about the SEO as a whole. The model was further expanded to include a secondary index of abundance (the REMA model). This allowed the 2022 assessment to examine the incorporation of CPUE estimates of yelloweye rockfish in the IPHC longline survey. This application was undertaken in collaboration with the NOAA Alaska Fisheries Science Center (AFSC) and their development of a standardized R package ([*rema*](https://afsc-assessments.github.io/rema/)). The author's recommended model was 22.2, a spatially-stratified, two-survey REMA model fit to ADF&G survey biomass estimates and CPUE estimates of yelloweye rockfish in the IPHC longline survey in the four management areas that comprise the SEO subdistrict, with an extra observation error term estimated for the biomass estimates. This model was approved by the Plan Team and SSC and adopted in December 2022.
+
+The 2024 assessment for SEO yelloweye rockfish uses model 22.2. However, given the likely lack of an ADF&G ROV survey in future years, as well as reduced sampling of IPHC survey stations due to insufficient funding (Planas 2024), acquiring adequate data to continue using this modeling approach for future assessments is a significant concern. 
+
+## General model structure for SEO yelloweye rockfish {-}
+
+The RE model was developed to assess biomass in data-limited groundfish stocks and apportion harvests by area (Hulson *et al.* 2021) and has since been expanded to fit multiple survey strata (i.e., management area, depth) simultaneously (REM), allow a secondary index of abundance (REMA; Hulson *et al.* 2021), and estimate additional observation error (Sullivan *et al.* 2022b).  
+
+For SEO yelloweye rockfish, we applied the REMA model to the management unit-level biomass estimates described above as well as the secondary index of abundance derived from the standardized CPUE of yelloweye rockfish in the IPHC longline survey. In the REMA model, there are separate observation likelihoods for the biomass and additional abundance indices, which are assumed to be log-normally distributed with known variance (i.e., observation error). True biomass is estimated as a series of random effects, where estimated process error parameters are constrained using a random walk model. Because model 22.2 includes two surveys, additional scaling parameters are estimated that scale the CPUE indices to predicted biomass. Model 22.2 includes a single process error, unique strata *q* values, and one extra variance term for biomass estimates. The model was fit in Template Model Builder (TMB; Kristensen *et al.* 2016) using the R package *rema* (https://afsc-assessments.github.io/rema/). Detailed methods and structural equations for the observation and process error components of the model with extensions that estimate additional observation error are available online: https://afsc-assessments.github.io/rema/articles/rema_equations.html. 
+
+## Description of alternative models for SEO yelloweye rockfish {-}
+
+Model 22.2 is the only model we present for harvest specifications for SEO yelloweye rockfish in this assessment. The major difference between the analytic approach in this assessment and that of the previous assessment is the value of $M$: this assessment uses $M=0.044$ while the previous assessment used $M=0.02$ (Joy *et al.* 2022). However, this change in $M$ is not a model change since the model does not include $M$. Instead, the change in $M$ is a change in the calculations for the OFL and ABC as part of the Tier 5 harvest control rule. The yelloweye rockfish natural mortality value of $M=0.044$ was calculated by Sullivan *et al.* (2022a) using a maximum age of 122 years from the ADF&G Age Determination Unit. This change in $M$ is deemed necessary because the $M=0.044$ value is well-supported by recent analysis, consistent with the West Coast yelloweye rockfish stock assessment accepted by the Pacific Fishery Management Council, and recommended by CIE review: the range of yelloweye rockfish $M$ values calculated by Sullivan *et al.* (2022a) is 0.044 to 0.052, the West Coast yelloweye stock assessment uses $M = 0.044$ (Gertseva and Cope 2017), and a 2023 CIE review of this assessment suggested using Hamel's (2015) method for deriving $M$ (Cook 2023), which produces $M=0.044$ when using the maximum age of 122 years cited above.
+
+\clearpage
+
+# Results {-}
+
+## DSR in WG/CG/WY {-}
+
+The table below is the summary of the maximum catch of each DSR species in each management area during the time series from 2013-2022. The ABC and OFL are calculated for each species and summed for the total Tier 6.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrrr}
+  \\ \toprule
+Species & WG & CG & WY & OFL & ABC \\ 
+  \midrule
+  Canary & <1 & 1 & <1 & 2 & 2 \\ 
+  China & <1 & 1 & <1 & 2 & 2 \\ 
+  Copper & <1 & <1 & <1 & 0 & 0 \\ 
+  Quillback & 1 & 25 & 14 & 39 & 29 \\
+  Rosethorn & <1 & 2 & 2 & 5 & 4 \\
+  Tiger & 1 & 6 & 1 & 7 & 5 \\
+  Yelloweye & 82 & 171 & 53 & 306 & 229 \\
+  \hline
+  Total &  &  &  & 361 & 271 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+## SEO yelloweye rockfish model results {-}
+
+Model 22.2 is a spatially-stratified, two-survey REMA model fit to the ADF&G survey biomass estimates and CPUE estimates of yelloweye rockfish in the IPHC longline survey in the four management areas of the SEO, with an extra observation error term estimated for the ROV biomass estimates.  
+
+The model fits to the ADF&G survey biomass index varied among survey areas, with better fits for the NSEO and SSEO management units than for the CSEO and EYKT management units (Figure \@ref(fig:survey-fit-adfg)). For both CSEO and EYKT, survey biomass estimates fall below the model estimates for the two most recent survey years. This suggests that other information in the model is influencing the model estimates for those survey areas. The model fits to the IPHC survey CPUE index also varied among survey areas, with both CSEO and SSEO observed CPUE values exceeding the model estimates for the two most recent survey years (Figure \@ref(fig:survey-fit-iphc)). Comparing the $z$-score standardized biomass and CPUE indices clearly shows the recent above-average IPHC survey CPUE index observations in CSEO and SSEO (Figure \@ref(fig:stand-ind)).
+
+The model-estimated biomass trajectory indicates an increasing trend from 2014 to 2023, though the 2024 biomass estimate has high uncertainty due to the lack of survey data (Figure \@ref(fig:total-biom), Table \@ref(tab:biom-est)). The ADF&G survey did not occur in 2024 and IPHC survey data for 2024 were not available in time for this assessment. The increase in estimated biomass is particularly rapid from 2019 to 2023: the four highest-magnitude percent changes in estimated biomass in the time series occurred in 2019-2022 (Table \@ref(tab:biom-est)). The biomass estimates for 2021-2024 are the highest in the time series.
+
+The biomass trajectory estimated by model 22.2 in the current assessment differs from that estimated in the most recent assessment, from 2022: the 2022 estimated trajectory suggested a gradual increase, while the current estimated trajectory shows a rapid increase (Figure \@ref(fig:comp-biom)). Both new data inputs and changes in methodology may have contributed to this difference. New data inputs include ADF&G survey data from NSEO in 2022 and EYKT in 2023, and IPHC survey data from 2022 and 2023. The IPHC survey standardized CPUE values in 2022 and 2023 were notably above average (Figure \@ref(fig:stand-ind)) and are likely the main drivers of the difference between the biomass trajectory trends estimated by model 22.2 in 2022 versus 2024. Changes in methodology include that the IPHC survey CPUE index is now calculated in weight rather than numbers and is standardized using a GAM with the Tweedie distribution. The set of IPHC survey stations used has also changed: rather than excluding survey stations within the appropriate depth range that had never recorded yelloweye rockfish, we included all survey stations within the appropriate depth range. 
+
+Calculation of the OFL and ABC for this Tier 5 stock relies on the value of $M$, which has changed between the most recent and the current assessments. Using $M=0.02$ as in 2022, rather than $M=0.044$ as is currently recommended, would give OFL = `r format(ye.ofl.02, big.mark = ",", nsmall = 0, digits = 1)` t and max ABC = `r format(ye.maxabc.02, big.mark = ",", nsmall = 0, digits = 1)` t for 2025 and 2026, rather than OFL = `r format(ye.ofl, big.mark = ",", nsmall = 0, digits = 1)` t and max ABC = `r format(ye.maxabc, big.mark = ",", nsmall = 0, digits = 1)` t.
+
+Model 22.2 parameter estimates and their associated standard errors (SE) and 95% confidence intervals are shown below (LCI = lower confidence interval; UCI = upper confidence interval). All values have been transformed to an arithmetic scale for ease of interpretation. Model 22.2 uses a single process error, area-specific scaling parameters, and estimates additional observation error for the ADF&G survey biomass estimates.
+
+```{r para-est-tab, results='asis'}
+
+df <- par.est %>%
+  mutate(Parameter = case_when(
+    parameter == "process_error" ~ "Process error",
+    parameter == "scaling_parameter_q" & X == 2 ~ "CSEO scaling parameter",
+    parameter == "scaling_parameter_q" & X == 3 ~ "EYKT scaling parameter",
+    parameter == "scaling_parameter_q" & X == 4 ~ "NSEO scaling parameter",
+    parameter == "scaling_parameter_q" & X == 5 ~ "SSEO scaling parameter",
+    parameter == "extra_biomass_cv" ~ "Extra ADFG survey observation error"
+  )) %>%
+  rename("Parameter estimate" = "estimate", "SE" = "std_err", "LCI" = "lci", "UCI" = "uci") %>%
+  select(c(Parameter, `Parameter estimate`, SE, LCI, UCI))
+
+
+tab <- xtable(df, digits = c(0,0,6,6,6,6))
+
+print(tab, include.rownames = FALSE)
+
+```
+
+
+## Harvest recommendations {-}
+
+### Amendment 56 reference points {-}
+
+Amendment 56 to the GOA Groundfish Fishery Management Plan defines the “overfishing level” (OFL), the fishing mortality rate used to set the OFL ($F_{OFL}$), the maximum permissible ABC, and the fishing mortality rate used to set the maximum permissible ABC. The fishing mortality rate used to set the ABC ($F_{ABC}$) may be less but not greater than this maximum permissible level. All species in the DSR assemblage in WG/CG/WY, and all DSR species other than yelloweye rockfish in SEO, are managed under Tier 6 because reliable estimates of spawning biomass and recruitment are not available; the OFL is set at the maximum observed harvest during a period with ‘reliable catch history’, and the maximum permissible ABC is set equal to 75% of the OFL. The reliable catch history for Tier 6 DSR species in SEO spans from 2010 to 2014, whereas the times series for the Tier 6 DSR species in the WG/CG/WY area spans from 2013 to 2022 (see Results). Yelloweye rockfish in SEO are managed as Tier 5, using the available estimates of biomass and natural mortality. For Tier 5, $F_{OFL}$ is set equal to the estimate of natural mortality, updated to $M=0.044$ in this assessment, and the maximum permissible fishing mortality rate to set the ABC, $maxF_{ABC}$, is calculated as $0.75*M = 0.033$.  
+
+
+### Specifications of OFL and maximum permissible ABC {-}
+
+#### DSR in WG/CG/WY: {-}
+
+Based on the historical maximum catch from 2013 to 2022, the recommended maximum permissible **ABC is 271 t** and the **OFL is 361 t** for the DSR stock complex in the WG/CG/WY management area. Had this proposed ABC been in place, total catch of the DSR species in the WG/CG/WY combined area would have exceeded the ABC in both 2022 and 2023 (Table \@ref(tab:wgcgwy-catch-specs)). Total catch in 2024 has not exceeded the proposed ABC as of September 16, 2024. While the total catch in 2022 and 2023 would not have exceeded the proposed OFL, exceeding the ABC can limit fisheries by placing species on prohibited status. For DSR in WG/CG/WY, there does not appear to a biological concern if the ABC is surpassed because these species are caught as bycatch in other fisheries. These species, particularly yelloweye rockfish, are found in a variety of habitats, caught in both trawl and fixed gears, and not well sampled. There is no recommendation to amend the recommended maximum permissible ABC.
+
+#### DSR in SEO: {-}
+
+For SEO DSR Tier 6 species, based on the maximum catches in 2010-2014, the OFL is 26 t and the maximum ABC is 20 t.
+
+Applying the maximum permissible $F_{ABC}$ to the estimate of current exploitable biomass from model 22.2 of `r format(YE.biomass, big.mark = ",", nsmall = 0, digits = 1)` t for yelloweye rockfish in SEO results in a maximum ABC of `r format(ye.maxabc, big.mark = ",", nsmall = 0, digits = 1)` t and OFL of `r format(ye.ofl, big.mark = ",", nsmall = 0, digits = 1)` t for yelloweye rockfish. 
+
+Combining the Tier 5 yelloweye rockfish and the Tier 6 other DSR ABC and OFL results in a total SEO GOA maximum permissible **ABC of `r format(dsr.maxabc, big.mark = ",", nsmall = 0, digits = 1)` t** and a total **OFL of `r format(dsr.ofl, big.mark = ",", nsmall = 0, digits = 1)` t** for the DSR stock complex.  
+
+Application of the risk table (described below) suggests that a reduction in the maximum permissible ABC is appropriate for 2025 and 2026. The recommended ABC is based on a 20% reduction in the maximum permissible ABC of yelloweye rockfish to which the maximum permissible ABC of the Tier 6 species are added.  Thus, the total recommended ABC for SEO DSR is the maximum permissible yelloweye rockfish ABC of `r format(ye.maxabc, big.mark = ",", nsmall = 0, digits = 1)` t reduced by 20% to `r format(ye.recabc, big.mark = ",", nsmall = 0, digits = 1)` t and added to the Tier 6 ABC of 20 t for a total **recommended ABC of `r format(dsr.recabc, big.mark = ",", nsmall = 0, digits = 1)` t** for the GOA SEO DSR fishery. 
+
+\clearpage
+
+### Risk table and ABC recommendations {-}
+
+The following table is to be used to complete the risk table.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lllll}
+  \\ \toprule
+ &  Assessment- & Population & Environmental/ & Fishery  \\
+ & related & dynamics & ecosystem & performance \\
+ & considerations & considerations & considerations &  \\
+  \midrule
+  Level 1: & Typical to & Stock trends are  & No apparent & No apparent \\ 
+  No concern & moderately increased & typical for the stock; & environmental/ & fishery/resource-use \\
+  & uncertainty/minor & recent recruitment is & ecosystem concerns & performance and/or  \\
+  & unresolved issues in & within normal range &  & behavior concerns \\
+  & assessment &  &  &  \\
+  &  &  &  &  \\
+  Level 2: & Major problems with & Stock trends are & Multiple indicators & Multiple indicators \\
+  major concern & the stock assessment; & highly unusual; very & showing consistent & showing consistent \\
+  & very poor fits to & rapid changes in & adverse signals a) across & adverse signals \\
+  & data; high level of & stock abundance, or & the same trophic level & a) across different \\
+  & uncertainty; strong & highly atypical & as the stock, and/or & sectors, and/or \\
+  & retrospective bias & recruitment patterns & b) up or down trophic & b) different gear \\
+  &  &  & levels (i.e., predators & types \\
+  &  &  & and prey of the stock) &  \\
+  &  &  &  &  \\
+  Level 3: & Severe problems with & Stock trends are & Extreme anomalies in & Extreme anomalies \\
+  extreme concern & the stock assessment; & unprecedented; more & multiple ecosystem & in multiple \\
+  & severe retrospective & rapid changes in & indicators that are & performance \\
+  & bias. Assessment & stock abundance than & highly likely to & indicators that \\
+  & considered unreliable & have ever been seen & impact the stock; & are highly likely \\
+  &  & previously, or a very & potential for & to impact the \\
+  &  & long stretch of poor & cascading effects on & stock \\
+  &  & recruitment compared & other ecosystem &  \\
+  &  & to previous patterns & components &  \\
+  &  &  &  &  \\
+  \hline
+\end{tabular}
+\end{table}
+
+The table is applied by evaluating the severity of four types of considerations that could be used to support a scientific recommendation to reduce the ABC from the maximum permissible. These considerations are stock assessment considerations, population dynamics considerations, environmental/ecosystem considerations, and fishery performance. Examples of the types of concerns that might be relevant include the following:
+
+1. Assessment considerations: 
+
+     a. Data-inputs: biased ages, skipped surveys, lack of fishery-independent trend data
+
+     b. Model fits: poor fits to fishery or survey data, inability to simultaneously fit multiple data inputs
+
+     c. Model performance: poor model convergence, multiple minima in the likelihood surface, parameters hitting bounds
+
+     d. Estimation uncertainty: poorly-estimated but influential year classes
+
+     e. Retrospective bias in biomass estimates.
+
+2. Population dynamics considerations: decreasing biomass trend, poor recent recruitment, inability of the stock to rebuild, abrupt increase or decrease in stock abundance.
+
+3. Environmental/ecosystem considerations: adverse trends in environmental/ecosystem indicators, ecosystem model results, decreases in ecosystem productivity, decreases in prey abundance or availability, increases or increases in predator abundance or productivity.
+
+4. Fishery performance: fishery CPUE is showing a contrasting pattern from the stock biomass trend, unusual spatial pattern of fishing, changes in the percent of TAC taken, changes in the duration of fishery openings.
+
+#### DSR in CG/WG/WY {-}
+
+##### Assessment considerations: {-}
+
+Recommended **Level 1**: The DSR species in the WG/CG/WY are managed as Tier 6 using a maximum catch methodology. This method is a precautionary approach to setting harvest specifications and is acceptable for this stock complex because all species are non-targeted. The majority of the species belonging to the stock complex are very infrequently caught by the fishery throughout the catch history. Yelloweye rockfish comprise over 90% of the total DSR catch and are caught in both trawl and longline gear types. The trawl survey should not be used to assess the yelloweye rockfish population because it only samples a portion of the population and thus gives only a partial representation of the population trend. Further data-limited methods are being explored by the AFSC data-limited working group and alternative assessment methodologies will be presented when available. The maximum catch methodology currently appears to be sufficient.
+
+##### Population dynamics considerations: {-}
+
+Recommended **Level 1**: Further details on the population dynamics and life histories for these DSR species are sparse. Historical biomass trends have not been estimated for any species belonging to this stock complex in the WG/CG/WY. Catch has been slightly higher in the past few years, but overall catch trends have not altered significantly and the higher recent catch seems reasonable. There appears to be no indication of population concerns.
+
+##### Environmental/ecosystem considerations: {-}
+
+Ecosystem considerations for DSR was scored as **level 1** for WG/CG/WY. Benthic thermal conditions for adults and surface conditions for larvae of the major group and the minor group were approximately average in 2024. There is no indication of change in predation and competition, but these interactions are not well known. We document an ongoing concern due to the continued decline of sponges, habitat of known importance to DSR. In general, there is a lack of a mechanistic understanding for the direct and indirect effects of environmental change on the survival and productivity of DSR. This risk table section is informed by cited contributions to the 2023 and 2024 Gulf of Alaska Ecosystem Status Report (Ferriss 2023, 2024). 
+
+This summary of environmental considerations for the WG/CG/WY DSR stock complex is based on representatives of the dominant species (yelloweye rockfish, accounts for approximately 95% of the total biomass) and of the minor species accounting for a low percentage of harvest, with little data to assess population status (quillback, copper, rosethorn, China, canary, and tiger), described in Baskett *et al.* (2006), Love *et al.* (2002), and Yoklavich *et al.* (2002).  
+
+##### Fishery performance: {-}
+
+Recommended **Level 1**: There is no directed fishing for species belonging to the DSR stock complex in the GOA WG/CG/WY combined area, and these species can only be retained as incidental catch. The vast majority of the DSR stock complex catch are yelloweye rockfish, which are caught in both trawl and longline gear, with the majority of the total catch coming from the Central GOA. In 2022 and 2023, total catches (286 t and 287 t, respectively) would have exceeded the proposed ABC of 271 t (Table \@ref(tab:wgcgwy-catch-specs)). While catches have increased in the past few years, total past catches have not exceeded the new OFL and catches do not seem unreasonably high. Total DSR catches in the WG/CG/WY have ranged from 84 to 297 t. Catches will continue to be monitored.
+
+\clearpage
+
+#### DSR in SEO {-}
+
+##### Assessment considerations: {-}
+
+**Level 2**. The REMA model used in this assessment was approved in 2022 and has not undergone major changes. However, uncertainty in the ADF&G survey biomass estimates remains a concern. The primary source of unease revolves around the amount of habitat available to yelloweye rockfish, which is used to expand the density estimates derived from the ROV survey into biomass estimates for each survey district. The variability in survey biomass estimates over time is greater than might be predicted in such a long-lived species, particularly during the early years of the submersible surveys, indicating potential inconsistencies and problems with the density and biomass estimates. Model fits to the ADF&G survey data are poor for some survey areas (Figure \@ref(fig:survey-fit-adfg)). Skipped surveys have also occurred: CSEO was last surveyed by ADF&G in 2022, EYKT in 2023, NSEO in 2022, and SSEO in 2020 (Table \@ref(tab:sub-dat)); none of the areas were surveyed in 2024, and no future ADF&G ROV survey effort is currently planned due to insufficient funding and lack of adequate ROV equipment. The IPHC survey has historically supplied consistent data that are now used in a secondary index of abundance for yelloweye rockfish; however, in 2024, the IPHC survey did not survey stations that correspond to the EYKT management unit and part of the NSEO management unit, and it is unknown whether the survey will sample the full complement of stations in future years due to insufficient funding (Planas 2024).  
+
+##### Population dynamics considerations: {-}
+
+Given the rapid change in stock biomass for yelloweye rockfish, as well as a reduced ability to accurately estimate biomass due to the lack of ROV survey data, this category is rated **level 3**. Yelloweye rockfish is the primary target species in the SEO DSR stock complex, making up over 95% of the DSR commercial harvest. DSR are particularly vulnerable to overexploitation and are slow to recover once fished below sustainable levels given their longevity, slow growth, late maturation, and high site fidelity, with yelloweye rockfish reaching an estimated maximum age of 122 years and maturing at 18–22 years. Yelloweye rockfish biomass estimates declined from 1995 to a low point in 2008, before beginning an overall increasing trend after 2020 in the absence of directed commercial fishing and with increasingly restrictive recreational fishing regulations that have resulted in harvests well below the recommended ABC (Table \@ref(tab:total-catch), Figure \@ref(fig:tac-catch)). Model biomass estimates from the current assessment begin to increase sharply in 2019, with the four highest-magnitude percent changes in estimated biomass in the time series occurring in 2019-2022 (Table \@ref(tab:biom-est)). The biomass estimates for 2021-2024 are the highest in the time series (Table \@ref(tab:biom-est)). This rapid increase in estimated biomass matches the level 3 description of "more rapid changes in stock abundance than have ever been seen previously". The lack of ROV survey data for 2024, and the resulting large confidence intervals around the 2024 biomass estimate (`r format(YE.biomass, big.mark = ",", nsmall = 0, digits = 1)` t; lower CI = `r format(YE.biomass.lci, big.mark = ",", nsmall = 0, digits = 1)` t; upper CI = `r format(YE.biomass.uci, big.mark = ",", nsmall = 0, digits = 1)` t), also raise concerns.
+
+##### Environmental/ecosystem considerations: {-}
+
+The ecosystem consideration category for DSR was scored as **level 1** for SEO. Benthic thermal conditions for adults in 2024 were approximately average, while larval rockfish growth may have benefited from warm spring/summer surface waters coupled with adequate prey (zooplankton) availability. There is no indication of change in predation and competition, but these interactions are not well known. In general, there is a lack of a mechanistic understanding for the direct and indirect effects of environmental change on the survival and productivity of DSR. This risk table section is informed by cited contributions to the 2023 and 2024 Gulf of Alaska Ecosystem Status Report (Ferriss 2023, 2024). 
+
+This summary of environmental considerations for DSR in SEO is based on representatives of the dominant species (yelloweye rockfish, accounts for approximately 95% of the total biomass) and of the minor species accounting for a low percentage of harvest, with little data to assess population status (quillback, copper, rosethorn, China, canary, and tiger), described in Baskett *et al.* (2006), Love *et al.* (2002), and Yoklavich *et al.* (2002).  
+
+##### Fishery performance: {-}
+
+**Level 2**. With the closure of the directed DSR commercial fishery and prohibition of yelloweye rockfish retention in the recreational and personal use fisheries, all DSR species may now only be retained in subsistence fisheries and as bycatch in commercial fisheries. Commercial fishery bycatch harvest of DSR rockfish shows an increasing trend from 2014, with the 2024 bycatch harvest down from that in 2023 and 2022 yet still higher than any other value from 2009 to 2021 (Table \@ref(tab:total-catch), Figure \@ref(fig:dsr-comm-inccatch)). This commercial fishery bycatch harvest primarily occurs in the halibut longline fishery, indicating that halibut fishers may be finding it more difficult to avoid catching DSR rockfish or may be fishing more heavily in areas where DSR rockfish are more abundant. Anecdotal information from fishers and processors suggests that difficulties in catching halibut due to declines in halibut stocks may have contributed to higher incidental catch of yelloweye rockfish.
+
+\clearpage
+
+### Summary and ABC recommendations {-}
+
+\begin{table}[h]
+\caption*{The following is a summary of the risk table for DSR in WG/CG/WY:}
+\centering
+\begin{tabular}{lllll}
+  \\ \toprule
+  Assessment- & Population & Environmental/ & Fishery & Overall score \\
+  related & dynamics & ecosystem & performance & (highest of the \\
+  considerations & considerations & considerations & considerations & individual scores) \\
+  \midrule
+  Level 1: new & Level 1: catch has & Level 1: normal, & Level 1: no apparent & Level 1: no \\
+  assessment, but & been slightly higher & no apparent & fishery/resource-use & elevated concern \\
+  same methodology & than average, but & environmental/ & performance and/or & \\
+   & not significantly & ecosystem concerns & behavior concerns &  \\
+  \hline
+\end{tabular}
+\end{table}
+
+
+
+\begin{table}[h]
+\caption*{The following is a summary of the risk table for DSR in SEO:}
+\begin{center}
+\begin{tabular}{lllll}
+  \\ \toprule
+  Assessment- & Population & Environmental/ & Fishery & Overall score \\
+  related & dynamics & ecosystem & performance & (highest of the \\
+  considerations & considerations & considerations & considerations & individual scores) \\
+  \midrule
+  Level 2: lack & Level 3: more rapid & Level 1: normal, & Level 2: increased & Level 3: \\
+  of survey data; & changes in stock & no apparent & commercial fishery & extreme concern \\
+  uncertainty in & abundance than & environmental/ & bycatch harvest & \\
+  survey biomass & have ever been seen & ecosystem concerns &  &  \\
+  estimates & previously &  &  &  \\
+  \hline
+  & & & & \\
+\end{tabular}
+\end{center}
+Due to extreme concern in the population dynamics category of the risk table for DSR in SEO, in addition to major concerns in the assessment and fishery performance categories of the risk table, we recommend a 20\% reduction from the maximum allowable ABC to `r format(dsr.recabc, big.mark = ",", nsmall = 0, digits = 1)` t for 2025 and 2026.
+\end{table}
+
+
+
+### Area allocation of harvests {-}
+
+Harvests are not apportioned by area for the DSR stock complex in the WG/CG/WY. For the DSR stock complex in SEO, the State of Alaska manages DSR in the EGOA regulatory area with Council oversight and any further apportionment of the management area OFL and ABC within SEO is at the discretion of the State.
+
+### Status determination {-}
+
+Due to changes to the way in which the stock complex is managed, the DSR stock complex in the WG/CG/WY did not have an OFL for 2023, so it is unknown whether overfishing occurred in 2023. For the DSR stock complex in SEO, the OFL for 2023 was 376 t and total catch was 226 t, so overfishing did not occur (Figure \@ref(fig:tac-catch)). 
+
+# Ecosystem considerations {-}
+
+## Ecosystem effects on the stock {-}
+
+### Prey availability/abundance trends {-}
+
+The prey base for yelloweye rockfish (rockfish, herring, shrimp, flatfish, crab; Love *et al.* 2002) and the minor group (crab, shrimp, smaller rockfish; Love *et al.* 2002) is potentially below average, with limited prey- and region-specific information. Limited information on biomass of euphausiids and calanoid copepods (primary prey for larvae/juveniles) in 2024 indicate average to above average availability in 2024, and a potential increase from 2023 (Seward Line, Hopcroft 2024; zooplanktivorous seabird reproductive success in eastern GOA, Drummond and Renner 2024, Whelan 2024). Herring spawning stock biomass remains relatively elevated (Hebert 2024). Larval surveys in Shelikof Strait in 2023 observed a decline to below average (from 2019 and 2021) of larval rockfish (not identified to species; Rogers and Axler 2023) an indicator of fewer rockfish as prey for yelloweye rockfish in the system. Tanner crab biomass dropped below average in the ADF&G survey around Kodiak, a decline of the strong year class first observed in 2018 (Worton 2024). Pandalid and non-pandalid shrimp CPUE declined between the 2021 and 2023 NOAA bottom trawl surveys in Chirikof, Kodiak, and Yakutat (Laman and Dowlin 2023a). Other important prey of DSR include poorly monitored crabs, amphipods, and other benthic invertebrates. 
+
+### Predator population trends {-}
+
+There is no cause to suspect increased predation or competition on larval or adult DSR, although information is limited. Predators of yelloweye rockfish include salmon and orcas. Predators of the minor group include lingcod, shore birds, and larger rockfish. The main competitors of juvenile yelloweye rockfish are other rockfish, and are unknown for the minor group. Salmon catch in 2024 continued a relatively low even year trend, with reduced pink salmon, coho and chum (Whitehouse 2024). Little is known about the predator population status of orcas, lingcod, and shore birds. 
+
+### Changes in physical environment for CG/WG/WY {-}
+
+Benthic thermal conditions for adults and surface conditions for larvae of the major group (yelloweye rockfish: 90 to 180 m) and the minor group (30 to 300 m) were approximately average in 2024. The 2023/2024 El Ni$\tilde{n}$o event brought warmer surface temperatures to the GOA in the winter, but it was moderate and short-lived, resulting in approximately average surface temperatures by spring in the western GOA (when larval rockfish are released) (Lemagie and Callahan 2024, Danielson and Hopcroft 2024). Upcoming 2025 winter and spring surface temperatures are predicted to be cooler than average, in alignment with weak La Ni$\tilde{n}$a conditions (Lemagie and Bell 2024). 
+
+A continued multi-year decline (with high uncertainty) in relative abundance of sponges, structural habitat of importance, presents an ongoing concern for DSR in the WG/CG/WY regions. Observations in 2023 from AFSC’s fishery-independent bottom trawl survey and fisheries-dependent observer data of non-target catches (both not designed to target structural epifauna) show relative stability until 2015 followed by a continual 9-year decline in the GOA wide index through 2023 to a historic low value  (AFSC bottom trawl, Laman and Dowlin 2023b; observer data, Whitehouse and Gaichas 2023). The declines in sponges appear to be driven by trends in the Shumagin and to a lesser extent Kodiak regions.
+
+### Changes in physical environment for SEO {-}
+
+Benthic thermal conditions for adults of yelloweye rockfish (90 to 180 m) and the minor group (30 to 300 m) were approximately average in 2024, while larval rockfish growth may have benefited from warm spring/summer surface waters (coupled with adequate prey availability). The 2023/2024 El Ni$\tilde{n}$o event brought warmer surface temperatures to the GOA in the winter, with above average sea surface temperatures persisting through the spring in the eastern GOA (Lemagie and Callahan 2024, Danielson and Hopcroft 2024). Larval rockfish are released in the spring/summer and can grow faster in warm surface waters. Upcoming 2025 winter and spring surface temperatures are predicted to be cooler than average, in alignment with weak La Ni$\tilde{n}$a conditions (Lemagie and Bell 2024). 
+
+
+
+## Fishery effects on the ecosystem {-}
+
+### Fishery-specific contribution to bycatch of HAPC biota {-}
+
+HAPC biota such as corals and sponges are associated with some of the same habitats that yelloweye rockfish and other DSR inhabit. On ROV and submersible dives, many observations of yelloweye rockfish in close association with corals and sponges have been recorded. However, as described above, bottom trawling is prohibited in the EGOA, so contact with the bottom and therefore biogenic habitat removal is limited to primarily hook and line and dinglebar gear. The expanded observer program should provide additional data on invertebrate incidental catch in the halibut longline fishery. 
+
+### Fishery-specific concentration of target catch in space and time relative to predator needs in space and time (if known) and relative to spawning components {-}
+
+Insufficient research exists to determine yelloweye rockfish catch relative to predator needs in time and space. Yelloweye rockfish are winter/spring spawners, with a peak period of parturition in April and May in Southeast Alaska (O’Connell 1987). The directed fishery, if opened, occurs between late January and early March, but the bulk of the mortality for the DSR complex is taken as incidental catch in the halibut longline fishery. Reproductive activities do overlap with the fishery, but since parturition takes place over a protracted period, there should be sufficient spawning potential relative to fishery mortality. 
+
+### Fishery-specific effects on amount of large size target fish {-}
+
+Full retention of the DSR complex is required in the EGOA, therefore high grading should be minimized in the reported catch and lengths sampled in port should be representative of length composition of yelloweye rockfish captured on the gear. The commercial directed fisheries landing data show that most fish are captured at between 450 and 700 mm in length depending on the management area (Figures \@ref(fig:lcomp-cseo) - \@ref(fig:lcomp-sseo)).
+
+### Fishery contribution to discards and offal production {-}
+
+Full retention requirements of the DSR complex became regulation in 2000 in State of Alaska waters and 2005 in federal waters of the EGOA, thus making discard at sea of DSR illegal. There may be some unreported discard in the fishery. Data from the observer restructuring program may provide additional information on the magnitude of unreported catch. 
+
+### Fishery-specific effects on age-at-maturity and fecundity of the target fishery {-}
+
+Fishery effects on age-at-maturity and fecundity are unknown. Age composition of the fishery, by management area, is shown in Figures \@ref(fig:acomp-cseo) - \@ref(fig:acomp-sseo). The age at 50% maturity for yelloweye rockfish in Southeast Alaska is 17.6 years. This age is based on a maturity-at-age curve for males and females combined and was derived from directed DSR commercial fishery data from 1992–2013 from all four management areas. 
+
+### Fishery-specific effects on EFH living and non-living substrate {-}
+
+Effects of the DSR fishery on non-living substrates are minimal because no trawl gear is used in the fishery. Occasionally fishing gear is lost in the fishery, so longline and anchors may end up on the bottom. There is likely minimal damage to EFH living substrate as the gear used in the fishery is set on the bottom but does not drag along the bottom. 
+
+# Data gaps and research priorities {-}
+
+There are large biological data gaps for DSR species in the GOA. Yelloweye rockfish in the WG/CG/WY will receive attention from the AFSC Data-Limited Working Group, including the exploration of new methodologies to determine whether enough information is available to apply an alternative method for assessing yelloweye rockfish in the WG/CG/WY.
+
+The availability of consistent survey data time series for the SEO yelloweye rockfish assessment model is a major concern. The fishery-independent ADF&G ROV survey is the primary data source for this assessment but, due to lack of a functional ROV, staff trained to operate a ROV, and adequate funding, none of the four management units were surveyed in 2024, and only the EYKT unit was surveyed in 2023. It is likely that resources to complete the ROV survey will not be in place for 2025 or 2026. The IPHC survey represents a valuable secondary index of abundance for this assessment. However, in 2024, the IPHC survey did not survey stations that correspond to the EYKT management unit and part of the NSEO unit, and it is unknown whether the survey will sample the full complement of stations in future years due to insufficient funding (Planas 2024). Lack of consistent survey data time series will increase the uncertainty around model biomass estimates.
+
+An age-structured model could potentially improve our understanding of yelloweye rockfish stock dynamics. Development of an age-structured model to compare with the current REMA approach is a goal that may be pursued in future versions of this assessment, data availability permitting. Updated life history parameter estimates for yelloweye rockfish would improve the ability of an age-structured model to accurately capture the biology of the stock. Information is needed on yelloweye rockfish fecundity and maturity, timing of parturition for recruitment, and post-larval survival. A recruitment index for yelloweye rockfish would aid in estimating biomass. 
+
+A Bayesian surplus production model for yelloweye rockfish was presented in September 2022 and underwent CIE review; this model will continue to be developed as a research model as staff time allows.  
+
+
+# Acknowledgements {-}
+
+The authors would like to acknowledge the help provided by the ADF&G Statewide Rockfish Initiative (SRI) projects that helped make this assessment possible. Many people have contributed to this assessment over the years: Donnie Arthur produced estimates of removal in the foreign fishery; Randy Peterson compiled halibut harvest data; Kellii Wood worked hard to leave the SEO ROV surveys in good shape, completed two surveys in 2022, and compiled the data necessary to produce density estimates for the CSEO in 2022; Erica Ebert and Madison Bargas participated in the surveys and completed video reviews; Ana Vinson assisted with 2023 video review; Mike Byerly was the pilot and captain of the ROV *Buttercup* until his retirement in 2024 and remains an invaluable source of insight with regards to the surveys; and Captain Dave Anderson and the crew of the R/V *Solstice* conducted ROV surveys in SEO for many years. The Alaska Regional Office (NMFS) provided commercial catch estimates, and the Alaska Fisheries Information Network of the Pacific States Marine Fisheries Commission provided a user-friendly portal to access the Catch Accounting System data. The three CIE reviewers provided insightful suggestions that have helped to improve this assessment. We thank Chris Siddon for his continued support and encouragement in developing this assessment.    
+
+
+\clearpage
+
+# Literature cited {-}
+
+Andrews, A.H., Cailliet, G.M., Coale, K.H., Munk, K.M., Mahoney, M.M., and O'Connell, V.M. 2002. Radiometric age validation of the yelloweye rockfish (*Sebastes ruberrimus*) from southeastern Alaska. Marine and Freshwater Research, 53(2), pp.139-146.
+
+Andrews, K.S., K. M. Nichols, A. Elz, N. Tolimieri, C.J. Harvey, R. Pacunski, D. Lowry, K.L. Yamanaka, and D.M. Tonnes. 2018. Cooperative research sheds light on population structure and listing status of threatened and endangered rockfish species. Conserv. Genet. 19: 865-878.
+
+Archibald, C.P., W. Shaw, and B.M. Leaman. 1981. Growth and mortality estimates of rockfish (Scorpaenidae) from B. C. coastal waters. 1977-1979. Can. Tech. Rep. Fish. Aquat. Sc. No. 1048. 57 p.
+
+Arthur, D.E. 2020. The Reproductive Biology of Yelloweye Rockfish (*Sebastes ruberrimus*) in Prince William Sound and the Northern Gulf of Alaska. University of Alaska Fairbanks.
+
+Baskett, M., M. Yoklavich, and M.S. Love. 2006. Predation, competition, and the recovery of overexploited fish stocks in marine reserves. Can. J. Fish. Aquatics. 63: 1214-1229.
+
+Berger, J., J. Wall, and R. Nelson, Jr. 1984. Summary of U.S. observer sampling of foreign and joint-venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1983. (Document submitted to theannual meeting of the International North Pacific Fisheries Commission, Vancouver, B.C., Canada, October 1984.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Berger, J., J. Wall, and R. Nelson, Jr. 1985. Summary of U.S. observer sampling of foreign and joint-venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1984. (Document submitted to the annual meeting of the International North Pacific Fisheries Commission, Tokyo, Japan, October 1985.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, Building 4, Bin C15700, 7600 Sand Point Way N. E., Seattle, WA 98115.
+
+Berger, J., J. Wall, and R. Nelson, Jr. 1987. Summary of U.S. observer sampling of foreign and joint venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1985. U.S. Dep. Commer., NOAA Tech. Memo. NMFS F/NWC-112, 169 p.
+
+Berger, J., R. Nelson, Jr., J. Wall, H. Weikart, and B. Maier. 1988. Summary of U.S. observer sampling of foreign and joint venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1986. U.S. Dep. Commer., NOAA Tech. Memo. NMFS F/NWC-128, 167 p.
+
+Berger, J., and H. Weikart. 1988. Summary of U.S. observer sampling of foreign and joint venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1987. U.S. Dep. Commer., NOAA Tech. Memo. NMFS F/NWC-148, 141 p.
+
+Boehlert, G.W., M. Kusakari, M. Shimizu, and J. Yamada. 1986. Energetics during embryonic development in kurosoi, *Sebastes schlegeli* Hilgendorf. J. Exp. Mar. Biol. Ecol. 101:239-256.
+
+Boehlert, G.W., and M.M. Yoklavich. 1984. Reproduction, embryonic energetics, and the maternal-fetal relationship in the viviparous genus *Sebastes*. Biol. Bull. 167:354-370. 
+
+Brylinsky, C., J. Stahl, D. Carlile, and M. Jaenicke. 2009. Assessment of the demersal shelf rockfish stock for 2010 in the southeast outside district of the Gulf of Alaska. In: Stock assessment and fishery evaluation report for the groundfish resources for the Gulf of Alaska, North Pacific Fisheries Management Council, Anchorage, Alaska pp. 1067 – 1110.
+
+Buckland, S.T., D.R. Anderson, K.P. Burnham, and J.L. Laake. 1993. Distance sampling: estimating abundance of biological populations. Chapman & Hall. London. 446 p.
+
+Buckland, S.T., E.A. Rexstad, T.A. Marques, and C.S. Oedekoven. 2015. Distance sampling: methods and applications (Vol. 431). Springer. New York, NY, USA. 
+
+Carlile, D. 2005. An Assessment of Age Determination Needs and Samples Sizes for Groundfish Fisheries Managed by the State of Alaska. Alaska Department of Fish and Game, Special Publication No. 05-12, Anchorage.
+
+Chadwick, R.E., T.A. Tydingco, and P.W. Fowler. 2017. Overview of the Sport Fisheries for Groundfish and Shellfish in Southeast Alaska Through 2017. Alaska Department of Fish and Game, Division of Sport Fish, Research and Technical Services.
+
+Chilton, D.E., and R.J. Beamish. 1982. Age determination methods for fishes studied by the groundfish program at the Pacific Biological Station. Ottawa, Canada: Department of Fisheries and Oceans.
+
+Cleaver S., M. Furuness, and O. Davis. 2022. Reclassifying Other Rockfish and Demersel Shelf Rockfish species groupings. GOA Other Rockfish/Demersal Shelf Rockfish Spatial Management Paper, draft for Plan Team review. North Pacific Fishery Management Council, Anchorage, AK.
+
+Cook, R. 2023. Independent peer review report of Gulf of Alaska demersal shelf rockfish assessment. Prepared for the Center for Independent Experts. 
+
+Danielson, S., and R. Hopcroft. 2024. Ocean temperature synthesis: Seward line May survey. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Dick, E. J., S. Beyer, M. Mangel, and S. Ralston.  2017.  A meta-analysis of fecundity in rockfishes (genus *Sebastes*). Fisheries Research 187: 73-85.  
+
+Dorn, M. 2000. Advice on west coast rockfish harvest rates from Bayesian meta-analysis of *Sebastes* stock-recruit relationships. Proceedings of the 11th Western Groundfish Conference, Alaska Department of Fish and Game, Sitka, Alaska.
+
+Drummond, B. and H. Renner. 2024. Seabird Synthesis: Alaska Maritime National Wildlife Refuge Data. In Ferriss, B., and S. Zador, 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Dunn, P. 2017. Tweedie: Evaluation of Tweedie exponential family models. R package.
+
+Ferriss, B.E. 2023. Ecosystem Status Report 2023: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage,
+Alaska 99501.
+
+Ferriss, B.E. 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage,
+Alaska 99501.
+
+Forrester, C. R., A.J. Beardsley, and Y. Takashi. 1978. Groundfish, shrimp and herring fisheries in the Bering Sea and northeast Pacific -- historical catch statistics through 1970. International North Pacific Fisheries Commission, Bulletin Number 37. 147 pp.
+
+Forrester, C.R., R.G. Bakkala, K. Okada, and J.E. Smith. 1983. Groundfish, shrimp, and herring fisheries in the Bering Sea and Northeast Pacific—historical catch statistics, 1971-1976. International North Pacific Fisheries Commission, Bulletin Number 41. 108 pp.
+
+Francis, R.C. 1985. Fisheries research and its application to west coast groundfish management. In T. Frady (ed.). Proceedings of the Conference on Fisheries Management: Issues and Options. p. 285-304. Alaska Sea Grant Report 85-2.
+
+GMT. 2014. Groundfish Management Team report on proposed discard mortality for cowcod, canary rockfish, and yelloweye rockfish released using descending devices in the recreational fishery. Pacific Fishery Management Council, Agenda Item D.3.b, Supplemental GMT Report 2, March 2014.
+
+Gertseva, V., and J.M. Cope. 2017. Stock assessment of the yelloweye rockfish (*Sebastes ruberrimus*) in state and Federal waters of California, Oregon, and Washington. Pacific Fishery Management Council, Portland, OR.  Available from http://www.pcouncil.org/groundfish/stock-assessments/
+
+Green, K., K. Van Kirk, J. Stahl, M. Jaenicke, and S. Meyer. 2015. Assessment of the demersal shelf rockfish stock for 2016 in the southeast outside district of the Gulf of Alaska. Chapter 14 IN 2015 Stock Assessment and Fishery Evaluation Report for 2016. North Pacific Fishery Management Council, Anchorage, AK.
+
+Greene, H.G., M.M. Yoklavich, R. Starr, V.M. O’Connell, W.W. Wakefield, D.L. Sullivan, J.E. MacRea, and G.M. Cailliet. 1999. A classification scheme for deep-water seafloor habitats: Oceanographica Acta 22: 663–678.
+
+Haldorson, L. and M. Love. 1991. Maturity and fecundity in the rockfishes, *Sebastes* spp., a review.  Marine Fisheries Review: 53(2): 25-31. 
+
+Hamel, O.S. 2015. A method for calculating a meta-analytical prior for the natural mortality rate using multiple life history correlates. ICES Journal of Marine Science 72:62-69.
+
+Hebert, K. 2024. Southeast Alaska herring. In Ferriss, B. and Zador, S., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 605 W 4th Ave, Suite 306, Anchorage, AK 99501.
+
+Hochhalter, S.J., and D.J. Reed. 2011. The effectiveness of deepwater release at improving the survival of discarded yelloweye rockfish. North. Amer. J. Fish. Mgt. 31:852-860.
+
+Hopcroft, R. 2024. Seward Line: large copepod & euphausiid biomass. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Howard, K.G., D. Evans, and A. St. Saviour. 2020. Operational Plan: Spatially explicit reconstructions of black and yelloweye rockfishes sportfish harvests. Alaska Department of Fish and Game, Division of Sportfish, Regional Operational Plan ROP.SF.4A.2020.02, Anchorage.
+
+Hoyle, S.D., R.A. Campbell, N.D. Ducharme-Barth, A. Gruss, B.R. Moore, J.T. Thorson, L. Tremblay-Boyer, H. Winker, S. Zhou, and M.N. Maunder. 2024. Catch per unit effort modelling for stock assessment: a summary of good practices. Fisheries Research 269:106860.
+
+Hulson, P.J.F., K.B. Echave, P.D. Spencer, and J.N. Ianelli.  2021.  Using multiple indices for biomass and apportionment estimation of Alaska groundfish stocks.  U. S. Dep. Commer., NOAA Tech. Memo.  NMFS-AFSC-414, 28pp.  
+
+Jaenicke, M., D. Tersteeg, and J. Huang. 2019. Operational Plan: Southeast Alaska marine boat sport fishery harvest studies, 2019. Alaska Department of Fish and Game, Regional Operational Plan SF.1J.2019.05, Anchorage.
+
+Joy, P., J. Sullivan, R. Ehresmann, A. Olson, and M. Jaenicke. 2022. Assessment of the demersal shelf rockfish stock complex in the Southeast Outside subdistrict of the Gulf of Alaska. North Pacific Fishery Management Council, Anchorage, AK.
+
+Kristensen, K., A. Nielsen, C.W. Berg, H. Skaug, and B.M. Bell.  2016.  TMB: Automatic differentiation and Laplace approximation.  Journal of Statistical Software 70: 1-21.
+
+Laman, N. and A. Dowlin. 2023a. Miscellaneous Species - Gulf of Alaska. In Ferriss, B., 2023. Ecosystem Status Report 2023: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Laman, N. and A. Dowlin. 2023b. Structural Epifauna – Gulf of Alaska. In Ferriss, B., 2023. Ecosystem Status Report 2023: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Langseth, B.J., C.R. Wetzel, J.M. Cope, and J.E. Budrick. 2021. Status of quillback rockfish (*Sebastes maliger*) in U.S. waters off the coast of California in 2021 using catch and length data. Pacific Fisheries Management Council, Portland, Oregon. 127 p.
+
+Leaman, B.M. and R.J. Beamish. 1984. Ecological and management implications of longevity in some northeast Pacific groundfishes. Int. North Pac. Fish. Comm. Bull. 42:85-97.
+
+Lemagie, E. and S. Bell, 2024. Seasonal Projections from the National Multi-Model Ensemble. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Lemagie, E. and M.W. Callahan. 2024. Ocean temperature synthesis: Satellite Data and Marine Heat Waves. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Love, M.S., P. Morris, M. McCrae, and R. Collins. 1990. Life History Aspects of 19 rockfish species (Scorpaenidae: *Sebastes*) from the southern California Bight. NOAA Tech. Rpt. NMFS 87: 38pp.
+
+Love, M.S., M. Yoklavich, and L. Thorsteinson. 2002. The Rockfishes of the Northeast Pacific. University of California Press. Berkeley, CA.
+
+Love, M.S. 2011. Certainly more than you want to know about the fishes of the Pacific Coast: A Post Modern Experience. Really Big Press. Santa Barbara, CA.
+
+Nelson, R., Jr., J. Wall, and J. Berger. 1983. Summary of U.S. observer sampling of foreign and joint-venture fisheries in the northeast Pacific Ocean and eastern Bering Sea, 1982. (Document submitted to the annual meeting of the International North Pacific Fisheries Commission, Anchorage, Alaska, October 1983.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+North Pacific Fisheries Management Council. 2022. Scientific and Statistical Committee final report to the North Pacific Fisheries Management Council, December 5th - 7th, 2022. Anchorage, Alaska.
+
+O'Connell, V.M. 1987. Reproductive seasons for some *Sebastes* species in Southeastern Alaska. Alaska Department of Fish and Game Information Leaflet 263: 21 p.
+
+O’Connell, V.M. and C.K. Brylinsky. 2003. The Southeast Alaska demersal shelf rockfish fishery with 2004 season outlook. Alaska Department of Fish and Game Regional Information Report No. 1J03-43.
+
+O’Connell, V.M. and D.W. Carlile. 1993. Habitat-specific density of adult yelloweye rockfish *Sebastes ruberrimus* in the eastern Gulf of Alaska. Fish Bull 91:304-309.
+
+O'Connell, V.M. 1987. Reproductive seasons for some *Sebastes* species in Southeastern Alaska. Alaska Department of Fish and Game Information Leaflet 263: 21 pp. 
+
+O'Connell, V.M., and F.C. Funk. 1987. Age and growth of yelloweye rockfish (*Sebastes ruberrimus*) landed in southeastern Alaska. In Proceedings of the International Rockfish Symposium, Anchorage, Alaska, USA, October 20-22, 1986, No. 87, p. 171. University of Alaska.
+
+Omori, K.L., and J.T. Thorson. 2022. Identifying species complexes based on spatial and temporal clustering from joint dynamic species distribution models. ICES Journal of Marine Science 79:677-688.
+
+Omori, K.L., C.A. Tribuzio, E.A. Babcock, and J.M. Hoenig. 2021. Methods for identifying species complexes using a novel suite of multivariate approaches and multiple data sources: a case study with Gulf of Alaska rockfish. Frontiers in Marine Science 8:663375.
+
+Omori, K.L., C.A. Tribuzio, and B. Ferriss. 2023. Assessment of the Other Rockfish stock complex in the Gulf of Alaska. North Pacific Fishery Management Council, Anchorage, AK. 
+
+Ono, K. 2023. Independent peer review report on the Gulf of Alaska demersal shelf rockfish assessment. Prepared for the Center for Independent Experts. 
+
+Planas, J. 2024. International Pacific Halibut Commission. Presentation at the Technical Subcommittee of the Canada-U.S. Groundfish Committee meeting, 17-18 April, 2024. 
+
+R Core Team. 2024. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/
+
+Rogers, L., and K. Axler. 2023. Larval fish abundance in the Gulf of Alaska 1981-2023. In Ferriss, B., 2023. Ecosystem Status Report 2023: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Siegle, M.R., E.B. Taylor, K.M. Miller, R.E. Withler, K.L. Yamanaka. 2013. Subtle population genetic structure in yelloweye rockfish (*Sebastes ruberrimus*) is consistent with a major oceanographic division in British Columbia, Canada. PLoS ONE 8(8): e71083. 
+
+Spencer, P.D. and C.N. Rooper. 2016. Assessment of blackspotted and rougheye rockfish stock complex in the Bering Sea/Aleutian Islands. Chapter 13 in 2016 Stock Assessment and Fishery Evaluation Report for 2017. North Pacific Fishery Management Council, Anchorage, AK.
+
+Stokes, K. 2023. Report on the independent peer review of Gulf of Alaska demersal shelf rockfish assessment. Prepared for the Center for Independent Experts. 
+
+Sullivan, J., C.A. Tribuzio, and K.B. Echave. 2022a. A review of available life history data and updated estimates of natural mortality for several rockfish species in Alaska. NOAA Technical Memorandum NMFS-AFSC-443.
+
+Sullivan, J., C. Monnahan, P. Hulson, J. Ianelli, J. Thorson, and A. Havron. 2022b. REMA: a consensus version of the random effects model for ABC apportionment and Tier 4/5 assessments. Plan Team Report, Joint Groundfish Plan Teams, North Pacific Fishery Management Council. 605 W 4th Ave, Suite 306 Anchorage, AK 99501. https://meetings.npfmc.org/CommentReview/ DownloadFile?p=eaa760cf-8a4e-4c05-aa98- 82615da1982a.pdf&fileName=Tier%204 _5%20Random%20Effects.pdf
+
+Thomas, L., S.T. Buckland, E.A. Rexstad, J.L. Laake, S. Strindberg, S.L. Hedley, J.R.B. Bishop, T.A. Marques, and K.P. Burnham. 2010. Distance software: design and analysis of distance sampling surveys for estimating population size. Journal of Applied Ecology 47: 5-14. 
+ 
+Tribuzio C.A., K.B. Echave, B. Williams, and A. Olson. 2017. Reclassifying Other Rockfish and Demersel Shelf Rockfish species groupings. GOA Other Rockfish/Demersal Shelf Rockfish Spatial Management Paper, draft for Plan Team review. North Pacific Fishery Management Council, Anchorage, AK.
+ 
+Turek, M., N. Ratner, W.E. Simeone, and D.L. Holen. 2009. Subsistence harvests and local knowledge of rockfish *Sebastes* in four Alaskan communities; Final report to the North Pacific Research Board. Alaska Department of Fish and Game, Division of Subsistence Technical Paper No. 337, Juneau.
+
+Tydingco, T., K. Reppert, C. Schwanke, D.J. Teske, D.C. Love, and J. Nichols. 2021. Overview of the sport fisheries for groundfish and shellfish in Southeast Alaska through 2020: a report to the Alaska Board of Fisheries. Alaska Department of Fish and Game, Special Publication No. 21-12, Anchorage.
+
+Wall, J., R. French, R. Nelson, Jr., and D. Hennick. 1978. Data from the observations of foreign fishing fleets in the Gulf of Alaska, 1977. (Document submitted to the International North Pacific Fisheries Commission by the U.S. National Section.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Wall, J., R. French, and R. Nelson, Jr. 1979. Observations of foreign fishing fleets in the Gulf of Alaska, 1978. (Document submitted to the International North Pacific Fisheries Commission by the U.S. National Section.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Wall, J., R. French, and R. Nelson, Jr. 1980. Observations of foreign fishing fleets in the Gulf of Alaska, 1979. (Document submitted to the annual meeting of the International North Pacific Fisheries Commission, Anchorage, Alaska, September 1980.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Wall, J., R. French, and R. Nelson, Jr. 1981. Observations of foreign fishing fleets in the Gulf of Alaska, 1980. (Document submitted to the annual meeting of the International North Pacific Fisheries Commission, Vancouver, B. C., Canada, September 1981.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Wall, J., R. Nelson Jr., and J. Berger. 1982. Observations of foreign fishing fleets in the Gulf of Alaska, 1981. (Document submitted to the annual meeting of the International North Pacific Fisheries Commission, Vancouver, B. C., Canada, October 1982.) Northwest and Alaska Fisheries Center, National Marine Fish. Serv., NOAA, 2725 Montlake Blvd. E., Seattle, WA 98112.
+
+Webster, R. 2021. IPHC Fishery-Independent Setline Survey (FISS) and commercial data modelling. IPHC-2021-SRB019-05. URL: https://www.iphc.int/uploads/pdf/srb/srb019/iphc-2021-srb019-05.pdf.
+
+Whelan, S. 2024. Seabird synthesis: Institute for Seabird Research and Conservation Data. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Whitehouse, A. and S. Gaichas. 2023. Time Trends in Non-Target Species Catch. In Ferriss, B., 2023. Ecosystem Status Report 2023: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Whitehouse, A. 2024. Trends in Alaska Commercial Salmon Catch—Gulf of Alaska. In Ferriss, B., 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 1007 West Third, Suite 400, Anchorage, Alaska 99501.
+
+Wood, K., R. Ehresmann, P. Joy, and M. Jaenike. 2021. Assessment of the demersal shelf rockfish stock for 2022 in the Southeast Outside district of the Gulf of Alaska. Chapter 14 in 2021 Stock Assessment and Fishery Evaluation Report for 2022. North Pacific Fishery Management Council, Anchorage, AK.
+
+Wood, S. 2017. Generalized Additive Models: An Introduction with R, 2 edition. Chapman and Hall/CRC.
+
+Worton, C. 2024. ADF&G Gulf of Alaska trawl survey. In Ferriss, B. and S. Zador, 2024. Ecosystem Status Report 2024: Gulf of Alaska, Stock Assessment and Fishery Evaluation Report, North Pacific Fishery Management Council, 605 W 4th Ave, Suite 306, Anchorage, AK 99501.
+
+Yoklavich, M., G. Cailliet, R.N. Lea, H.G. Greene, R. Starr, J.D. Marignac, and J. Field. 2002. Deepwater habitat and fish resources associated with the Big Creek Marine Ecological Reserve. CalCOFI (California Cooperative Oceanic Fisheries Investigations), Rep. 43: 120-140. Available at https://www.calcofi.org/ccpublications/ccreports/calcofi-reports-toc/181-crtoc-vol-43-2002.html.
+
+
+\clearpage
+
+# Tables {-}
+
+\clearpage
+
+\blandscape
+
+```{r dockside-wts, results = "asis"}
+
+df <- dockside.wts.2 %>%
+  select(-c(GFMU.x, var.weight.x, GFMU.y, var.weight.y, GFMU.x.x, var.weight.x.x, GFMU.y.y, var.weight.y.y)) %>%
+  mutate(across(where(is.numeric), ~na_if(., 0)))
+
+names(df) <- c("Year", "Average weight", "SD", "# YE", "Average weight", "SD", "# YE", "Average weight", "SD", "# YE", "Average weight", "SD", "# YE")
+
+tab <- xtable(df, caption = "The dockside average weight (kg), standard deviation of weights, and number sampled for yelloweye rockfish from East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections of the Southeast Outside (SEO) Subdistrict of the Gulf of Alaska, 1984–September 2024. The commercial directed demersal shelf rockfish (DSR) fishery was closed to harvest in all management areas for 2020-2024; average weights, if available, were obtained from bycatch in the halibut fishery.", label = "tab:dockside-wts", digits = c(0,0,2,2,0,2,2,0,2,2,0,2,2,0))
+
+addtorow <- list()
+addtorow$pos <- list(-1)
+addtorow$command <- paste0(paste0('\\multicolumn{1}{c}{} &
+                                  \\multicolumn{3}{c}{EYKT} &
+                                  \\multicolumn{3}{c}{NSEO} &
+                                  \\multicolumn{3}{c}{CSEO} &
+                                  \\multicolumn{3}{c}{SSEO} ', collapse=''), '\\\\')
+
+
+#print(tab, caption.placement = "top", include.rownames = FALSE, add.to.row=addtorow, include.colnames=F, booktabs = TRUE)
+print(tab, caption.placement = "top", include.rownames = FALSE, add.to.row=addtorow, size="\\fontsize{9pt}{10pt}\\selectfont", booktabs = TRUE, NA.string = "-")
+#print(tab, caption.placement = "top", include.rownames = FALSE, add.to.row=addtorow)
+
+
+#%>%
+  #add_row(Year = NA, mean.weight.kg.x = "Average weight", sd.weight.x = "SD", no.YE.x = "# YE", mean.weight.kg.y = "Average weight", sd.weight.y = "SD", no.YE.y = "# YE", mean.weight.kg.x.x = "Average weight", sd.weight.x.x = "SD", no.YE.x.x = "# YE", mean.weight.kg.y.y = "Average weight", #sd.weight.y.y = "SD", no.YE.y.y = "# YE", .before = 1)
+
+```
+
+\elandscape
+
+\clearpage
+
+\blandscape
+
+```{r total-catch, results = "asis"}
+
+df <- seo.harvest
+
+tab <- xtable(df, caption = "Catch (t) of demersal shelf rockfish (DSR) from research, directed commercial, incidental commercial, estimated unreported discards from the halibut fishery, foreign fleet, recreational, subsistence, and total catch from all fisheries in the Southeast Outside (SEO) Subdistrict; allowable biological catch (ABC); overfishing level (OFL); and total allowable catch (TAC) for 1992–2024. Commercial catch data from the ADF\\&G fish ticket database are updated through 29 October 2024. Commercial catch includes redbanded rockfish from 1992–1996 and also include discards at sea/at the dock and catch retained for personal use. The directed commercial DSR fishery was closed to harvest in SEO in 2006, 2007, and 2020-2024. Recreational harvest is preliminary for 2022-2024. Recreational harvest for 1992–1998 comes from Table 1 in Chadwick et al. 2017; recreational harvest for 1999–2024 includes retained harvest plus estimated release mortality discard. Subsistence catch is projected for the fishery year; these data were not available or deducted from the ABC prior to 2009. Harvest interviews have not been conducted since 2015 but were estimated for all years to account for subsistence harvest that occurred. The 1993 ABC is for CSEO, NSEO, and SSEO only (not EYKT). Total commercial catch is calculated as the sum of directed commercial catch, incidental commercial catch, and estimated unreported discards from the longline halibut fishery.", label = "tab:total-catch", digits = 0, align=c(
+               "R{0.05cm}",
+               "R{0.7cm}",
+               "R{1.4cm}",
+               "R{1.4cm}",
+               "R{1.55cm}",
+               "R{1.9cm}",
+               "R{2cm}",
+               "R{1.8cm}",
+               "R{1cm}",
+               "R{0.8cm}",
+               "R{0.8cm}",
+               "R{0.8cm}"))
+
+print(tab, caption.placement = "top", include.rownames = FALSE, size="\\fontsize{9pt}{10pt}\\selectfont", booktabs = TRUE)
+
+```
+
+\elandscape
+
+\clearpage
+
+\blandscape
+
+```{r iphc-cpue, results = "asis"}
+
+df <- iphc.cpue.2 %>%
+  select(-c(SEdist.x, SEdist.y, SEdist.x.x, SEdist.y.y)) %>%
+  arrange(Year)
+
+names(df) <- c("Year", "Mean", "CV", "No. stations", "Mean", "CV", "No. stations", "Mean", "CV", "No. stations", "Mean", "CV", "No. stations")
+
+tab <- xtable(df, caption = "Standardized mean catch per unit effort (CPUE) of yelloweye rockfish in kg per hook in the International Pacific Halibut Commission (IPHC) longline survey, the coefficient of variation (CV), and the number of survey stations included in the calculations for each of the four management areas in the Southeast Outside (SEO) Subdistrict: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections. The CPUE index was standardized using the Tweedie model to account for zero inflation. Only survey stations shallower than 250 fathoms (457 m) were included.", label = "tab:iphc-cpue", digits = c(0,0,2,2,0,2,2,0,2,2,0,2,2,0))
+
+addtorow <- list()
+addtorow$pos <- list(-1)
+addtorow$command <- paste0(paste0('\\multicolumn{1}{c}{} &
+                                  \\multicolumn{3}{c}{EYKT} &
+                                  \\multicolumn{3}{c}{NSEO} &
+                                  \\multicolumn{3}{c}{CSEO} &
+                                  \\multicolumn{3}{c}{SSEO} ', collapse=''), '\\\\')
+
+print(tab, caption.placement = "top", include.rownames = FALSE, add.to.row=addtorow, size="\\fontsize{9pt}{10pt}\\selectfont", booktabs = TRUE, NA.string = "-")
+
+```
+
+\elandscape
+
+
+```{r comm-land, results = "asis"}
+
+df <- comm.land
+
+names(df) <- c("Year", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024")
+
+tab <- xtable(df, caption = "Commercial landings (t) of demersal shelf rockfish (DSR) by species in Southeast Outside (SEO) Subdistrict, 2015–October 2024. Discards (at sea and at dock) and personal use are included. Commercial data from Alaska Department of Fish and Game fish tickets are updated through 29 October 2024.", label = "tab:comm-land", digits = c(0,0,2,2,2,2,2,2,2,2,2,2))
+
+print(tab, caption.placement = "top", include.rownames = FALSE, booktabs = T)
+
+```
+
+
+\clearpage
+
+\blandscape
+
+```{r wgcgwy-catch-specs, results = "asis"}
+
+wgcgwy.catch.specs <- read.csv(paste0(here::here(), "/REMA/doc/wgcgwy/Table_catch_specs.csv")) %>%
+  rename("GOA (W/C/WY)" = GOA..W.C.WY.)
+
+tab <- xtable(wgcgwy.catch.specs, caption = "Time series catch estimates (t) for the demersal shelf rockfish (DSR) complex in the WG/CG/WY area with acceptable biological catch (ABC), overfishing limits (OFL), and total allowable catch (TAC). Data queried through AKFIN on September 16, 2024.", label = "tab:wgcgwy-catch-specs")
+
+# print the table, then edit manually to add the multirow commands
+#print(tab, caption.placement = "top", include.rownames = FALSE, booktabs = T, sanitize.text.function = identity)
+
+```
+
+\begin{table}[ht]
+\centering
+\caption{Time series catch estimates (t) for the demersal shelf rockfish (DSR) complex with acceptable biological catch (ABC), overfishing limits (OFL), and total allowable catch (TAC). Data queried through AKFIN on September 16, 2024.} 
+\label{tab:wgcgwy-catch-specs}
+\begin{tabular}{rrrrrrrll}
+  \\ \toprule
+Year & WG & CG & WY & GOA (W/C/WY) & ABC & OFL & TAC & Management \\ 
+  \midrule
+1991 & 29 & 164 & 54 & 247 &  &  &  &  \\ 
+  1992 & 21 & 192 & 83 & 297 &  &  &  &  \\ 
+  1993 & 7 & 125 & 161 & 293 &  &  &  &  \\ 
+  1994 & 2 & 89 & 42 & 132 &  &  &  &  \\ 
+  1995 & 3 & 86 & 17 & 106 &  &  &  &  \\ 
+  1996 & 6 & 82 & 15 & 103 &  &  &  &  \\ 
+  1997 & 8 & 110 & 15 & 132 &  &  &  &  \\ 
+  1998 & 8 & 140 & 18 & 166 &  &  &  &  \\ 
+  1999 & 10 & 98 & 31 & 140 &  &  &  & \multirow[t]{2}{*}{\parbox{11cm}{Trawling prohibited in east of 140°W long.; EGOA split into West Yakutat and East Yakutat/Southeast Outside}} \\ 
+  & & & & & & & & \\
+  2000 & 7 & 51 & 49 & 107 &  &  &  &  \\ 
+  2001 & 14 & 61 & 47 & 122 &  &  &  &  \\ 
+  2002 & 14 & 70 & 10 & 94 &  &  &  &  \\ 
+  2003 & 31 & 84 & 110 & 225 &  &  &  &  \\ 
+  2004 & 36 & 60 & 17 & 113 &  &  &  &  \\ 
+  2005 & 19 & 56 & 10 & 84 &  &  &  &  \\ 
+  2006 & 26 & 60 & 24 & 110 &  &  &  &  \\ 
+  2007 & 21 & 80 & 27 & 128 &  &  &  &  \\ 
+  2008 & 35 & 108 & 25 & 168 &  &  &  &  \\ 
+  2009 & 34 & 89 & 26 & 148 &  &  &  &  \\ 
+  2010 & 44 & 136 & 41 & 221 &  &  &  &  \\ 
+  2011 & 60 & 141 & 35 & 236 &  &  &  &  \\ 
+  2012 & 44 & 121 & 16 & 181 &  &  &  &  \\ 
+  2013 & 58 & 132 & 41 & 231 &  &  &  & \multirow{2}{*}{\parbox{11cm}{DSR species added to the Other Rockfish stock complex in WGOA, CGOA, and West Yakutat}} \\ 
+  & & & & & & & & \\
+  2014 & 46 & 109 & 24 & 179 &  &  &  &  \\ 
+  2015 & 49 & 140 & 21 & 211 &  &  &  &  \\ 
+  2016 & 29 & 152 & 13 & 194 &  &  &  &  \\ 
+  2017 & 83 & 118 & 12 & 213 &  &  &  &  \\ 
+  2018 & 23 & 85 & 67 & 176 &  &  &  &  \\ 
+  2019 & 47 & 84 & 25 & 156 &  &  &  &  \\ 
+  2020 & 23 & 68 & 23 & 115 &  &  &  &  \\ 
+  2021 & 27 & 144 & 30 & 201 &  &  &  &  \\ 
+  2022 & 55 & 191 & 40 & 286 &  &  &  &  \\ 
+  2023 & 61 & 178 & 49 & 287 &  &  &  &  \\ 
+  2024 & 15 & 113 & 40 & 169 &  &  &  &  \\ 
+  2025 &  &  &  &  & 271 & 360 &  & Remove DSR from Other Rockfish into a single GOA-wide DSR assessment \\ 
+   \bottomrule
+\end{tabular}
+\end{table}
+
+\elandscape
+
+```{r foreign-catch, results = "asis"}
+
+for.catch <- read.csv(paste0(here::here(), "/Data_processing/Data/YERF_Foreign_reconstruction.csv")) %>%
+  select(c(Year, RF_harvest_GOA, RF_excPOP_harvest_GOA, YERF_harvest_GOA, YERF_Southeastern)) %>%
+  mutate(Year = factor(Year)) %>%
+  mutate(across(where(is.numeric), ~ format(., big.mark = ",", scientific = F))) %>%
+  rowwise() %>%
+  mutate_all(~str_squish(.)) %>%
+  ungroup() %>%
+  mutate(across(where(is.character), ~replace(., . == "0.00", "NF"))) %>%
+  rename("All rockfish incl. POP" = "RF_harvest_GOA", "All rockfish excl. POP" = "RF_excPOP_harvest_GOA", "Gulfwide Yelloweye" = "YERF_harvest_GOA", "Southeastern Yelloweye" = "YERF_Southeastern")
+
+tab <- xtable(for.catch, caption = "Reported foreign catches (mt) in the Gulf of Alaska groundfish fishery, 1960–1987. POP = Pacific ocean perch; NF = no foreign fishing; NA = not available. Sources: Berger et al. 1984, 1985, 1987, 1988; Berger and Weikart 1988; Forrester et al. 1978, 1983; Nelson et al. 1983; Wall et al. 1978, 1979, 1980, 1981, 1982. ", label = "tab:foreign-catch")
+print(tab, caption.placement = "top", include.rownames = FALSE)
+
+```
+
+```{r wgcgwy-pws, results = "asis"}
+
+wgcgwy.pws <- read.csv(paste0(here::here(), "/REMA/doc/wgcgwy/Table_catch_PWS.csv")) %>%
+  rename("DSR catch" = PWI)
+
+tab <- xtable(wgcgwy.pws, caption = "Estimated catch (t) of demersal shelf rockfish (DSR) from federally managed fisheries occurring in Prince William Sound (PWS, NMFS Area 649). Data queried through AKFIN on September 16, 2024.", label = "tab:wgcgwy-pws", digits = c(0,0,0))
+
+print(tab, caption.placement = "top", include.rownames = FALSE, booktabs = T, sanitize.text.function = identity)
+
+```
+
+
+```{r wgcgwy-discard, results = "asis"}
+
+wgcgwy.discard <- read.csv(paste0(here::here(), "/REMA/doc/wgcgwy/Table_discard_rate.csv")) 
+
+tab <- xtable(wgcgwy.discard, caption = "Proportion discarded by main gear types, trawl and fixed (hook-and-line, jig, and pot), and total for the demersal shelf rockfish (DSR) stock complex in the WG/CG/WY area.", label = "tab:wgcgwy-discard")
+print(tab, caption.placement = "top", include.rownames = FALSE, booktabs = T, sanitize.text.function = identity)
+
+```
+
+\clearpage
+
+\blandscape
+
+```{r sub-dat, results = "asis"}
+
+sub.dat <- read.csv(paste0(here::here(), "/Data_processing/Data/seo_dsr_density_summary_stats.csv")) 
+
+df <- sub.dat %>%
+  rename("No. transects" = Number.transects, "No. YE" = Number.YE, "M surveyed" = Meters.surveyed, "Encounter rate (YE/m)" = Encounter.rate..YE.m., "Density (YE/km\\textsuperscript{2})" = Density_YE_km2, "Lower CI (YE/km\\textsuperscript{2})" = Lower.CI, "Upper CI (YE/km\\textsuperscript{2})" = Upper.CI)
+
+tab <- xtable(df, caption = "Submersible (1994, 1995, 1997, 1999, 2003, 2005, 2007, 2009) and remotely operated vehicle (ROV) (2012, 2013, 2015–2020, 2022, 2023) yelloweye rockfish (YE) density estimates with 95 percent confidence intervals (CI) and coefficient of variation (CV) by year and Southeast Outside (SEO) Subdistrict management unit: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO). YE encounter rates and the number of transects, YE, and meters surveyed are shown. Estimates for the EYKT management unit include only the Fairweather Grounds, which is composed of a west and an east bank. In 1997, only 2 of 20 transects - and in 1999, no transects - were performed on the east bank. In other years, transects were performed on both the east and west bank. Subadult and adult YE were included in the analyses to estimate density. A few small subadult YE were excluded from the 2012 and 2015 estimates based on size; length data were only available for the ROV surveys (not submersible surveys). Data were truncated at large distances for some years; as a consequence, the number of YE included in the estimates does not necessarily equal the total number of YE observed on the transects. Only a side-facing camera was used in 1994 to video record fish. The forward-facing camera was added after 1994, which ensures that fish are observed on the transect line. 
+", label = "tab:sub-dat", digits = c(0,0,0,0,0,0,3,0,0,0,2))
+
+print(tab, caption.placement = "top", include.rownames = FALSE, hline.after = c(-1,0,9, 18, 22,28), sanitize.text.function = identity, booktabs = T)
+
+```
+
+
+\clearpage
+
+```{r gam-results, results = "asis"}
+
+tab <- xtable(gam, caption = "Comparison of general additive models (GAMs) evaluated for standardizing International Pacific Halibut Commission (IPHC) survey catch per unit effort (CPUE; kg per hook) data. All models included a term for the interaction between year and Southeast Outside (SEO) management unit in order to produce standardized CPUE estimates by year and management unit. The model with the highest deviance explained and lowest AIC value was used to estimate the standardized CPUE index used in model 22.2.", label = "tab:gam-results", digits = c(0,0,1,3,3))
+print(tab, caption.placement = "top", include.rownames = FALSE, booktabs = T, sanitize.text.function = identity)
+
+```
+
+\elandscape
+
+```{r catch-tier6, results = "asis"}
+
+species <- c("Canary rockfish", "China rockfish", "Copper rockfish", "Quillback rockfish", "Rosethorn rockfish", "Tiger rockfish", "Sum Tier 6 (t)")
+sciname <- c("S. pinniger", "S. nebulosus", "S. caurinus", "S. maliger", "S. helvomaculatus", "S. nigrocinctus", "")
+maxcatch <- c(5.6, 1.4, 4.4, 13.9, 0.0, 0.8, NA)
+oflt <- c(5.6, 1.4, 4.4, 13.9, 0.0, 0.8, 26.1)
+abct <- c(4.2, 1.1, 3.3, 10.4, 0.0, 0.6, 19.6)
+df <- data.frame(species, sciname, maxcatch, oflt, abct)
+names(df) <- c("Species", "Scientific name", "Max catch (t) 2010-2014", "OFL (t)", "ABC (t)")
+df$`Scientific name` <- paste0("\\textit{", df$`Scientific name`, "}") 
+tab <- xtable(df, caption = "Catch data for Tier 6 calculations for non-yelloweye demersal shelf rockfish (DSR). These catch data represent, for each species, the highest year (maximum sum) of commercial, subsistence, and recreational catch during 2010–2014. The 2010–2014 time period is used because the three time series of catch data (commercial, recreational, and subsistence) overlap.", label = "tab:catch-tier6", digits = c(0,0,0,1,1,1))
+print(tab, caption.placement = "top", include.rownames = FALSE, hline.after = c(-1,0,6,7), booktabs = T, sanitize.text.function = identity)
+
+```
+
+```{r biom-est, results = "asis"}
+
+df <- biomass.pc %>%
+  select(year, pred, pred_lci, pred_uci, per_ch) %>%
+  mutate(year = factor(year), `Annual percent change` = case_when(
+    is.na(per_ch) == FALSE ~ paste0(round(per_ch*100, 1), "%"),
+    is.na(per_ch) == TRUE ~ "-"
+                                                                  )) %>%
+  select(-per_ch) %>%
+  mutate(across(where(is.numeric), ~ format(., big.mark = ",", scientific = F, digits = 1))) %>%
+  rename("Year" = "year", "Biomass (t)" = "pred", "Lower 95% CI" = "pred_lci", "Upper 95% CI" = "pred_uci")
+tab <- xtable(df, caption = "Yelloweye rockfish biomass estimates from model 22.2.", label = "tab:biom-est")
+print(tab, caption.placement = "top", include.rownames = FALSE)
+
+```
+
+
+\clearpage
+
+# Figures {-}
+
+\clearpage
+
+```{r seo-map, fig.align = "center", fig.cap = "The Southeast Outside (SEO) Subdistrict of the Gulf of Alaska with the Alaska Department of Fish and Game groundfish management areas used for managing the demersal shelf rockfish (DSR) fishery: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections.", out.width="100%", out.height="100%"}
+
+knitr::include_graphics("Figures/2024/seomap.png", dpi = 375)
+```
+
+```{r dsr-comm-catch, fig.align = "center", fig.cap = "Directed commercial demersal shelf rockfish (DSR) fishery catch (t) in the Southeast Outside (SEO) Subdistrict groundfish management areas: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections, 1992–2019. The directed commercial fishery was closed in SEO in 2006 and 2007 and has been closed since 2020.", out.width="90%", out.height="90%"}
+
+knitr::include_graphics("Figures/2024/directed_fig_2024.png", dpi = 375)
+```
+
+
+```{r dsr-comm-inccatch, fig.align = "center", fig.cap = "Incidental commercial fishery catch (t) of demersal shelf rockfish (DSR) in the halibut, sablefish, lingcod, Pacific cod, miscellaneous finfish, and salmon fisheries in 1992–2024 for Southeast Outside (SEO) Subdistrict groundfish management units: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections. Harvest designated 'SEO' could not be assigned to a management unit due to fish ticket data limitations.", out.width="90%", out.height="90%"}
+
+knitr::include_graphics("Figures/2024/bycatch_fig_2024.png", dpi = 375)
+```
+
+
+```{r dsr-catch-sector, fig.align = "center", fig.cap = "Demersal shelf rockfish (DSR) catch (t) by fishery type: commercial (directed, incidental, and estimated unreported discards from the halibut longline fishery), recreational, research, and subsistence for the Southeast Outside (SEO) Subdistrict, 1992–2024. The directed commercial fishery was closed in SEO in 2006 and 2007 and has been closed since 2020. The recreational fishery was closed to the retention of DSR in all Southeast Alaska management areas in 2020 and 2021; however, 2020 and 2021 recreational fishery catch include the estimated release mortality.", out.width="90%", out.height="90%"}
+
+knitr::include_graphics("Figures/2024/sector_fig_2024.png", dpi = 375)
+```
+
+
+```{r tac-catch, fig.align = "center", fig.cap = "Demersal shelf rockfish (DSR) catch guidelines: overfishing level (OFL), allowable biological catch (ABC), total allowable catch (TAC), and total catch for the Southeast Outside (SEO) Subdistrict, 1992–2024. The directed commercial fishery was closed in SEO in 2006 and 2007 and has been closed since 2020. The recreational fishery was closed to the retention of DSR in all Southeast Alaska management areas in 2020 and 2021; however, 2020 and 2021 recreational fishery catches include the estimated release mortality. Points for 2025 represent the OFL (red asterisk), maxABC (green asterisk), and recommended ABC (green X) from this assessment.", out.width="90%", out.height="90%"}
+
+knitr::include_graphics("Figures/2024/catchlimits_fig_2024_withABC_labels.png", dpi = 375)
+```
+
+
+```{r wgcgwy-dsr-catch, fig.align = "center", fig.cap = "Estimated catch (t) of demersal shelf rockfish (DSR) in the Gulf of Alaska by area (Western GOA, Central GOA, and West Yakutat) and combined WG/CG/WY area by (A) main gear types (trawl and fixed gear [hook-and-line, jig, pot]) and (B) proportion of main species caught. Data queried through September 16, 2024."}
+
+knitr::include_graphics("Figures/2024/Fig_Fishery_Catch_area_gear_spcomp.png", dpi = 375)
+```
+
+```{r dyrh, fig.align = "center", fig.cap = "The designated yelloweye rockfish habitat (DYRH; yellow hatching) and example dive locations (black circles) for remotely operated vehicle (ROV) surveys in the Southeast Outside (SEO) Subdistrict of the Gulf of Alaska.", out.height="100%", out.width="100%"}
+
+knitr::include_graphics("Figures/2024/dyrh.png", dpi = 375)
+```
+
+\clearpage
+
+```{r cpue-index-compare, fig.align = "center", fig.cap = "Raw versus standardized catch per unit effort (CPUE) indices derived from the International Pacific Halibut Commission (IPHC) 1998-2023 survey data by Southeast Outside (SEO) management unit. The standardized index was included in model 22.2.", out.width="100%", out.height="100%"}
+
+knitr::include_graphics("Figures/2024/IPHC_cpue_tweedie_boot_comp_rke_2024.png", dpi = 375)
+```
+
+
+\clearpage
+
+```{r lcomp-cseo, fig.align = "center", fig.cap = "Yelloweye rockfish length compositions sampled in the Central Southeast Outside (CSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021, 2022, 2023 and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/CSEO_ridgelabeled_lengthcomp_byyear.png", dpi = 375)
+```
+
+
+```{r lcomp-eykt, fig.align = "center", fig.cap = "Yelloweye rockfish length compositions sampled in the East Yakutat (EYKT) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021, 2022, 2023, and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/EYKT_ridgelabeled_lengthcomp_byyear.png", dpi = 375)
+```
+
+
+```{r lcomp-nseo, fig.align = "center", fig.cap = "Yelloweye rockfish length compositions sampled in the Northern Southeast Outside (NSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery in NSEO has been closed since 1994, and fishery biological data in recent years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/NSEO_ridgelabeled_lengthcomp_byyear.png", dpi = 375)
+```
+
+
+```{r lcomp-sseo, fig.align = "center", fig.cap = "Yelloweye rockfish length compositions sampled in the Southern Southeast Outside (SSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021 2022, 2023, and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/SSEO_ridgelabeled_lengthcomp_byyear.png", dpi = 375)
+```
+
+
+```{r acomp-cseo, fig.align = "center", fig.cap = "Yelloweye rockfish age compositions sampled in the Central Southeast Outside (CSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021, 2022, 2023 and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/CSEO_bubble_agecomp_byyear.png", dpi = 375)
+```
+
+
+```{r acomp-eykt, fig.align = "center", fig.cap = "Yelloweye rockfish age compositions sampled in the East Yakutat (EYKT) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021, 2022, 2023, and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/EYKT_bubble_agecomp_byyear.png", dpi = 375)
+```
+
+
+```{r acomp-nseo, fig.align = "center", fig.cap = "Yelloweye rockfish age compositions sampled in the Northern Southeast Outside (NSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery in NSEO has been closed since 1994, and fishery biological data in recent years are from halibut incidental fisheries, when available."}
+
+knitr::include_graphics("Figures/2024/NSEO_bubble_agecomp_byyear.png", dpi = 375)
+```
+
+
+```{r acomp-sseo, fig.align = "center", fig.cap = "Yelloweye rockfish age compositions sampled in the Southern Southeast Outside (SSEO) Section obtained from directed and incidental catch, 1988–2024. The directed commercial demersal shelf rockfish (DSR) fishery was closed in 2006, 2007, 2020, 2021 2022, 2023, and 2024 and fishery biological data from these years are from halibut incidental fisheries, when available.  The number of samples in each year are presented next to the density plots."}
+
+knitr::include_graphics("Figures/2024/SSEO_bubble_agecomp_byyear.png", dpi = 375)
+```
+
+\clearpage
+
+```{r survey-fit-adfg, fig.align = "center", fig.cap = "Model 22.2 fits to the Alaska Department of Fish and Game (ADFG) submersible and remotely operated vehicle (ROV) survey yelloweye rockfish biomass estimates by management unit.", out.height="100%", out.width="100%"}
+
+knitr::include_graphics("Figures/2024/adfg_survey_fits_22_2.png", dpi = 375)
+```
+
+
+\clearpage
+
+```{r survey-fit-iphc, fig.align = "center", fig.cap = "Model 22.2 fits to the International Pacific Halibut Commission (IPHC) longline survey standardized catch per unit effort (CPUE) index by management unit.", out.height="100%", out.width="100%"}
+
+knitr::include_graphics("Figures/2024/iphc_survey_fits_22_2.png", dpi = 375)
+```
+
+
+\clearpage
+
+
+```{r stand-ind, fig.align = "center", fig.cap = "Standardized biomass index from the Alaska Department of Fish and Game (ADF\\&G) survey compared to standardized catch per unit effort (CPUE) index from the International Pacific Halibut Commission (IPHC) survey. Indices are z-score standardized to allow for visual comparison. The dashed horizontal line represents the mean.", out.height="100%", out.width="100%"}
+
+knitr::include_graphics("Figures/2024/stand_indices.png", dpi = 375)
+```
+
+\clearpage
+
+```{r total-biom, fig.align = "center", fig.cap = "Total estimated biomass of yelloweye rockfish in the Southeast Outside (SEO) Subdistrict of the Gulf of Alaska as determined using the two-survey random effects (REMA) model 22.2 fit to the Alaska Department of Fish and Game (ADF\\&G) remotely operated vehicle (ROV) survey biomass and standardized International Pacific Halibut Commission (IPHC) survey catch per unit effort (CPUE; kg per hook). The shaded region represents the 95% confidence interval around the predictions from the REMA model.", out.width="100%", out.height="100%"}
+
+knitr::include_graphics("Figures/2024/est_biomass_22_2.png", dpi = 375)
+```
+
+
+```{r comp-biom, fig.align = "center", fig.cap = "Estimated Southeast Outside (SEO) yelloweye rockfish biomass trajectories for model 22.2 from the 2022 assessment (green) and from the current year's assessment (blue). Changes in data inputs for the 2024 assessment include the addition of 2022 NSEO and 2023 EYKT Alaska Department of Fish and Game (ADF\\&G) survey data, as well as 2022 and 2023 International Pacific Halibut Commission (IPHC) survey data. The ADF\\&G survey biomass index was calculated using the same methods as in 2022. For 2024, the IPHC survey CPUE index was calculated in kg per hook and was standardized using a general additive model (GAM) with the Tweedie distribution to account for zero-inflation in the time series. In 2022, the IPHC survey CPUE index was calculated by averaging CPUE in numbers per hook across stations, with the CV calculated by bootstrapping across stations.", out.height="100%", out.width="100%"}
+
+knitr::include_graphics("Figures/2024/est_biomass_compare.png", dpi = 375)
+```
+
+
+
+
+```{r ye-habitat, fig.align = "center", fig.cap = "The designated yelloweye rockfish habitat (DYRH; yellow hatching) and example dive locations (black circles) for remotely operated vehicle (ROV) surveys in the Southeast Outside Subdistrict (SEO) of the Gulf of Alaska."}
+
+#knitr::include_graphics("Figures/2024/seomap.png", dpi = 375)
+```
+
+
+
+```{r ye-dens, fig.align = "center", fig.cap = "Estimates of yelloweye rockfish density in four management areas in the Southeast Outside (SEO) Subdistrict of the Gulf of Alaska: East Yakutat (EYKT), Northern Southeast Outside (NSEO), Central Southeast Outside (CSEO), and Southern Southeast Outside (SSEO) Sections, 1994–2023 as derived from submersible and ROV surveys and distance sampling methods.  Error bars represent 95% confidence intervals."}
+
+#knitr::include_graphics("Figures/2024/seomap.png", dpi = 375)
+```
+
+
