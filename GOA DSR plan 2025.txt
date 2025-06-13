@@ -1,0 +1,44 @@
+GOA DSR plan 2025
+
+
+Data input preparation
+
+- halibut reconstruction for bycatch - Cindy's method, look into this - Laura and Spencer work together on this
+- biological data: Phil's code, creates figures in SAFE - Laura will do this
+- catch (non-halibut): waiting on sportfish data for figures - Laura will do this
+- IPHC survey data: download 2024 FISS data, process data, standardize index - Spencer and Caitlin
+
+Model runs
+
+- bridging analysis
+
+Text preparation
+
+- get WG/CG/WY info (figures, tables, text) from Kristin Omori
+
+
+
+Draft SAFE
+
+25 Aug: send draft SAFE to coauthors/internal reviewers for review
+
+1-4 Sept: revise draft SAFE according to reviews
+
+5 Sept: submit draft SAFE to post on GPT eAgenda
+
+8-12 Sept: finalize presentation; give practice presentation
+
+16-19 Sept: Groundfish Plan Teams
+
+
+Final SAFE
+
+20 Oct: send final SAFE to coauthors/internal reviewers for review
+
+27-30 Oct: revise final SAFE according to reviews
+
+31 Oct: submit final SAFE to post on GPT eAgenda
+
+3-7 Nov: finalize presentation; give practice presentation
+
+10-14 Nov: Groundfish Plan Teams
