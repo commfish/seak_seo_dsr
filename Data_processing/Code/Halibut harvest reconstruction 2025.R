@@ -21,12 +21,12 @@ YEAR<-2024
 
 #ADF&G FT Data last pulled 6/30/25 LSC
 
-##########################################################################################
+################################################################################
 ### IMPORT DATA ###
-##########################################################################################
+################################################################################
 
 
-## ADF&G Halibut fish Ticket Data ########################################################
+## ADF&G Halibut fish Ticket Data ##############################################
 
 ## Catch Data 1975-2020 - R output - I don't know what code this originally comes from.
 HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T) %>% 
@@ -35,24 +35,35 @@ HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.cs
          gear = gear.description,
          ha.mt = ha.lbs*0.00045359,
          source = "old") %>%
+  ## Since I don't know where this output comes from, I'm going to exclude the years
+  ## that are readily available in OceanAK (output for most accurate harvest) see below 
+  ## "HA.Harv.update"
+  filter(Year < 2007, gear == "Longline", !ha.mt == 0) %>% 
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source)
 
-unique(HA.Harv$Mgt.Area)
+lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
+#This output includes all other fisheries and inside waters. It's interesting that 
+#salmon fisheries are coded as longline...that doesn't seem correct.
 
 ## Catch Data 2021-Current Year
-## https://oceanak.adfg.alaska.gov/analytics/saw.dll?PortalGo&Action=prompt&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202021%20-%20present
-## This OceanAK report originally (Halibut harvest SEO in fish ticket data 2007-2022) 
-## had data from 2007-2022 but I changed the the report to include all years 
-## >= 2021 to avoid overlap with HA.Harv. I also added NSEI and SSEI because the HA.Harv has inside waters
+
+## https://oceanak.adfg.alaska.gov/analytics/saw.dll?PortalGo&Action=prompt&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007%20-%20present 
+## OceanAK report originally (Halibut harvest SEO in fish ticket data 2007-2022) 
+## excluded inside waters and included only halibut trips (B permits). I changed filters to match 
+## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish 
+## ticket data 2007 - present". Actoin Item: clean up OCeanAK folders with only the reports
+## we need.
 HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_6.30.25.csv") %>% 
   mutate(Year=DOL.Year,
          gear = Gear.Code.and.Name,
          ha.lbs = as.numeric(Whole.Weight..sum.),
          ha.mt = ha.lbs*0.00045359,
          fishery.code = CFEC.Fishery.Code,
-         source = "new",
-         Mgt.Area = Mgt.Area.District) %>% 
+         source = "new") %>% 
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source)
+
+lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
+#This output includes all other fisheries and inside waters
 
 #Data Check - combine the new and old HA harvest data
 temp<-rbind(HA.Harv,HA.Harv.update)
@@ -62,35 +73,55 @@ ggplot(temp,aes(Year,ha.mt,col=source)) +
   geom_line()+
   facet_wrap(~Mgt.Area)
 
-Halibut.harv.1975<-rbind(HA.Harv %>% 
+#Combine 1975-2006 to 2007-present ADF&G fish ticket data
+
+Halibut.harv.1977<-rbind(HA.Harv %>% 
                            filter(Year < min(HA.Harv.update$Year)),HA.Harv.update) %>%
+  #Limiting output to halibut fisheries - Action Item: Check with Spencer - do we want
+  #to include harvest from other fisheries to figure out the proportions?
+  #The data originally included other fisheries and went to 1975
+  filter(fishery.code %in% c("B05B","B060","B06B","B06Z","B06ZL","B09B","B25B",
+                             "B26B","B61B","B61ZL","B91B","BAKE","BO6B")) %>% 
   group_by(Year,Mgt.Area) %>% 
   summarise(HA.lbs = sum(ha.lbs), HA.mt = sum(ha.mt))
 
+lapply(Halibut.harv.1977[c("Year", "Mgt.Area")], unique)
+
 #SAVE this data for use in estimating historical bycatch
 
-write.csv(Halibut.harv.1975,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1975$Year),"-",
-                                   max(Halibut.harv.1975$Year),".csv"))
+write.csv(Halibut.harv.1977,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1977$Year),"-",
+                                   max(Halibut.harv.1977$Year),".csv"))
 
-## IPHC Survey Data #####################################################################
+## IPHC Fishery  ###############################################################
 
-## Halibut harvest from IPHC 1982 -2022; Data is available from: https://www.iphc.int/data/commercial-datasets 
+## Halibut harvest from IPHC for present year
+## Data is available from: https://www.iphc.int/data/commercial-datasets 
 ## and under "Pacific Halibut Directed Commercial Landings" download "IPHC Statistical 
 ## Area and Year - head-off, dressed weight; 1991-" with the net weight in lbs
 ## save it to the Data_processing/Data/Harvests/ folder and call it IPHC_harv_YEAR.csv
 ## The spreadsheet is heavily formatted so you'll need to do some cleaning to 
 ## get just the header row and the data for the most recent year.  This will then be
-## added to the sheet Randy came up with (HA.req) and then saved for next year 
-HA.req<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2022.csv")
+## added to the sheet Randy came up with (HA.req) and then saved for next year
 
-## Halibut harvest from IPHC 1929-1975; Data for 1975-1982 came from IPHC Scientific report 67 (Hoag et al. 1983)
-HA.29_75<-read.csv("Data_processing/Data/Harvests/IPHC_Halibut_harv_1929-1975.csv")
-unique(HA.29_75$Year)
+## 6.30.25 - could only find data til 2022 but this website can be difficult....
+## Action Item - get 2023 harvest data!!
+HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2022.csv")
+unique(HA.newreq$Year) #2022
+
+## Halibut harvest from IPHC for 1982 - 2021; Randy Peterson originally put in this
+## request 
+HA.req<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2021.csv")
+unique(HA.req$Year) #1982-2021
 
 ## Halibut harvest from IPHC 1975-1982; Data for 1929-1975 came from IPHC Technical report 14 (Myhre et al. 1977) 
 Ha.75_82<-read.csv("Data_processing/Data/Harvests/IPHC_Halibut_harv_1975-1982.csv")
+unique(Ha.75_82$Year) #1971-1982
 
-## Halibut by IPHC area from web source data; Data came via an IPHC data request (T. Khong and I. Stewart pers. comm.)
+## Halibut harvest from IPHC 1929-1975; Data for 1975-1982 came from IPHC Scientific report 67 (Hoag et al. 1983)
+HA.29_75<-read.csv("Data_processing/Data/Harvests/IPHC_Halibut_harv_1929-1975.csv")
+unique(HA.29_75$Year) #1929-1975
+
+## Halibut by IPHC area from web source data
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
 
 ################################################################################
@@ -117,10 +148,35 @@ HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1
 #         a) 2C partitioned into SEO and SEI - measure this PROPORTION (2Cprops)
 #         b) 3A to SEO from FISHTICKET data proportion - measure and apply (3A prop)
 
+## Stat areas are further subdivided into "inside/outside" or I/O areas when it 
+## was found that outside waters has a greater proportion of older fish an inside waters.
+IOs<-unique(HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>%
+              select(IPHC.Statistical.Area,IPHC.Stat.Area..1929.1975,IPHC.Region.2..1929.1975))
+
+HA.newreq <- HA.newreq %>% 
+  filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>% 
+  mutate(Net_lbs=Net.wt..lb./1000) %>%
+  select(Year,IPHC.Regulatory.Area,IPHC.Statistical.Area = IPHC..Statistical.Area,Net_lbs)
+
+HA.newreq <- join(HA.newreq,IOs,by="IPHC.Statistical.Area")
+
+head(HA.req)
+head(HA.newreq)
+
+HA.req<-rbind(HA.req %>% 
+                select(Year,
+                       IPHC.Regulatory.Area,
+                       IPHC.Statistical.Area,
+                       Net_lbs = Pacific.halibut.Net.wt..000.lbs.,
+                       IPHC.Stat.Area..1929.1975,
+                       IPHC.Region.2..1929.1975),
+              HA.newreq) %>% 
+  mutate(Net_lbs = as.numeric(Net_lbs))
+
 HA.req_2C_3A <- HA.req %>%
   filter(IPHC.Regulatory.Area %in% c("2C", "3A")) %>%
   group_by(IPHC.Regulatory.Area, Year, IPHC.Region.2..1929.1975) %>%
-  summarise(Halibut_lbs = sum(Pacific.halibut.Net.wt..000.lbs.), .groups = "drop") %>%
+  summarise(Halibut_lbs = sum(Net_lbs), .groups = "drop") %>%
   mutate(Halibut_mt = Halibut_lbs * 0.00045359 * 1000,
     IO = IPHC.Region.2..1929.1975) %>%
   select(Year, IPHC.regarea = IPHC.Regulatory.Area, IO, Halibut_lbs, Halibut_mt)
@@ -130,62 +186,69 @@ Hal.SPM<-data.frame()
 years<-unique(HA.req_2C_3A$Year) 
 i<-1
 for (y in years) {  #y<-years[1]
-  subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
+  subha<-Halibut.harv.1977[Halibut.harv.1977$Year == y,]
   req<-HA.req_2C_3A[HA.req_2C_3A$Year == y,]
   Hal.SPM[i,"Year"]<-y
-  Hal.SPM[i,"3A.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "3A"])
+  Hal.SPM[i,"3A.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "3A"]) # Total 3A halibut harvest (IPHC data)
   Hal.SPM[i,"3Ayak.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "3A" & 
-                                                req$IO == "Yakutat"])
-  Hal.SPM[i,"2C.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "2C"])
-  Hal.SPM[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"]
+                                                req$IO == "Yakutat"]) # Portion of 3A harvest attributed to Yakutat (IPHC data)
+  Hal.SPM[i,"2C.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "2C"]) # Total 2C harvest (IPHC data)
+  Hal.SPM[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"] # Total EYKT harvest (ADFG FT data)
   Hal.SPM[i,"SEO2C.tix"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |
                                             subha$Mgt.Area == "CSEO" |
-                                            subha$Mgt.Area == "SSEO"])
+                                            subha$Mgt.Area == "SSEO"]) # Total OUTSIDE harvest (ADFG FT data)
   Hal.SPM[i,"SEI2C.tix"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEI" |
-                                            subha$Mgt.Area == "SSEI"], na.rm=T)
-  Hal.SPM[i,"SEO2C.req"]<-req$Halibut_mt[req$IO == "SE-O"]
-  Hal.SPM[i,"SEI2C.req"]<-req$Halibut_mt[req$IO == "SE-I"]
+                                            subha$Mgt.Area == "SSEI"], na.rm=T) # Total INSIDE harvest (ADFG FT data)
+  Hal.SPM[i,"SEO2C.req"]<-req$Halibut_mt[req$IO == "SE-O"] # Total OUTSIDE harvest (IPHC data)
+  Hal.SPM[i,"SEI2C.req"]<-req$Halibut_mt[req$IO == "SE-I"] # Total INSIDE harvest (IPHC data)
   
-  Hal.SPM[i,"prop3A.EYKT"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3A.harv"]
-  Hal.SPM[i,"prop3A.EYKT_yak"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3Ayak.harv"]
-  Hal.SPM[i,"prop2C.SEOtix"]<-Hal.SPM[i,"SEO2C.tix"]/Hal.SPM[i,"2C.harv"]
-  Hal.SPM[i,"prop2C.SEItix"]<-Hal.SPM[i,"SEI2C.tix"]/Hal.SPM[i,"2C.harv"]
-  Hal.SPM[i,"prop2C.SEOreq"]<-Hal.SPM[i,"SEO2C.req"]/Hal.SPM[i,"2C.harv"]
-  Hal.SPM[i,"prop2C.SEIreq"]<-Hal.SPM[i,"SEI2C.req"]/Hal.SPM[i,"2C.harv"]
+  Hal.SPM[i,"prop3A.EYKT"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3A.harv"] # Proportion of 3A harvest attributed to EYKT (from ADFG FT data vs IPHC 3A total).
+  Hal.SPM[i,"prop3A.EYKT_yak"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3Ayak.harv"] # Proportion of Yakutat portion of 3A that is EYKT.
+  Hal.SPM[i,"prop2C.SEOtix"]<-Hal.SPM[i,"SEO2C.tix"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEO, using ADFG FT data.
+  Hal.SPM[i,"prop2C.SEItix"]<-Hal.SPM[i,"SEI2C.tix"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEI, using ADFG FT  data.
+  Hal.SPM[i,"prop2C.SEOreq"]<-Hal.SPM[i,"SEO2C.req"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEO, from IPHC data.
+  Hal.SPM[i,"prop2C.SEIreq"]<-Hal.SPM[i,"SEI2C.req"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEI, from IPHC data.
   
-  Hal.SPM[i,"SEO_harvest_mt"]<- Hal.SPM[i,"SEO2C.req"]+Hal.SPM[i,"EYKT"]
+  Hal.SPM[i,"SEO_harvest_mt"]<- Hal.SPM[i,"SEO2C.req"]+Hal.SPM[i,"EYKT"] 
+  #Combines SE-O (from IPHC data) and EYKT (from ADFG FT data) to give total SEO harvest for that year.
   
   i<-i+1
 }
 
-#halibut harvest in 2C from IPHC survey
+#halibut harvest in SEO 2C
 plot(data=Hal.SPM, SEO2C.req~Year, ylim=c(0,3500), type="l")
 
-#halibut harvest in 2C from ADF&G FTs
+#halibut harvest in SEO 2C from ADF&G FTs
 lines(data=Hal.SPM,SEO2C.tix~Year,type="l",col="blue")
 
+#Interesting that FTs have higher harvest, especially in more recent years
+#This data comes from federal logbooks? so would make sense self reported is less accurate than FT data.
+
 ## For hindcasting proportions lets use pre-full retention
-## Full retention was required of all DSR captured in groundfish 
-## and halibut fisheries in federal waters in 2005
+## Full retention was required for all DSR captured in groundfish 
+## and halibut fisheries in federal waters starting in 2005
 ## Full retention of all DSR captured in groundfish and halibut fisheries in 
-## state waters in 2009.
+## state waters started in 2009.
 
 Pre2010<-Hal.SPM[Hal.SPM$Year < 2010,]
-Prop.EYKT_3A<-mean(Pre2010$prop3A.EYKT)
+
+Prop.EYKT_3A<-mean(Pre2010$prop3A.EYKT) #average proportion of Area 3A harvest that came from EYKT
 var.EYKT_3A<-var(Pre2010$prop3A.EYKT)
-Prop.EYKT_yak<-mean(Pre2010$prop3A.EYKT_yak)
+
+Prop.EYKT_yak<-mean(Pre2010$prop3A.EYKT_yak) #average proportion of Yakutat (3A) harvest that was from EYKT
 var.EYKT_yak<-var(Pre2010$prop3A.EYKT_yak)
-Prop.SEO_2C<-mean(Pre2010$prop2C.SEOreq)
+
+Prop.SEO_2C<-mean(Pre2010$prop2C.SEOreq) #average proportion of Area 2C harvest that came from SEO
 var.SEO_2C<-var(Pre2010$prop2C.SEOreq)
 
-Halibut_harvest_forSPM<- Hal.SPM %>% 
+Halibut_harvest_forSPM <- Hal.SPM %>% 
   select(Year,SEO_harvest_mt)
 Halibut_harvest_forSPM$var<-0
 
 #STEP 2 ########################################################################
 ## Data from 1929-1975, get SEO data plus plus small proportion of 3A
 
-yrs29<-unique(HA.29_75$Year)
+yrs29<-unique(HA.29_75$Year); yrs29 #1929-1975
 
 prep <- HA.29_75 %>% filter(IPHC.Region.2 == "SE-O" |
                       IPHC.Region.2 == "SE-I" |
@@ -299,7 +362,7 @@ overlap.HA<-old.HA %>% filter(Year > 1974)
 years<-unique(overlap.HA$Year) 
 i<-1
 for (y in years) {  #y<-years[1]
-  subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
+  subha<-Halibut.harv.1977[Halibut.harv.1977$Year == y,]
   overlap.HA[i,"year.check"]<-y
   overlap.HA[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"]
   overlap.HA[i,"SEO2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |
