@@ -18,13 +18,14 @@ Southern Southeast Outside (SSEO) Sections.*
 The assessments associated with this code can be found here:
 
 * [2022 SAFE report](https://www.fisheries.noaa.gov/resource/data/2022-assessment-demersal-shelf-rockfish-stock-complex-southeast-outside-subdistrict)
+* [2024 SAFE report](https://www.npfmc.org/wp-content/PDFdocuments/SAFE/2024/GOAdsr.pdf)
 
 ### Repo directory: 
 
 This repository will hold data, files and r script for the SEO DSR assessment that ADF&G performs as part of the NPFMC stock assessments.  This repository contains the following sub directories that contain different analysis that are part of the assessment.  They are:
 
 1. **Data processing:** This folder contains script and raw data files for putting together data for use in the analysis contained in the folders below.  This includes catch data and biological data.
-2. **Density estimation:**  Script and data for estimating yelloweye rockfish density using distance sampling methods and transect data from ROV surveys.
+2. **Density estimation:**  Script and data for estimating yelloweye rockfish density using distance sampling methods and transect data from ROV surveys. The ROV survey program was suspended in 2023 due to lack of funding.
 4. **REMA analysis:** This folder contains the scripts for running the random effects model that is the current model used in the federal assessment.
 5. **Production models_JAGS:** This folder contains scripts for developing and running the bayesian state-space surplus production model (SS-SPM) in JAGS.  This model was reviewed by a CIE panel in September 2023 and was transitioned to STAN for further development.
 6. **Production models_STAN:** This folder contains scripts for developing and running the bayesian state-space surplus production model (SS-SPM) in STAN.  This modeling is the working directory and follows the recomendations of the CIE panel.
@@ -38,7 +39,7 @@ This repository will hold data, files and r script for the SEO DSR assessment th
 
 2. **Update catch and portside sampling data**: Download the most recent data from these sites and merge with older data using [`Data_processing/Code/Harvest reconstruction.R`]
 
-    1. [*OceanAK Portside sampling for biological data*](https://oceanak.dfg.alaska.local/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
+    1. [*OceanAK Portside sampling for biological data*](https://oceanak.adfg.alaska.gov/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2Fport%20sampling%20bio%20data)  
    
     2. *Yelloweye harvest data* is available here:
 
