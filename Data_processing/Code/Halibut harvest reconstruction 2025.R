@@ -3,9 +3,22 @@
 ##
 ## This code is used to reconstruct the halibut harvests for the SEO management
 ## units so that we can make estimates about yelloweye bycatch based on IPHC
-## survey data.  
-## Because long term halibut data management areas do not align with ADFG
-## management units, there is some extrapolation that include propagation of error
+## survey data. 
+##
+## 2022 SAFE Report - Appendix A:
+## https://apps-afsc.fisheries.noaa.gov/Plan_Team/2022/GOAdsr.pdf
+## Because IPHC statistical areas do not align with ADF&G management areas it
+## was necessary to reconstruct halibut harvests with some uncertainty. 
+## Three of the management areas (CSEO, SSEO and NSEO) were readily identifiable 
+## by IPHC regulatory area or region. However, the ADF&G EYKT management area 
+## comprises only a portion of IPHC regulatory area 3A and only a portion of the
+## Yakutat IPHC region. As such, hindcast harvests were constructed using the average
+## proportional relationship between the 3A or Yakutat harvests and the EYKT 
+## management area from 1982-2021.
+## For years going back to 1929 this meant applying the proportional relationship 
+## between the EYKT and the Yakutat IPHC region (which comprises a portion of 
+## IPHC management area 3A). For years prior to 1929 this meant applying the 
+## proportional relationship between the EYKT and the entire 3A regulatory area.
 ## 
 ## This is the most latest version of the code updated last 9/23/24 - LSC
 ################################################################################
@@ -51,7 +64,7 @@ lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## OceanAK report originally (Halibut harvest SEO in fish ticket data 2007-2022) 
 ## excluded inside waters and included only halibut trips (B permits). I changed filters to match 
 ## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish 
-## ticket data 2007 - present". Actoin Item: clean up OCeanAK folders with only the reports
+## ticket data 2007 - present". Action Item: clean up OceanAK folders with only the reports
 ## we need.
 HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_6.30.25.csv") %>% 
   mutate(Year=DOL.Year,
@@ -74,12 +87,12 @@ ggplot(temp,aes(Year,ha.mt,col=source)) +
   facet_wrap(~Mgt.Area)
 
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
-
 Halibut.harv.1977<-rbind(HA.Harv %>% 
                            filter(Year < min(HA.Harv.update$Year)),HA.Harv.update) %>%
   #Limiting output to halibut fisheries - Action Item: Check with Spencer - do we want
   #to include harvest from other fisheries to figure out the proportions?
-  #The data originally included other fisheries and went to 1975
+  #The data originally included other fisheries and went to 1975 but it seems to me
+  #that we would only want to limit to the directed halibut fishery?
   filter(fishery.code %in% c("B05B","B060","B06B","B06Z","B06ZL","B09B","B25B",
                              "B26B","B61B","B61ZL","B91B","BAKE","BO6B")) %>% 
   group_by(Year,Mgt.Area) %>% 
@@ -128,21 +141,6 @@ HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1
 ### HALIBUT HAREVEST RECONSTRUCTION ###
 ################################################################################
 
-## 2022 SAFE Report - Appendix A:
-## https://apps-afsc.fisheries.noaa.gov/Plan_Team/2022/GOAdsr.pdf
-## Because IPHC statistical areas do not align with ADF&G management areas it
-## was necessary to reconstruct halibut harvests with some uncertainty. 
-## Three of the management areas (CSEO, SSEO and NSEO) were readily identifiable 
-## by IPHC regulatory area or region. However, the ADF&G EYKT management area 
-## comprises only a portion of IPHC regulatory area 3A and only a portion of the
-## Yakutat IPHC region. As such, hindcast harvests were constructed using the average
-## proportional relationship between the 3A or Yakutat harvests and the EYKT 
-## management area from 1982-2021.
-## For years going back to 1929 this meant applying the proportional relationship 
-## between the EYKT and the Yakutat IPHC region (which comprises a portion of 
-## IPHC management area 3A). For years prior to 1929 this meant applying the 
-## proportional relationship between the EYKT and the entire 3A regulatory area.
-
 ## STEP 1 ######################################################################
 # get the contemporary data from IPHC request, get SEO data from there: HA.req
 #         a) 2C partitioned into SEO and SEI - measure this PROPORTION (2Cprops)
@@ -155,6 +153,7 @@ IOs<-unique(HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Are
 
 HA.newreq <- HA.newreq %>% 
   filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>% 
+  #Net weight (lb): head off, eviscerated, ice and slime deducted weight
   mutate(Net_lbs=Net.wt..lb./1000) %>%
   select(Year,IPHC.Regulatory.Area,IPHC.Statistical.Area = IPHC..Statistical.Area,Net_lbs)
 
@@ -176,7 +175,7 @@ HA.req<-rbind(HA.req %>%
 HA.req_2C_3A <- HA.req %>%
   filter(IPHC.Regulatory.Area %in% c("2C", "3A")) %>%
   group_by(IPHC.Regulatory.Area, Year, IPHC.Region.2..1929.1975) %>%
-  summarise(Halibut_lbs = sum(Net_lbs), .groups = "drop") %>%
+  summarise(Halibut_lbs = sum(Net_lbs)) %>%
   mutate(Halibut_mt = Halibut_lbs * 0.00045359 * 1000,
     IO = IPHC.Region.2..1929.1975) %>%
   select(Year, IPHC.regarea = IPHC.Regulatory.Area, IO, Halibut_lbs, Halibut_mt)
@@ -189,22 +188,31 @@ for (y in years) {  #y<-years[1]
   subha<-Halibut.harv.1977[Halibut.harv.1977$Year == y,]
   req<-HA.req_2C_3A[HA.req_2C_3A$Year == y,]
   Hal.SPM[i,"Year"]<-y
+  
   Hal.SPM[i,"3A.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "3A"]) # Total 3A halibut harvest (IPHC data)
+  
   Hal.SPM[i,"3Ayak.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "3A" & 
                                                 req$IO == "Yakutat"]) # Portion of 3A harvest attributed to Yakutat (IPHC data)
+  
   Hal.SPM[i,"2C.harv"]<-sum(req$Halibut_mt[req$IPHC.regarea == "2C"]) # Total 2C harvest (IPHC data)
+  
   Hal.SPM[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"] # Total EYKT harvest (ADFG FT data)
+  
   Hal.SPM[i,"SEO2C.tix"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |
                                             subha$Mgt.Area == "CSEO" |
                                             subha$Mgt.Area == "SSEO"]) # Total OUTSIDE harvest (ADFG FT data)
+  
   Hal.SPM[i,"SEI2C.tix"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEI" |
                                             subha$Mgt.Area == "SSEI"], na.rm=T) # Total INSIDE harvest (ADFG FT data)
+  
   Hal.SPM[i,"SEO2C.req"]<-req$Halibut_mt[req$IO == "SE-O"] # Total OUTSIDE harvest (IPHC data)
+  
   Hal.SPM[i,"SEI2C.req"]<-req$Halibut_mt[req$IO == "SE-I"] # Total INSIDE harvest (IPHC data)
+
   
   Hal.SPM[i,"prop3A.EYKT"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3A.harv"] # Proportion of 3A harvest attributed to EYKT (from ADFG FT data vs IPHC 3A total).
   Hal.SPM[i,"prop3A.EYKT_yak"]<-Hal.SPM[i,"EYKT"]/Hal.SPM[i,"3Ayak.harv"] # Proportion of Yakutat portion of 3A that is EYKT.
-  Hal.SPM[i,"prop2C.SEOtix"]<-Hal.SPM[i,"SEO2C.tix"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEO, using ADFG FT data.
+  Hal.SPM[i,"prop2C.SEOtix"]<-Hal.SPM[i,"SEO2C.tix"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is CSEO, NSEO, SSEO, using ADFG FT data.
   Hal.SPM[i,"prop2C.SEItix"]<-Hal.SPM[i,"SEI2C.tix"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEI, using ADFG FT  data.
   Hal.SPM[i,"prop2C.SEOreq"]<-Hal.SPM[i,"SEO2C.req"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEO, from IPHC data.
   Hal.SPM[i,"prop2C.SEIreq"]<-Hal.SPM[i,"SEI2C.req"]/Hal.SPM[i,"2C.harv"] # Proportion of 2C harvest that is SEI, from IPHC data.
@@ -250,12 +258,11 @@ Halibut_harvest_forSPM$var<-0
 
 yrs29<-unique(HA.29_75$Year); yrs29 #1929-1975
 
-prep <- HA.29_75 %>% filter(IPHC.Region.2 == "SE-O" |
-                      IPHC.Region.2 == "SE-I" |
-                      IPHC.Region.2 == "Yakutat") %>%
+prep <- HA.29_75 %>% 
+  filter(IPHC.Region.2 %in% c("SE-O", "SE-I", "Yakutat")) %>%
   group_by(Year,IPHC.Region.2) %>% 
   summarize(harv.ustons = sum(Total.Catch..US.Tons..Round.Weight.)) %>%
-  mutate(harv_mt = harv.ustons*0.90718474)
+  mutate(harv_mt = harv.ustons*0.90718474) #converting US tons to metric tons
 
 out29<-data.frame()
 yrs29<-unique(HA.29_75$Year)
@@ -264,7 +271,7 @@ for (y in yrs29){
   dat<-prep %>% filter(Year == y)
   out29[i,"Year"]<-y
   out29[i,"SEO_harvest_mt"]<-dat$harv_mt[dat$IPHC.Region.2 == "SE-O"] +
-    dat$harv_mt[dat$IPHC.Region.2 == "Yakutat"]*Prop.EYKT_yak
+    dat$harv_mt[dat$IPHC.Region.2 == "Yakutat"]*Prop.EYKT_yak #Proportion of Yakutat portion of 3A that is EYKT
   out29[i,"var"]<-var.EYKT_yak*dat$harv_mt[dat$IPHC.Region.2 == "Yakutat"]*dat$harv_mt[dat$IPHC.Region.2 == "Yakutat"]
   i<-i+1
 }
