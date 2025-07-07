@@ -280,10 +280,10 @@ Halibut_harvest_forSPM<-rbind(Halibut_harvest_forSPM,out29)
 Halibut_harvest_forSPM<-Halibut_harvest_forSPM [order(Halibut_harvest_forSPM$Year), ]
 
 ## STEP 3 ######################################################################
-## Data from 1888-1928 , partition using proportions: HA.IPHCweb
-##         a) apply 2Cprop and 3Aprop
-##Ha.75_82 OK for SEO but missing Yakutat numbers, so will use HA.IPHC web to 
-## est and add
+## Data from 1975-1982, get SEO data plus plus small proportion of 3A
+##
+## Note from Phil: Ha.75_82 OK for SEO but missing Yakutat numbers, so will use 
+## HA.IPHC web to est and add
 
 Ha.75_82 <- Ha.75_82 %>% 
   mutate(harv_mt = 0.90718474*Total.Catch..US.Tons..Round.Weight.)
@@ -307,6 +307,9 @@ Halibut_harvest_forSPM<-rbind(Halibut_harvest_forSPM,out76)
 Halibut_harvest_forSPM<-Halibut_harvest_forSPM [order(Halibut_harvest_forSPM$Year),]
 
 ## STEP 4 ######################################################################
+## Data from 1888-1928 data, partition using proportions: HA.IPHCweb
+##         a) apply 2Cprop and 3Aprop
+
 eys<-unique(HA.IPHCweb$Year)[HA.IPHCweb$Year < min(Halibut_harvest_forSPM$Year)]
 
 out1888<-data.frame()
@@ -335,7 +338,7 @@ ggplot(Halibut_harvest_forSPM,aes(Year,SEO_harvest_mt,col = "black")) +
   xlab("\nYear") +
   ylab("SEO Halibut harvest (t)") +
   scale_y_continuous(label=comma, breaks = seq(0,6000,1000)) +
-  scale_x_continuous(breaks=seq(1880,2022,5)) + 
+  scale_x_continuous(breaks=seq(1880,2025,5)) + 
   theme (panel.grid.minor = element_blank(),
          axis.text.x = element_text(angle = 45, vjust=1, hjust=1))
 
@@ -364,7 +367,7 @@ plot(old.HA$a3A.mt ~ old.HA$Year, type="l")
 lines(IPHC_3A$Halibut_mt[IPHC_3A$IO=="Yakutat"]+IPHC_3A$Halibut_mt[IPHC_3A$IO=="Kodiak"] ~
         IPHC_3A$Year[IPHC_3A$IO=="Yakutat"],type="l",col="orange")
 
-overlap.HA<-old.HA %>% filter(Year > 1974)
+overlap.HA<-old.HA %>% filter(Year > 1976)
 
 years<-unique(overlap.HA$Year) 
 i<-1
@@ -383,9 +386,7 @@ for (y in years) {  #y<-years[1]
   overlap.HA[i,"2c.ItoO.ratio"]<-overlap.HA[i,"SEO2C"]/(overlap.HA[i,"SEO2C"]+overlap.HA[i,"SEI2C"])
   i<-i+1
 }
-# The goal here is to see if IPHC data request and outside water harvest from 
-# fishticket data match up ... data request and web sight data match up.   
-# something going on since the proportion is great than 1
+
 plot(overlap.HA$prop.2C.SEO ~ overlap.HA$Year, ylim=c(0,1), type="l")
 lines(overlap.HA$prop.3A.EYKT ~ overlap.HA$Year, col="blue")
 lines(overlap.HA$prop.2C.SEI ~ overlap.HA$Year, col="red")
