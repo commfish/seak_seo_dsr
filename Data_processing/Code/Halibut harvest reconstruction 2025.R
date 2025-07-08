@@ -351,6 +351,8 @@ write.csv(Halibut_harvest_forSPM,paste0("Data_processing/Data/SEO_Halibut_remova
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
 ## Data check stuff here
+## LSC - I want to come back and investigate this more. The proportion for SEI is
+## greater than 1, which doesn't seem correct.
 
 HA.IPHCweb %>% 
   select(Year = Year,
