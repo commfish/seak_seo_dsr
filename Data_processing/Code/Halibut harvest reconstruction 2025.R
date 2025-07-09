@@ -32,82 +32,85 @@ library(scales)}
 
 YEAR<-2024
 
-#ADF&G FT Data last pulled 6/30/25 LSC
-
 ################################################################################
 ### IMPORT DATA ###
 ################################################################################
 
-
 ## ADF&G Halibut fish Ticket Data ##############################################
 
-## Catch Data 1975-2020 - R output - I don't know what code this originally comes from.
-HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_new071422.csv", header=T) %>% 
+## Catch Data 1975-2023 - R output - code from Rhea Ehresmann using lbs from the
+## CFEC gross earning subject area in OceanAK:
+## https://oceanak.adfg.alaska.gov/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FCFEC%20Gross%20Earnings#resultsTab197eba52b18
+## I have updated this spreadsheet through 2023 but we will only be using the data
+## before 2006 as the fish ticket data (below) is more accurate.We have a lot more 
+## flexibility with the fish ticket data and filters. The CFEC gross earnings 
+## doesn’t change if fish tickets are edited the following year, so the CFEC data aren’t updated 
+## even if the fish tickets are updated. 
+## This does not need to be updated in the future but in case someone does want to
+## The data is stored: Data_processing/Data/Harvests/CFEC Gross Earnings Data
+## The code is stored: Data_processing/Code/ye_hal_summary.R
+## There is an additional copy on the GF drive in Rhea's folder.
+## Previous versions of this spreadsheet are called: 
+## halibut_catch_data_new071422
+## halibut_catch_data
+HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_cfec.csv", header=T) %>%
   mutate(Year = year.landed, Mgt.Area = mgmt.area, ha.lbs = round.lbs,
          fishery.code = permit.fishery,
          gear = gear.description,
          ha.mt = ha.lbs*0.00045359,
          source = "old") %>%
-  ## Since I don't know where this output comes from, I'm going to exclude the years
-  ## that are readily available in OceanAK (output for most accurate harvest) see below 
-  ## "HA.Harv.update"
-  filter(Year < 2007, gear == "Longline", !ha.mt == 0) %>% 
-  select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source)
+  select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) %>% 
+  filter(Year <= 2006)
 
 lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
-#This output includes all other fisheries and inside waters. It's interesting that 
-#salmon fisheries are coded as longline...that doesn't seem correct.
 
 ## Catch Data 2021-Current Year
 
-## https://oceanak.adfg.alaska.gov/analytics/saw.dll?PortalGo&Action=prompt&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007%20-%20present 
-## OceanAK report originally (Halibut harvest SEO in fish ticket data 2007-2022) 
-## excluded inside waters and included only halibut trips (B permits). I changed filters to match 
-## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish 
-## ticket data 2007 - present". Action Item: clean up OceanAK folders with only the reports
-## we need.
-HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_6.30.25.csv") %>% 
+## https://oceanak.adfg.alaska.gov/analytics/saw.dll?PortalGo&Action=prompt&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FHalibut%20harvest%20SEO%20in%20fish%20ticket%20data%202007%20-%20present
+## OceanAK report originally (Halibut harvest SEO in fish ticket data 2007-2022)
+## excluded inside waters and included only halibut trips (B permits). I changed filters to match
+## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish
+## ticket data 2007 - present". 
+## I made an archive folder for old outputs. I think these can eventually be deleted,
+## but I am a data hoarder and it's nice to rerun with old outputs to recreate outputs.
+## Data pulled: 7.8.25
+HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_adfg_ft_data.csv") %>%
   mutate(Year=DOL.Year,
          gear = Gear.Code.and.Name,
          ha.lbs = as.numeric(Whole.Weight..sum.),
          ha.mt = ha.lbs*0.00045359,
          fishery.code = CFEC.Fishery.Code,
-         source = "new") %>% 
+         source = "new") %>%
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source)
 
 lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
-#This output includes all other fisheries and inside waters
 
 #Data Check - combine the new and old HA harvest data
 temp<-rbind(HA.Harv,HA.Harv.update)
 unique(temp$Year)
 
-ggplot(temp,aes(Year,ha.mt,col=source)) + 
+ggplot(temp,aes(Year,ha.mt,col=source)) +
   geom_line()+
   facet_wrap(~Mgt.Area)
 
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
-Halibut.harv.1977<-rbind(HA.Harv %>% 
+Halibut.harv.1975<-rbind(HA.Harv %>%
                            filter(Year < min(HA.Harv.update$Year)),HA.Harv.update) %>%
-  #Limiting output to halibut fisheries - Action Item: Check with Spencer - do we want
-  #to include harvest from other fisheries to figure out the proportions?
-  #The data originally included other fisheries and went to 1975 but it seems to me
-  #that we would only want to limit to the directed halibut fishery?
-  filter(fishery.code %in% c("B05B","B060","B06B","B06Z","B06ZL","B09B","B25B",
-                             "B26B","B61B","B61ZL","B91B","BAKE","BO6B")) %>% 
-  group_by(Year,Mgt.Area) %>% 
+  group_by(Year,Mgt.Area) %>%
   summarise(HA.lbs = sum(ha.lbs), HA.mt = sum(ha.mt))
 
-lapply(Halibut.harv.1977[c("Year", "Mgt.Area")], unique)
+lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
 
 #SAVE this data for use in estimating historical bycatch
 
-write.csv(Halibut.harv.1977,paste0("Data_processing/Data/SE_Halibut_removals_",min(Halibut.harv.1977$Year),"-",
-                                   max(Halibut.harv.1977$Year),".csv"))
+write.csv(Halibut.harv.1975, paste0("Data_processing/Data/SE_Halibut_removals_",
+                                    min(Halibut.harv.1975$Year), "-",
+                                    max(Halibut.harv.1975$Year), ".csv"), row.names = FALSE)
+
 
 ## IPHC Fishery  ###############################################################
 
-## Halibut harvest from IPHC for present year
+## Halibut harvest from IPHC for 2022 and beyond
 ## Data is available from: https://www.iphc.int/data/commercial-datasets 
 ## and under "Pacific Halibut Directed Commercial Landings" download "IPHC Statistical 
 ## Area and Year - head-off, dressed weight; 1991-" with the net weight in lbs
@@ -115,14 +118,17 @@ write.csv(Halibut.harv.1977,paste0("Data_processing/Data/SE_Halibut_removals_",m
 ## The spreadsheet is heavily formatted so you'll need to do some cleaning to 
 ## get just the header row and the data for the most recent year.  This will then be
 ## added to the sheet Randy came up with (HA.req) and then saved for next year
+## An updated file can be found under “Fishery information” at 
+## https://www.iphc.int/data/time-series-datasets/, 
+## specifically https://www.iphc.int/uploads/2024/09/iphc-2024-tsd-026.xlsx. These 
+## data are derived from logbook data and fish tickets. This report in particular 
+## ags by about a year. 2024 logs will still be collected well into 2025 and 
+## IPHC will generate an update sometime in the fall.
 
-## 6.30.25 - could only find data til 2022 but this website can be difficult....
-## Action Item - get 2023 harvest data!!
-HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2022.csv")
-unique(HA.newreq$Year) #2022
+HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2023.csv")
+unique(HA.newreq$Year) #2022 - 2023
 
-## Halibut harvest from IPHC for 1982 - 2021; Randy Peterson originally put in this
-## request 
+## Halibut harvest from IPHC for 1982 - 2021; Randy Peterson originally put in this request 
 HA.req<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHCdatareq_1982_2021.csv")
 unique(HA.req$Year) #1982-2021
 
@@ -152,6 +158,7 @@ IOs<-unique(HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Are
               select(IPHC.Statistical.Area,IPHC.Stat.Area..1929.1975,IPHC.Region.2..1929.1975))
 
 HA.newreq <- HA.newreq %>% 
+  mutate(IPHC.Regulatory.Area = str_trim(IPHC.Regulatory.Area)) %>% #removes the space after the letters in iphc regulatory area
   filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>% 
   #Net weight (lb): head off, eviscerated, ice and slime deducted weight
   mutate(Net_lbs=Net.wt..lb./1000) %>%
@@ -170,7 +177,8 @@ HA.req<-rbind(HA.req %>%
                        IPHC.Stat.Area..1929.1975,
                        IPHC.Region.2..1929.1975),
               HA.newreq) %>% 
-  mutate(Net_lbs = as.numeric(Net_lbs))
+  mutate(Net_lbs = as.numeric(Net_lbs)) %>% 
+  arrange(Year)
 
 HA.req_2C_3A <- HA.req %>%
   filter(IPHC.Regulatory.Area %in% c("2C", "3A")) %>%
@@ -185,7 +193,7 @@ Hal.SPM<-data.frame()
 years<-unique(HA.req_2C_3A$Year) 
 i<-1
 for (y in years) {  #y<-years[1]
-  subha<-Halibut.harv.1977[Halibut.harv.1977$Year == y,]
+  subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
   req<-HA.req_2C_3A[HA.req_2C_3A$Year == y,]
   Hal.SPM[i,"Year"]<-y
   
@@ -229,14 +237,12 @@ plot(data=Hal.SPM, SEO2C.req~Year, ylim=c(0,3500), type="l")
 #halibut harvest in SEO 2C from ADF&G FTs
 lines(data=Hal.SPM,SEO2C.tix~Year,type="l",col="blue")
 
-#Interesting that FTs have higher harvest, especially in more recent years
-#This data comes from federal logbooks? so would make sense self reported is less accurate than FT data.
+#1996 and 1998 have spikes in the fish ticket data - why?
 
 ## For hindcasting proportions lets use pre-full retention
-## Full retention was required for all DSR captured in groundfish 
-## and halibut fisheries in federal waters starting in 2005
-## Full retention of all DSR captured in groundfish and halibut fisheries in 
-## state waters started in 2009.
+## Full retention was required for all DSR captured in groundfish and halibut 
+## fisheries in federal waters starting in 2005 Full retention of all DSR 
+## captured in groundfish and halibut fisheries in state waters started in 2009.
 
 Pre2010<-Hal.SPM[Hal.SPM$Year < 2010,]
 
@@ -347,6 +353,9 @@ ggsave(paste0("Figures/Halibut_Harvest_SEO_", YEAR, ".png"), dpi=300,  height=3,
 write.csv(Halibut_harvest_forSPM,paste0("Data_processing/Data/SEO_Halibut_removals_",
                                         min(Halibut_harvest_forSPM$Year),"-",
                                         max(Halibut_harvest_forSPM$Year),".csv"))
+min(Halibut_harvest_forSPM$Year)
+max(Halibut_harvest_forSPM$Year)
+
 
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
@@ -374,7 +383,7 @@ overlap.HA<-old.HA %>% filter(Year > 1976)
 years<-unique(overlap.HA$Year) 
 i<-1
 for (y in years) {  #y<-years[1]
-  subha<-Halibut.harv.1977[Halibut.harv.1977$Year == y,]
+  subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
   overlap.HA[i,"year.check"]<-y
   overlap.HA[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"]
   overlap.HA[i,"SEO2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |

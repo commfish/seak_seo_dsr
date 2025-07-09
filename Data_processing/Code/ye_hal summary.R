@@ -21,7 +21,7 @@ theme_set(theme_bw(base_size=16,base_family='Times New Roman')
 
 
 #Load stat areas
-SAcode<- read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/SE_Stat_areas.csv")
+SAcode<- read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/SE_Stat_areas.csv")
 unique(SAcode$State.MU)
 SSEIcode<-SAcode$Stat.Area[SAcode$State.MU == "SSEI"]
 NSEIcode<-SAcode$Stat.Area[SAcode$State.MU == "NSEI"]
@@ -35,23 +35,23 @@ Code3A<-SAcode$Stat.Area[SAcode$IFQ.area == "3A"]
 
 # Data from OceanAK query in CFEC Gross earnings for all YE and Halibut data 
 
-D1<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1975-1981.csv", fileEncoding = 'UTF-8-BOM')
-D2<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1982-1987.csv", fileEncoding = 'UTF-8-BOM')
-D3<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1988-1992.csv", fileEncoding = 'UTF-8-BOM')
-D4<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1993-1995.csv", fileEncoding = 'UTF-8-BOM')
-D5<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1996-1997.csv", fileEncoding = 'UTF-8-BOM')
-D6<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/1998-2000.csv", fileEncoding = 'UTF-8-BOM')
-D7<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2001-2002.csv", fileEncoding = 'UTF-8-BOM')
-D8<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2003-2004.csv", fileEncoding = 'UTF-8-BOM')
-D9<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2005-2006.csv", fileEncoding = 'UTF-8-BOM')
-D10<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2007-2008.csv", fileEncoding = 'UTF-8-BOM')
-D11<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2009-2010.csv", fileEncoding = 'UTF-8-BOM')
-D12<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2011-2012.csv", fileEncoding = 'UTF-8-BOM')
-D13<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2013-2014.csv", fileEncoding = 'UTF-8-BOM')
-D14<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2015-2016.csv", fileEncoding = 'UTF-8-BOM')
-D15<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2017-2018.csv", fileEncoding = 'UTF-8-BOM')
-D16<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2019-2020.csv", fileEncoding = 'UTF-8-BOM')
-D17<-read.csv("Data_processing/Data/Harvests/Halibut Reconstruction Files/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>% 
+D1<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1975-1981.csv", fileEncoding = 'UTF-8-BOM')
+D2<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1982-1987.csv", fileEncoding = 'UTF-8-BOM')
+D3<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1988-1992.csv", fileEncoding = 'UTF-8-BOM')
+D4<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1993-1995.csv", fileEncoding = 'UTF-8-BOM')
+D5<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1996-1997.csv", fileEncoding = 'UTF-8-BOM')
+D6<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1998-2000.csv", fileEncoding = 'UTF-8-BOM')
+D7<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2001-2002.csv", fileEncoding = 'UTF-8-BOM')
+D8<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2003-2004.csv", fileEncoding = 'UTF-8-BOM')
+D9<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2005-2006.csv", fileEncoding = 'UTF-8-BOM')
+D10<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2007-2008.csv", fileEncoding = 'UTF-8-BOM')
+D11<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2009-2010.csv", fileEncoding = 'UTF-8-BOM')
+D12<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2011-2012.csv", fileEncoding = 'UTF-8-BOM')
+D13<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2013-2014.csv", fileEncoding = 'UTF-8-BOM')
+D14<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2015-2016.csv", fileEncoding = 'UTF-8-BOM')
+D15<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2017-2018.csv", fileEncoding = 'UTF-8-BOM')
+D16<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2019-2020.csv", fileEncoding = 'UTF-8-BOM')
+D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>% 
 select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Permit.Fishery",
        "Species.Code","IPHC.Regulatory.Area","IPHC.Statistical.Area","ADFG.Management.Area.Code",
        "Gear.Code","Gear.Description","Harvest.Code","Harvest.Description","Delivery.Code",
@@ -145,7 +145,7 @@ ye_hal2 %>%
   group_by(year.landed, mgmt.area, permit.fishery, gear.description) %>% 
   summarise(round.lbs = sum(round.pounds)) -> halibut
 table(halibut$permit.fishery, halibut$gear.description)   
-write.csv(halibut, "Data_processing/Data/Harvests/halibut_catch_data_7.8.25.csv")
+write.csv(halibut, "Data_processing/Data/Harvests/halibut_catch_data_cfec.csv")
 
 
 
