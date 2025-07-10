@@ -28,9 +28,12 @@
 library(dplyr)
 library(boot)
 library(ggplot2)
-library(scales)}
+library(scales)
+library(tidyverse)}
 
 YEAR<-2024
+
+options(scipen = 999)
 
 ################################################################################
 ### IMPORT DATA ###
@@ -122,7 +125,7 @@ write.csv(Halibut.harv.1975, paste0("Data_processing/Data/SE_Halibut_removals_",
 ## https://www.iphc.int/data/time-series-datasets/, 
 ## specifically https://www.iphc.int/uploads/2024/09/iphc-2024-tsd-026.xlsx. These 
 ## data are derived from logbook data and fish tickets. This report in particular 
-## ags by about a year. 2024 logs will still be collected well into 2025 and 
+## lags by about a year. 2024 logs will still be collected well into 2025 and 
 ## IPHC will generate an update sometime in the fall.
 
 HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2023.csv")
@@ -237,7 +240,8 @@ plot(data=Hal.SPM, SEO2C.req~Year, ylim=c(0,3500), type="l")
 #halibut harvest in SEO 2C from ADF&G FTs
 lines(data=Hal.SPM,SEO2C.tix~Year,type="l",col="blue")
 
-#1996 and 1998 have spikes in the fish ticket data - why?
+summary <- Hal.SPM %>%
+  summarise(across(prop3A.EYKT:prop2C.SEIreq, list(min = min, max = max))); summary
 
 ## For hindcasting proportions lets use pre-full retention
 ## Full retention was required for all DSR captured in groundfish and halibut 

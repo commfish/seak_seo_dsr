@@ -35,23 +35,24 @@ Code3A<-SAcode$Stat.Area[SAcode$IFQ.area == "3A"]
 
 # Data from OceanAK query in CFEC Gross earnings for all YE and Halibut data 
 
-D1<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1975-1981.csv", fileEncoding = 'UTF-8-BOM')
-D2<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1982-1987.csv", fileEncoding = 'UTF-8-BOM')
-D3<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1988-1992.csv", fileEncoding = 'UTF-8-BOM')
-D4<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1993-1995.csv", fileEncoding = 'UTF-8-BOM')
-D5<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1996-1997.csv", fileEncoding = 'UTF-8-BOM')
-D6<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1998-2000.csv", fileEncoding = 'UTF-8-BOM')
-D7<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2001-2002.csv", fileEncoding = 'UTF-8-BOM')
-D8<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2003-2004.csv", fileEncoding = 'UTF-8-BOM')
-D9<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2005-2006.csv", fileEncoding = 'UTF-8-BOM')
-D10<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2007-2008.csv", fileEncoding = 'UTF-8-BOM')
-D11<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2009-2010.csv", fileEncoding = 'UTF-8-BOM')
-D12<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2011-2012.csv", fileEncoding = 'UTF-8-BOM')
-D13<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2013-2014.csv", fileEncoding = 'UTF-8-BOM')
-D14<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2015-2016.csv", fileEncoding = 'UTF-8-BOM')
-D15<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2017-2018.csv", fileEncoding = 'UTF-8-BOM')
-D16<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2019-2020.csv", fileEncoding = 'UTF-8-BOM')
-D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>% 
+D1<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1975-1981.csv", fileEncoding = 'UTF-8-BOM') #1975-1981
+D2<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1982-1987.csv", fileEncoding = 'UTF-8-BOM') 
+D3<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1988-1992.csv", fileEncoding = 'UTF-8-BOM') #1988-1992 
+D4<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1993-1995.csv", fileEncoding = 'UTF-8-BOM') #1993-1995 
+D5<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1996-1997.csv", fileEncoding = 'UTF-8-BOM') #1996-1998
+D6<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/1998-2000.csv", fileEncoding = 'UTF-8-BOM') %>% #1999-2000
+  filter(Year.Landed!=1998)#1998 is included in D5, so this was creating issues
+D7<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2001-2002.csv", fileEncoding = 'UTF-8-BOM') #2001-2002
+D8<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2003-2004.csv", fileEncoding = 'UTF-8-BOM') #2003-2004
+D9<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2005-2006.csv", fileEncoding = 'UTF-8-BOM') #2005-2006
+D10<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2007-2008.csv", fileEncoding = 'UTF-8-BOM') #2007-2008
+D11<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2009-2010.csv", fileEncoding = 'UTF-8-BOM') #2009-2010
+D12<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2011-2012.csv", fileEncoding = 'UTF-8-BOM') #2011-2012
+D13<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2013-2014.csv", fileEncoding = 'UTF-8-BOM') #2013-2014
+D14<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2015-2016.csv", fileEncoding = 'UTF-8-BOM') #2015-2016
+D15<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2017-2018.csv", fileEncoding = 'UTF-8-BOM') #2017-2018
+D16<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2019-2020.csv", fileEncoding = 'UTF-8-BOM') #2019-2020
+D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>%  #2021-2023
 select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Permit.Fishery",
        "Species.Code","IPHC.Regulatory.Area","IPHC.Statistical.Area","ADFG.Management.Area.Code",
        "Gear.Code","Gear.Description","Harvest.Code","Harvest.Description","Delivery.Code",
@@ -64,11 +65,15 @@ select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Per
          Fish.TIcket.Number.1=Fish.Ticket.Number.1)
 
 # combine into one df
-ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D17)
+ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D17) 
 
 # organize the df 
 ye_hal <- ye_hal %>% 
-  rename_all(tolower) 
+  rename_all(tolower)
+
+data_check <- ye_hal %>%
+  filter(year.landed == 1998 & fish.ticket.number == " CW9810145")
+
 
 # filter out the fisheries and areas we definitely don't want, as best as we can broadly
 # do not use iphc.regulatory.area -- WRONG AREA DATA
@@ -90,7 +95,7 @@ ye_hal2 <- ye_hal %>%
                        '255601',	'25640',	"25783", "25810",	"25855",	"25891",	"25892",	"25897",	"25961",	"27380",	"29122",	"29131",	
                        "29132",	"29142",	"29152",	"29153", "30215",	"30216",	"30217", "30221",	"30222",	"30230",	"30231",	"30240", 
                        "32422",	"32423","32621",	"32670", "18300", "35631", "4065", "5065", "680", "0", "305902", "259010", "NA"), 
-         gear.description %in% c("Longline", "Other/unspecified/missing"), 
+         # gear.description %in% c("Longline", "Other/unspecified/missing"), 
          !harvest.code %in% c(43, 44, 42)) %>%  # remove test fisheries  
          #port.name != "Metlakatla") %>%  
          #!permit.fishery %in% c("", "9998", "0000")) %>% 
@@ -136,6 +141,9 @@ ye_hal2 <- ye_hal %>%
                                                                ifelse(nmfs.area %in% 650, "SEO","WESTWARD"))))))), 
          round.pounds = ifelse(cfec.whole.pounds < pounds, pounds, cfec.whole.pounds)) %>%  
   filter(!mgmt.area == "WESTWARD")
+
+
+write.csv(ye_hal2,"Data_processing/Data/Harvests/CFEC Gross Earnings Data/data_check_ye_hal_summary.csv")
 
 
 
