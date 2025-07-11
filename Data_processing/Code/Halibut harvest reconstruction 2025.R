@@ -63,7 +63,7 @@ HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_cfec.csv", h
          ha.mt = ha.lbs*0.00045359,
          source = "old") %>%
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) %>% 
-  filter(Year <= 2006)
+  filter(Year <= 2006)## i removed the filter from the source code for longline and other gear.
 
 lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 
@@ -91,10 +91,68 @@ lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 #Data Check - combine the new and old HA harvest data
 temp<-rbind(HA.Harv,HA.Harv.update)
 unique(temp$Year)
+unique(temp$fishery.code)
 
 ggplot(temp,aes(Year,ha.mt,col=source)) +
   geom_line()+
   facet_wrap(~Mgt.Area)
+
+## I am trying to sort out what is bycatch and what are directed trips.
+## Assigning fishery types based on fishery codes and I haveonly included the codes
+## in the data (n=38)
+
+  
+
+hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
+yelloweye <- c("Y06A")
+sablefish <- c("C61B","C09B","C06B","C61C","C61A","C50B" )
+lingcod <- c("I25B","I05B")
+misc <- c("M06B","M61B","M99B","L99B","M05B","S04D","M26B","P09B","D09B","G34A", "M07B","9998","9999","M06G")
+#Website for hisotrical CFEC fishery codes: https://www.cfec.state.ak.us/misc/FshyDesH.htm
+#"M06B", "M61B" & "M06G" = longline 
+#"M05B" = hand troll
+#"M26B" = mechanical jig 
+#"P09B" = shrimp pot
+#"D09B" = Dungeness
+#"G34A" = Herring gill net
+#"M07B" = trawl
+#"M99B" = Experimental/Special Permit 1975-2021
+#"L99B" = herring spawn on kelp (1974-1980)
+#Unknown:
+#"9998"
+#"9999"
+
+salmon <- c("S05B","S15B","S03A","S01A","S04D")
+
+hal_fishery <- temp %>% 
+  mutate(fishery = ifelse(fishery.code %in% yelloweye, "Yelloweye Incidental",
+                          ifelse(fishery.code %in% hal_directed, "Halibut Directed",
+                                 ifelse(fishery.code %in% sablefish, "Sablefish Incidental",
+                                        ifelse(fishery.code %in% lingcod, "Lingcod Incidental",
+                                               ifelse(fishery.code %in% misc, "Misc Incidental",
+                                                      ifelse(fishery.code %in% salmon, "Salmon Incidental","Other")))))))
+
+#Here's the thing - some of the sablefish, misc, and lingcod are not incidental
+#these are
+
+check <- hal_fishery %>% 
+  filter(fishery == "Misc Incidental")
+
+big_table <-  hal_fishery %>% 
+  group_by(Year, fishery) %>% 
+  summarise(tot_tons = sum(ha.mt)) %>% 
+  pivot_wider(names_from = "fishery", values_from = "tot_tons") %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(across(where(is.numeric), ~ round(.x, digits = 1)))
+
+
+big_fig <- big_table %>% 
+  mutate("Total Catch" = (Research + Incidental + Directed + UnreportedDiscard + Recreational + Subsistence)) %>% 
+  group_by(year) %>% 
+  select(year, TAC, ABC, OFL, "Total Catch") %>% 
+  pivot_longer(-year, names_to = "Group", values_to = "Tons") %>%
+  filter(year > 2009 | Group != "TAC") # remove TAC line from 2008 and back to avoid weird issues with plotting lines on top of each other since TAC and ABC were the same
+
 
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
 Halibut.harv.1975<-rbind(HA.Harv %>%
