@@ -95,7 +95,7 @@ ye_hal2 <- ye_hal %>%
                        '255601',	'25640',	"25783", "25810",	"25855",	"25891",	"25892",	"25897",	"25961",	"27380",	"29122",	"29131",	
                        "29132",	"29142",	"29152",	"29153", "30215",	"30216",	"30217", "30221",	"30222",	"30230",	"30231",	"30240", 
                        "32422",	"32423","32621",	"32670", "18300", "35631", "4065", "5065", "680", "0", "305902", "259010", "NA"), 
-         # gear.description %in% c("Longline", "Other/unspecified/missing"), 
+         # gear.description %in% c("Longline", "Other/unspecified/missing"), #LSC removed this filter so all data was included in "Halibut harvest reconstruction 2025"
          !harvest.code %in% c(43, 44, 42)) %>%  # remove test fisheries  
          #port.name != "Metlakatla") %>%  
          #!permit.fishery %in% c("", "9998", "0000")) %>% 

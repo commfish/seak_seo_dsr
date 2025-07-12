@@ -24,12 +24,21 @@
 ################################################################################
 
 # set up ----
+
 {library(plyr)
 library(dplyr)
 library(boot)
 library(ggplot2)
 library(scales)
-library(tidyverse)}
+library(tidyverse)
+  library(extrafont)}
+
+###  set plotting theme to use TNR  ###
+#font_import() #remove # to run this but only do this one time - it takes a while
+loadfonts(device="win")
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+theme_set(theme_bw(base_size=18,base_family='Times New Roman')
+          +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()))
 
 YEAR<-2024
 
@@ -84,90 +93,18 @@ HA.Harv.update<-read.csv("Data_processing/Data/Harvests/halibut_catch_adfg_ft_da
          ha.mt = ha.lbs*0.00045359,
          fishery.code = CFEC.Fishery.Code,
          source = "new") %>%
-  select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source)
+  select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) %>% 
+  mutate(
+    gear = case_when(
+      gear == "61 - Longline"~"Longline",
+      gear == "05 - Hand troll"~"Hand troll",
+      gear == "25 - Dinglebar troll"~"Dinglebar troll",
+      gear == "15 - Power gurdy troll"~"Power gurdy troll",
+      gear == "91 - Pot"~"Pot",
+      gear == "99 - Other/unspecified/missing"~"Other/unspecified/missing",
+      gear == "26 - Mechanical jigs"~"Mechanical jigs",TRUE~gear))
 
 lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
-
-#Data Check - combine the new and old HA harvest data
-temp<-rbind(HA.Harv,HA.Harv.update)
-unique(temp$Year)
-unique(temp$fishery.code)
-
-ggplot(temp,aes(Year,ha.mt,col=source)) +
-  geom_line()+
-  facet_wrap(~Mgt.Area)
-
-## I am trying to sort out what is bycatch and what are directed trips.
-## Assigning fishery types based on fishery codes and I haveonly included the codes
-## in the data (n=38)
-
-  
-
-hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
-yelloweye <- c("Y06A")
-sablefish <- c("C61B","C09B","C06B","C61C","C61A","C50B" )
-lingcod <- c("I25B","I05B")
-misc <- c("M06B","M61B","M99B","L99B","M05B","S04D","M26B","P09B","D09B","G34A", "M07B","9998","9999","M06G")
-#Website for hisotrical CFEC fishery codes: https://www.cfec.state.ak.us/misc/FshyDesH.htm
-#"M06B", "M61B" & "M06G" = longline 
-#"M05B" = hand troll
-#"M26B" = mechanical jig 
-#"P09B" = shrimp pot
-#"D09B" = Dungeness
-#"G34A" = Herring gill net
-#"M07B" = trawl
-#"M99B" = Experimental/Special Permit 1975-2021
-#"L99B" = herring spawn on kelp (1974-1980)
-#Unknown:
-#"9998"
-#"9999"
-
-salmon <- c("S05B","S15B","S03A","S01A","S04D")
-
-hal_fishery <- temp %>% 
-  mutate(fishery = ifelse(fishery.code %in% yelloweye, "Yelloweye Incidental",
-                          ifelse(fishery.code %in% hal_directed, "Halibut Directed",
-                                 ifelse(fishery.code %in% sablefish, "Sablefish Incidental",
-                                        ifelse(fishery.code %in% lingcod, "Lingcod Incidental",
-                                               ifelse(fishery.code %in% misc, "Misc Incidental",
-                                                      ifelse(fishery.code %in% salmon, "Salmon Incidental","Other")))))))
-
-#Here's the thing - some of the sablefish, misc, and lingcod are not incidental
-#these are
-
-check <- hal_fishery %>% 
-  filter(fishery == "Misc Incidental")
-
-big_table <-  hal_fishery %>% 
-  group_by(Year, fishery) %>% 
-  summarise(tot_tons = sum(ha.mt)) %>% 
-  pivot_wider(names_from = "fishery", values_from = "tot_tons") %>% 
-  replace(is.na(.), 0) %>% 
-  mutate(across(where(is.numeric), ~ round(.x, digits = 1)))
-
-
-big_fig <- big_table %>% 
-  mutate("Total Catch" = (Research + Incidental + Directed + UnreportedDiscard + Recreational + Subsistence)) %>% 
-  group_by(year) %>% 
-  select(year, TAC, ABC, OFL, "Total Catch") %>% 
-  pivot_longer(-year, names_to = "Group", values_to = "Tons") %>%
-  filter(year > 2009 | Group != "TAC") # remove TAC line from 2008 and back to avoid weird issues with plotting lines on top of each other since TAC and ABC were the same
-
-
-#Combine 1975-2006 to 2007-present ADF&G fish ticket data
-Halibut.harv.1975<-rbind(HA.Harv %>%
-                           filter(Year < min(HA.Harv.update$Year)),HA.Harv.update) %>%
-  group_by(Year,Mgt.Area) %>%
-  summarise(HA.lbs = sum(ha.lbs), HA.mt = sum(ha.mt))
-
-lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
-
-#SAVE this data for use in estimating historical bycatch
-
-write.csv(Halibut.harv.1975, paste0("Data_processing/Data/SE_Halibut_removals_",
-                                    min(Halibut.harv.1975$Year), "-",
-                                    max(Halibut.harv.1975$Year), ".csv"), row.names = FALSE)
-
 
 ## IPHC Fishery  ###############################################################
 
@@ -203,6 +140,170 @@ unique(HA.29_75$Year) #1929-1975
 
 ## Halibut by IPHC area from web source data
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
+
+################################################################################
+### HALIBUT HAREVEST ADFG FISH TICKET DATA EXPLORATION ###
+################################################################################
+
+#Data Check - combine the new and old HA harvest data
+hal_fishery<-rbind(HA.Harv,HA.Harv.update)
+unique(hal_fishery$Year)
+unique(hal_fishery$fishery.code)
+unique(hal_fishery$gear)
+
+ggplot(hal_fishery,aes(Year,ha.mt,col=source)) +
+  geom_line()+
+  facet_wrap(~Mgt.Area)
+
+## I am trying to sort out what is bycatch and what are directed trips because here's
+## the thing, there are dual target trips in sablefish, DSR, and p.cod fisheries.
+
+## In the state sablefish fisheries, fishers with halibut IFQ in regulatory area 
+## 2C and a CFEC halibut permit card MUST retain all halibut over 32 inches in 
+## length, up to the amount of their IFQ.
+
+## Halibut incidentally taken during an open commercial halibut season by power 
+#and hand troll gear operated for salmon consistent with applicable state laws 
+## and regulations are legally taken and possessed (5 AAC 28.133[c]). Commercial 
+## halibut may be retained only by Individual Fishing Quota (IFQ) permit holders 
+## during the open season for halibut. Trollers making an IFQ halibut landing of 
+## 500 lb or less of IFQ weight as determined pursuant to 50 CFR 679.40(h) are exempted
+## from the 3-hour prior notice of landing if landed concurrently with a legal landing of salmon
+## harvested using hand troll or power troll gear (50 CFR 679.5[l][1][iv][A]).
+
+
+## Assigning fishery types based on fishery codes and I have only included the codes
+## in the data (n=38)
+
+hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
+yelloweye <- c("Y06A")
+sablefish <- c("C61B","C09B","C06B","C61C","C61A","C50B" )
+lingcod <- c("I25B","I05B")
+salmon <- c("S05B","S15B","S03A","S01A","S04D")
+misc <- c("M06B","M61B","M99B","L99B","M05B","S04D","M26B","P09B","D09B","G34A", "M07B","M06G")
+unknown <- c("","9998","9999")
+
+#Website for historical CFEC fishery codes: https://www.cfec.state.ak.us/misc/FshyDesH.htm
+#"M06B", "M61B" & "M06G" = longline (potential pacific cod trips)
+#"M05B" = hand troll
+#"M26B" = mechanical jig 
+#"P09B" = shrimp pot
+#"D09B" = Dungeness
+#"G34A" = Herring gill net
+#"M07B" = trawl
+#"M99B" = Experimental/Special Permit 1975-2021
+#"L99B" = herring spawn on kelp (1974-1980)
+#Unknown:
+#"9998" = this is an interim value that is supposed  be replace with a valid value within 72 hrs
+#"9999"
+
+pal <- c("Halibut Directed"        = "#91D5DE",
+         "Yelloweye Incidental"    = "#2E8289",
+         "Sablefish Incidental"    = "#B4674E",
+         "Lingcod Incidental"      = "#EAAE37",
+         "Salmon Incidental"       = "#682C37",
+         "Misc Incidental"         = "#606060",
+         "Unknown"                 = "#606090")
+
+hal_fishery <- hal_fishery %>% 
+  mutate(fishery = ifelse(fishery.code %in% yelloweye, "Yelloweye Incidental",
+                          #there is one yelloweye incidental from 2025, the permit holder was allowed to retain and sell the halibut
+                          #even tho there are not halibut bycatch allowances for the DSR fishery because the halibut was tagged
+                          ifelse(fishery.code %in% hal_directed, "Halibut Directed",
+                                 ifelse(fishery.code %in% sablefish, "Sablefish Incidental",
+                                        ifelse(fishery.code %in% lingcod, "Lingcod Incidental",
+                                               ifelse(fishery.code %in% salmon, "Salmon Incidental",
+                                                      ifelse(fishery.code %in% misc, "Misc Incidental","Unknown"))))))) %>% 
+  mutate(fishery = factor(fishery, levels = names(pal)))
+
+check <- hal_fishery %>% 
+  filter(fishery.code %in% c("9998","9999",""))
+
+unique(check$gear)
+
+sector_fig <- hal_fishery %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = fishery), width = 0.7) +
+  scale_fill_manual(values = pal) + 
+  ylab("Catch (mt)\n") + xlab("Year\n") +
+  coord_cartesian(ylim=c(0, 7000)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 7000, 500)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)) ; sector_fig
+
+incidental <- hal_fishery %>% 
+  filter(!fishery=="Halibut Directed") %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = fishery), width = 0.7) +
+  scale_fill_manual(values = pal) + 
+  ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("'Incidental' Fisheries")+
+  coord_cartesian(ylim=c(0, 1700)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)) ; incidental
+
+non_other_incidental <- hal_fishery %>% 
+  filter(!fishery %in% c("Halibut Directed","Unknown")) %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = fishery), width = 0.7) +
+  scale_fill_manual(values = pal) + 
+  ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("Non-Unknown Incidental Fisheries")+
+  coord_cartesian(ylim=c(0, 100)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 5)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)) ; non_other_incidental
+
+pal2 <- c("#91D5DE", "#2E8289", "#B4674E",  "#EAAE37", "#682C37", "#606060", "#606")
+#other means the fishery code was missing (all data from cfec) or the code 9999/9998 was used (all data after 2007)
+unknown <- hal_fishery %>% 
+  filter(fishery=="Unknown") %>% 
+  mutate(gear = if_else(gear == "61 - Longline", "Longline", 
+                        if_else(gear == "15 - Power gurdy troll", "Power gurdy troll",gear))) %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = gear), width = 0.7) +
+  scale_fill_manual(values = pal2) + 
+  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Unknown Fishery by Gear Type") +
+  coord_cartesian(ylim=c(0, 1700)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)); unknown
+
+#Combine 1975-2006 to 2007-present ADF&G fish ticket data
+Halibut.harv.1975 <- (hal_fishery %>%
+  #Filter here to keep directed halibut trips - the B permits were introduced in
+  #1977, so I am also going to assume anything that is fishery "unknown" and 
+  #the gear is longline is a directed halibut trip
+  filter(Year %in% c("1975","1976") & fishery == "Unknown" & gear == "Longline" |
+           fishery.code %in% c("B06B", "B61B", "B05B", "B99B", "B26B", 
+                               "B25B", "B61Z", "B06Z", "B09B", "B91B")) %>% 
+  group_by(Year, Mgt.Area) %>%
+  summarise(HA.lbs = sum(ha.lbs, na.rm = TRUE),HA.mt  = sum(ha.mt,  na.rm = TRUE),.groups = "drop"))
+
+
+lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
+
+#SAVE this data for use in estimating historical bycatch
+
+write.csv(Halibut.harv.1975, paste0("Data_processing/Data/SE_Halibut_removals_",
+                                    min(Halibut.harv.1975$Year), "-",
+                                    max(Halibut.harv.1975$Year), ".csv"), row.names = FALSE)
+
 
 ################################################################################
 ### HALIBUT HAREVEST RECONSTRUCTION ###
@@ -297,6 +398,23 @@ plot(data=Hal.SPM, SEO2C.req~Year, ylim=c(0,3500), type="l")
 
 #halibut harvest in SEO 2C from ADF&G FTs
 lines(data=Hal.SPM,SEO2C.tix~Year,type="l",col="blue")
+
+data_check_plot <- Hal.SPM %>%
+  select(Year, SEO2C.req, SEO2C.tix) %>%
+  pivot_longer(cols = c(SEO2C.req, SEO2C.tix), 
+               names_to = "Source", 
+               values_to = "Harvest") %>% 
+  ggplot(aes(x = Year, y = Harvest, color = Source)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = c("SEO2C.req" = "black", "SEO2C.tix" = "blue")) +
+  ylim(0, 3500) +
+  labs(
+    title = "Halibut Harvest in SEO 2C",
+    y = "Harvest (mt)", 
+    x = "Year", 
+    color = "Data Source");data_check_plot
+
+
 
 summary <- Hal.SPM %>%
   summarise(across(prop3A.EYKT:prop2C.SEIreq, list(min = min, max = max))); summary
