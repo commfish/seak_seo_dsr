@@ -14,7 +14,7 @@
 ## comprises only a portion of IPHC regulatory area 3A and only a portion of the
 ## Yakutat IPHC region. As such, hindcast harvests were constructed using the average
 ## proportional relationship between the 3A or Yakutat harvests and the EYKT 
-## management area from 1982-2021.
+## management area from 1982-2024.
 ## For years going back to 1929 this meant applying the proportional relationship 
 ## between the EYKT and the Yakutat IPHC region (which comprises a portion of 
 ## IPHC management area 3A). For years prior to 1929 this meant applying the 
@@ -74,6 +74,12 @@ HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_cfec.csv", h
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) %>% 
   filter(Year <= 2006)## i removed the filter from the source code for longline and other gear.
 
+data_check3 <- HA.Harv %>%
+  filter(Year == 1996) %>%
+  group_by(Year, Mgt.Area) %>%
+  summarise(ha.lbs = sum(ha.lbs, na.rm = TRUE)) %>%
+  mutate(ha.mt = ha.lbs*0.00045359)
+
 lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 
 ## Catch Data 2021-Current Year
@@ -109,6 +115,13 @@ lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## IPHC Fishery  ###############################################################
 
 ## Halibut harvest from IPHC for 2022 and beyond
+## An updated file can be found under “Fishery information” at 
+## https://www.iphc.int/data/time-series-datasets/, 
+## specifically https://www.iphc.int/uploads/2024/09/iphc-2024-tsd-026.xlsx. These 
+## data are derived from logbook data and fish tickets. This report in particular 
+## lags by about a year. 2024 logs will still be collected well into 2025 and 
+## IPHC will generate an update sometime in the fall.
+## Below are old notes left from Phil:
 ## Data is available from: https://www.iphc.int/data/commercial-datasets 
 ## and under "Pacific Halibut Directed Commercial Landings" download "IPHC Statistical 
 ## Area and Year - head-off, dressed weight; 1991-" with the net weight in lbs
@@ -116,12 +129,7 @@ lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## The spreadsheet is heavily formatted so you'll need to do some cleaning to 
 ## get just the header row and the data for the most recent year.  This will then be
 ## added to the sheet Randy came up with (HA.req) and then saved for next year
-## An updated file can be found under “Fishery information” at 
-## https://www.iphc.int/data/time-series-datasets/, 
-## specifically https://www.iphc.int/uploads/2024/09/iphc-2024-tsd-026.xlsx. These 
-## data are derived from logbook data and fish tickets. This report in particular 
-## lags by about a year. 2024 logs will still be collected well into 2025 and 
-## IPHC will generate an update sometime in the fall.
+
 
 HA.newreq<-read.csv("Data_processing/Data/Harvests/IPHC_harv_2023.csv")
 unique(HA.newreq$Year) #2022 - 2023
@@ -157,13 +165,14 @@ ggplot(hal_fishery,aes(Year,ha.mt,col=source)) +
 
 ## I am trying to sort out what is bycatch and what are directed trips because here's
 ## the thing, there are dual target trips in sablefish, DSR, and p.cod fisheries.
+## Some of the harvest on the misc permits is def bycatch
 
 ## In the state sablefish fisheries, fishers with halibut IFQ in regulatory area 
 ## 2C and a CFEC halibut permit card MUST retain all halibut over 32 inches in 
 ## length, up to the amount of their IFQ.
 
 ## Halibut incidentally taken during an open commercial halibut season by power 
-#and hand troll gear operated for salmon consistent with applicable state laws 
+## and hand troll gear operated for salmon consistent with applicable state laws 
 ## and regulations are legally taken and possessed (5 AAC 28.133[c]). Commercial 
 ## halibut may be retained only by Individual Fishing Quota (IFQ) permit holders 
 ## during the open season for halibut. Trollers making an IFQ halibut landing of 
@@ -171,9 +180,8 @@ ggplot(hal_fishery,aes(Year,ha.mt,col=source)) +
 ## from the 3-hour prior notice of landing if landed concurrently with a legal landing of salmon
 ## harvested using hand troll or power troll gear (50 CFR 679.5[l][1][iv][A]).
 
-
 ## Assigning fishery types based on fishery codes and I have only included the codes
-## in the data (n=38)
+## in the data (n=38, including " ").
 
 hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
 yelloweye <- c("Y06A")
@@ -266,11 +274,10 @@ non_other_incidental <- hal_fishery %>%
         legend.margin = margin(6, 6, 6, 6)) ; non_other_incidental
 
 pal2 <- c("#91D5DE", "#2E8289", "#B4674E",  "#EAAE37", "#682C37", "#606060", "#606")
-#other means the fishery code was missing (all data from cfec) or the code 9999/9998 was used (all data after 2007)
+
+#unknown means the fishery code was missing (all data from cfec) or the code 9999/9998 was used (all data after 2007)
 unknown <- hal_fishery %>% 
   filter(fishery=="Unknown") %>% 
-  mutate(gear = if_else(gear == "61 - Longline", "Longline", 
-                        if_else(gear == "15 - Power gurdy troll", "Power gurdy troll",gear))) %>% 
   ggplot(aes(x=Year, y=ha.mt)) +
   geom_col(aes(fill = gear), width = 0.7) +
   scale_fill_manual(values = pal2) + 
@@ -284,16 +291,54 @@ unknown <- hal_fishery %>%
         legend.box.just = "right",
         legend.margin = margin(6, 6, 6, 6)); unknown
 
+pal3 <- c("Hand Troll"        = "#91D5DE",
+          "Longline"           = "#2E8289",
+          "Mechanical jigs"    = "#B4674E",
+          "Power gurdy troll"  = "#EAAE37",
+          "Dinglebar troll"    = "#682C37",
+          "Pot"                = "#606060")
+
+direct <- hal_fishery %>% 
+  filter(fishery=="Halibut Directed") %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = gear), width = 0.7) +
+  scale_fill_manual(values = pal3) + 
+  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type") +
+  coord_cartesian(ylim=c(0, 8000)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 8000, 500)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)); direct
+
+direct_noLL <- hal_fishery %>% 
+  filter(fishery=="Halibut Directed", gear != "Longline") %>% 
+  ggplot(aes(x=Year, y=ha.mt)) +
+  geom_col(aes(fill = gear), width = 0.7) +
+  scale_fill_manual(values = pal3) + 
+  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type w/o LL") +
+  coord_cartesian(ylim=c(0, 100)) +
+  scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 10)) +
+  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+  theme(legend.title = element_blank(),
+        legend.position = c(.95, .95),                #Position the legend within the plot====         
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)); direct_noLL
+
+
+################################################################################
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
+################################################################################
 Halibut.harv.1975 <- (hal_fishery %>%
-  #Filter here to keep directed halibut trips - the B permits were introduced in
-  #1977, so I am also going to assume anything that is fishery "unknown" and 
-  #the gear is longline is a directed halibut trip
-  filter(Year %in% c("1975","1976") & fishery == "Unknown" & gear == "Longline" |
-           fishery.code %in% c("B06B", "B61B", "B05B", "B99B", "B26B", 
-                               "B25B", "B61Z", "B06Z", "B09B", "B91B")) %>% 
+  ## Filter here to keep directed halibut trips and trips where the gear is longline
+  ## keeping LL trips would include the dual target trips
+  filter(fishery.code %in% c("B06B", "B61B", "B05B", "B99B", "B26B",
+                               "B25B", "B61Z", "B06Z", "B09B", "B91B")) %>%
   group_by(Year, Mgt.Area) %>%
-  summarise(HA.lbs = sum(ha.lbs, na.rm = TRUE),HA.mt  = sum(ha.mt,  na.rm = TRUE),.groups = "drop"))
+  summarise(HA.lbs = sum(ha.lbs, na.rm = TRUE),HA.mt  = sum(ha.mt,  na.rm = TRUE),.groups = "drop")) 
 
 
 lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
@@ -406,10 +451,15 @@ data_check_plot <- Hal.SPM %>%
                values_to = "Harvest") %>% 
   ggplot(aes(x = Year, y = Harvest, color = Source)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("SEO2C.req" = "black", "SEO2C.tix" = "blue")) +
+  geom_point()+
+  scale_color_manual(
+    values = c("SEO2C.req" = "black", "SEO2C.tix" = "blue"),
+    labels = c("SEO2C.req" = "IPHC Data", "SEO2C.tix" = "ADFG FT Data"))+
+  scale_x_continuous(breaks = seq(min(Hal.SPM$Year), max(Hal.SPM$Year), by = 4)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ylim(0, 3500) +
   labs(
-    title = "Halibut Harvest in SEO 2C",
+    title = "Filtered ADF&G data for B permits",
     y = "Harvest (mt)", 
     x = "Year", 
     color = "Data Source");data_check_plot

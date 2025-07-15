@@ -71,9 +71,6 @@ ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D17)
 ye_hal <- ye_hal %>% 
   rename_all(tolower)
 
-data_check <- ye_hal %>%
-  filter(year.landed == 1998 & fish.ticket.number == " CW9810145")
-
 
 # filter out the fisheries and areas we definitely don't want, as best as we can broadly
 # do not use iphc.regulatory.area -- WRONG AREA DATA
@@ -142,6 +139,13 @@ ye_hal2 <- ye_hal %>%
          round.pounds = ifelse(cfec.whole.pounds < pounds, pounds, cfec.whole.pounds)) %>%  
   filter(!mgmt.area == "WESTWARD")
 
+# #there is a bump in 1996 harvest that i am trying to figure out
+# #it looks okay here in the OG data
+data_check <- ye_hal2 %>%
+  filter(year.landed == 1996 & species.code == 200) %>%
+  group_by(year.landed, mgmt.area) %>%
+  summarise(ha.lbs = sum(whole.pounds, na.rm = TRUE)) %>%
+  mutate(ha.mt = ha.lbs*0.00045359)
 
 write.csv(ye_hal2,"Data_processing/Data/Harvests/CFEC Gross Earnings Data/data_check_ye_hal_summary.csv")
 
@@ -153,6 +157,7 @@ ye_hal2 %>%
   group_by(year.landed, mgmt.area, permit.fishery, gear.description) %>% 
   summarise(round.lbs = sum(round.pounds)) -> halibut
 table(halibut$permit.fishery, halibut$gear.description)   
+
 write.csv(halibut, "Data_processing/Data/Harvests/halibut_catch_data_cfec.csv")
 
 
