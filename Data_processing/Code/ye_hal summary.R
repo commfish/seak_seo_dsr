@@ -52,20 +52,21 @@ D13<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2013-2014.
 D14<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2015-2016.csv", fileEncoding = 'UTF-8-BOM') #2015-2016
 D15<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2017-2018.csv", fileEncoding = 'UTF-8-BOM') #2017-2018
 D16<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2019-2020.csv", fileEncoding = 'UTF-8-BOM') #2019-2020
-D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>%  #2021-2023
-select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Permit.Fishery",
-       "Species.Code","IPHC.Regulatory.Area","IPHC.Statistical.Area","ADFG.Management.Area.Code",
-       "Gear.Code","Gear.Description","Harvest.Code","Harvest.Description","Delivery.Code",
-       "Delivery.Description","Disposition.Code","Disposition.Description","Pounds","Whole.Pounds",
-       "CFEC.Whole.Pounds","Pre.Print.Ticket","Fish.Ticket.Number.1","Office.Name","IFQ.Halibut.Area",
-       "IFQ.Sable.Area","Groundfish.Mgt.Area.District","NMFS.Area","Stat.Area","Statistical.Area",
-       "Weight.Modifier","CFEC.Permit.Type","CFEC.Permit.Holder.Name","CFEC.Permit.Serial.Number",
-       "Port.Name.1","Date.Landed","Date.Fishing.Began","Date.Fishing.Ended","Vessel.ADFG.Number") %>% 
-  rename(Fish.TIcket.Number=Fish.Ticket.Number,
-         Fish.TIcket.Number.1=Fish.Ticket.Number.1)
+# D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>%  #2021-2023
+# select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Permit.Fishery",
+#        "Species.Code","IPHC.Regulatory.Area","IPHC.Statistical.Area","ADFG.Management.Area.Code",
+#        "Gear.Code","Gear.Description","Harvest.Code","Harvest.Description","Delivery.Code",
+#        "Delivery.Description","Disposition.Code","Disposition.Description","Pounds","Whole.Pounds",
+#        "CFEC.Whole.Pounds","Pre.Print.Ticket","Fish.Ticket.Number.1","Office.Name","IFQ.Halibut.Area",
+#        "IFQ.Sable.Area","Groundfish.Mgt.Area.District","NMFS.Area","Stat.Area","Statistical.Area",
+#        "Weight.Modifier","CFEC.Permit.Type","CFEC.Permit.Holder.Name","CFEC.Permit.Serial.Number",
+#        "Port.Name.1","Date.Landed","Date.Fishing.Began","Date.Fishing.Ended","Vessel.ADFG.Number") %>% 
+#   rename(Fish.TIcket.Number=Fish.Ticket.Number,
+#          Fish.TIcket.Number.1=Fish.Ticket.Number.1)
+# I realized that this output is not complete and there must be other filter I need to apply in OceanAK
 
 # combine into one df
-ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D17) 
+ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16) 
 
 # organize the df 
 ye_hal <- ye_hal %>% 
@@ -139,16 +140,7 @@ ye_hal2 <- ye_hal %>%
          round.pounds = ifelse(cfec.whole.pounds < pounds, pounds, cfec.whole.pounds)) %>%  
   filter(!mgmt.area == "WESTWARD")
 
-# #there is a bump in 1996 harvest that i am trying to figure out
-# #it looks okay here in the OG data
-data_check <- ye_hal2 %>%
-  filter(year.landed == 1996 & species.code == 200) %>%
-  group_by(year.landed, mgmt.area) %>%
-  summarise(ha.lbs = sum(whole.pounds, na.rm = TRUE)) %>%
-  mutate(ha.mt = ha.lbs*0.00045359)
-
 write.csv(ye_hal2,"Data_processing/Data/Harvests/CFEC Gross Earnings Data/data_check_ye_hal_summary.csv")
-
 
 
 # run halibut numbers for Phil - halibut and rockfish, just replace/remove the ! before species.code to run for halibut or rockfish

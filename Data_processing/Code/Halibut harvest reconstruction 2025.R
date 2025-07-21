@@ -74,12 +74,6 @@ HA.Harv<-read.csv("Data_processing/Data/Harvests/halibut_catch_data_cfec.csv", h
   select(Year,Mgt.Area,fishery.code,gear,ha.lbs,ha.mt,source) %>% 
   filter(Year <= 2006)## i removed the filter from the source code for longline and other gear.
 
-data_check3 <- HA.Harv %>%
-  filter(Year == 1996) %>%
-  group_by(Year, Mgt.Area) %>%
-  summarise(ha.lbs = sum(ha.lbs, na.rm = TRUE)) %>%
-  mutate(ha.mt = ha.lbs*0.00045359)
-
 lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 
 ## Catch Data 2021-Current Year
@@ -463,8 +457,6 @@ data_check_plot <- Hal.SPM %>%
     y = "Harvest (mt)", 
     x = "Year", 
     color = "Data Source");data_check_plot
-
-
 
 summary <- Hal.SPM %>%
   summarise(across(prop3A.EYKT:prop2C.SEIreq, list(min = min, max = max))); summary
