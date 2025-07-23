@@ -361,7 +361,6 @@ IOs<-unique(HA.req %>% filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Are
 HA.newreq <- HA.newreq %>% 
   mutate(IPHC.Regulatory.Area = str_trim(IPHC.Regulatory.Area)) %>% #removes the space after the letters in iphc regulatory area
   filter(IPHC.Regulatory.Area == "2C" | IPHC.Regulatory.Area == "3A") %>% 
-  #Net weight (lb): head off, eviscerated, ice and slime deducted weight
   mutate(Net_lbs=Net.wt..lb./1000) %>%
   select(Year,IPHC.Regulatory.Area,IPHC.Statistical.Area = IPHC..Statistical.Area,Net_lbs)
 
@@ -388,6 +387,8 @@ HA.req_2C_3A <- HA.req %>%
   mutate(Halibut_mt = Halibut_lbs * 0.00045359 * 1000,
     IO = IPHC.Region.2..1929.1975) %>%
   select(Year, IPHC.regarea = IPHC.Regulatory.Area, IO, Halibut_lbs, Halibut_mt)
+
+write.csv(HA.req_2C_3A)
 
 Hal.SPM<-data.frame()
 
