@@ -1,8 +1,8 @@
 # Summarizing halibut and yelloweye rockfish fish ticket data for Phil Joy
 # Includes: CFEC Gross Earnings subject area in OceanAK 
-# https://oceanak.adfg.alaska.gov/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FCFEC%20Gross%20Earnings#resultsTab197eb6751ad
+# https://oceanak.adfg.alaska.gov/analytics/saw.dll?PortalGo&Action=prompt&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FRockfish%20data%20for%20SRI%20(Phil%2C%20Randy%2C%20Rhea)%2FSRI%20Harvest%20Reconstruction%20Files%20for%20YE%2FGross%20Earnings%20Report%20-%20Phil%20data%20request
 # Author:  Rhea Ehresmann (rhea.ehresmann@alaska.gov) 
-# Last modified: July 8,2025 by LSC
+# Last modified: August 12,2025 by LSC
 
 # set up ----
 source('Data_processing/Code/helper.r') 
@@ -52,18 +52,6 @@ D13<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2013-2014.
 D14<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2015-2016.csv", fileEncoding = 'UTF-8-BOM') #2015-2016
 D15<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2017-2018.csv", fileEncoding = 'UTF-8-BOM') #2017-2018
 D16<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2019-2020.csv", fileEncoding = 'UTF-8-BOM') #2019-2020
-# D17<-read.csv("Data_processing/Data/Harvests/CFEC Gross Earnings Data/2021-2023.csv", fileEncoding = 'UTF-8-BOM') %>%  #2021-2023
-# select("Year.Landed","Fish.Ticket.Number","Port.Name","Permit.Fishery","CFEC.Permit.Fishery",
-#        "Species.Code","IPHC.Regulatory.Area","IPHC.Statistical.Area","ADFG.Management.Area.Code",
-#        "Gear.Code","Gear.Description","Harvest.Code","Harvest.Description","Delivery.Code",
-#        "Delivery.Description","Disposition.Code","Disposition.Description","Pounds","Whole.Pounds",
-#        "CFEC.Whole.Pounds","Pre.Print.Ticket","Fish.Ticket.Number.1","Office.Name","IFQ.Halibut.Area",
-#        "IFQ.Sable.Area","Groundfish.Mgt.Area.District","NMFS.Area","Stat.Area","Statistical.Area",
-#        "Weight.Modifier","CFEC.Permit.Type","CFEC.Permit.Holder.Name","CFEC.Permit.Serial.Number",
-#        "Port.Name.1","Date.Landed","Date.Fishing.Began","Date.Fishing.Ended","Vessel.ADFG.Number") %>% 
-#   rename(Fish.TIcket.Number=Fish.Ticket.Number,
-#          Fish.TIcket.Number.1=Fish.Ticket.Number.1)
-# I realized that this output is not complete and there must be other filter I need to apply in OceanAK
 
 # combine into one df
 ye_hal<-rbind(D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16) 
@@ -149,6 +137,8 @@ ye_hal2 %>%
   group_by(year.landed, mgmt.area, permit.fishery, gear.description) %>% 
   summarise(round.lbs = sum(round.pounds)) -> halibut
 table(halibut$permit.fishery, halibut$gear.description)   
+
+unique(ye_hal2$gear.description)
 
 write.csv(halibut, "Data_processing/Data/Harvests/halibut_catch_data_cfec.csv")
 

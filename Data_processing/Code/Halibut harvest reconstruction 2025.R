@@ -148,7 +148,8 @@ HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1
 ################################################################################
 
 #Data Check - combine the new and old HA harvest data
-hal_fishery<-rbind(HA.Harv,HA.Harv.update)
+hal_fishery<-rbind(HA.Harv,HA.Harv.update) %>% 
+  mutate(Year = as.character(Year))
 unique(hal_fishery$Year)
 unique(hal_fishery$fishery.code)
 unique(hal_fishery$gear)
@@ -157,183 +158,185 @@ ggplot(hal_fishery,aes(Year,ha.mt,col=source)) +
   geom_line()+
   facet_wrap(~Mgt.Area)
 
-## I am trying to sort out what is bycatch and what are directed trips because here's
-## the thing, there are dual target trips in sablefish, DSR, and p.cod fisheries.
-## Some of the harvest on the misc permits is def bycatch
-
-## In the state sablefish fisheries, fishers with halibut IFQ in regulatory area 
-## 2C and a CFEC halibut permit card MUST retain all halibut over 32 inches in 
-## length, up to the amount of their IFQ.
-
-## Halibut incidentally taken during an open commercial halibut season by power 
-## and hand troll gear operated for salmon consistent with applicable state laws 
-## and regulations are legally taken and possessed (5 AAC 28.133[c]). Commercial 
-## halibut may be retained only by Individual Fishing Quota (IFQ) permit holders 
-## during the open season for halibut. Trollers making an IFQ halibut landing of 
-## 500 lb or less of IFQ weight as determined pursuant to 50 CFR 679.40(h) are exempted
-## from the 3-hour prior notice of landing if landed concurrently with a legal landing of salmon
-## harvested using hand troll or power troll gear (50 CFR 679.5[l][1][iv][A]).
-
-## Assigning fishery types based on fishery codes and I have only included the codes
-## in the data (n=38, including " ").
-
-hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
-yelloweye <- c("Y06A")
-sablefish <- c("C61B","C09B","C06B","C61C","C61A","C50B" )
-lingcod <- c("I25B","I05B")
-salmon <- c("S05B","S15B","S03A","S01A","S04D")
-misc <- c("M06B","M61B","M99B","L99B","M05B","S04D","M26B","P09B","D09B","G34A", "M07B","M06G")
-unknown <- c("","9998","9999")
-
-#Website for historical CFEC fishery codes: https://www.cfec.state.ak.us/misc/FshyDesH.htm
-#"M06B", "M61B" & "M06G" = longline (potential pacific cod trips)
-#"M05B" = hand troll
-#"M26B" = mechanical jig 
-#"P09B" = shrimp pot
-#"D09B" = Dungeness
-#"G34A" = Herring gill net
-#"M07B" = trawl
-#"M99B" = Experimental/Special Permit 1975-2021
-#"L99B" = herring spawn on kelp (1974-1980)
-#Unknown:
-#"9998" = this is an interim value that is supposed  be replace with a valid value within 72 hrs
-#"9999"
-
-pal <- c("Halibut Directed"        = "#91D5DE",
-         "Yelloweye Incidental"    = "#2E8289",
-         "Sablefish Incidental"    = "#B4674E",
-         "Lingcod Incidental"      = "#EAAE37",
-         "Salmon Incidental"       = "#682C37",
-         "Misc Incidental"         = "#606060",
-         "Unknown"                 = "#606090")
-
-hal_fishery <- hal_fishery %>% 
-  mutate(fishery = ifelse(fishery.code %in% yelloweye, "Yelloweye Incidental",
-                          #there is one yelloweye incidental from 2025, the permit holder was allowed to retain and sell the halibut
-                          #even tho there are not halibut bycatch allowances for the DSR fishery because the halibut was tagged
-                          ifelse(fishery.code %in% hal_directed, "Halibut Directed",
-                                 ifelse(fishery.code %in% sablefish, "Sablefish Incidental",
-                                        ifelse(fishery.code %in% lingcod, "Lingcod Incidental",
-                                               ifelse(fishery.code %in% salmon, "Salmon Incidental",
-                                                      ifelse(fishery.code %in% misc, "Misc Incidental","Unknown"))))))) %>% 
-  mutate(fishery = factor(fishery, levels = names(pal)))
-
-check <- hal_fishery %>% 
-  filter(fishery.code %in% c("9998","9999",""))
-
-unique(check$gear)
-
-sector_fig <- hal_fishery %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = fishery), width = 0.7) +
-  scale_fill_manual(values = pal) + 
-  ylab("Catch (mt)\n") + xlab("Year\n") +
-  coord_cartesian(ylim=c(0, 7000)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 7000, 500)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)) ; sector_fig
-
-incidental <- hal_fishery %>% 
-  filter(!fishery=="Halibut Directed") %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = fishery), width = 0.7) +
-  scale_fill_manual(values = pal) + 
-  ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("'Incidental' Fisheries")+
-  coord_cartesian(ylim=c(0, 1700)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)) ; incidental
-
-non_other_incidental <- hal_fishery %>% 
-  filter(!fishery %in% c("Halibut Directed","Unknown")) %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = fishery), width = 0.7) +
-  scale_fill_manual(values = pal) + 
-  ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("Non-Unknown Incidental Fisheries")+
-  coord_cartesian(ylim=c(0, 100)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 5)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)) ; non_other_incidental
-
-pal2 <- c("#91D5DE", "#2E8289", "#B4674E",  "#EAAE37", "#682C37", "#606060", "#606")
-
-#unknown means the fishery code was missing (all data from cfec) or the code 9999/9998 was used (all data after 2007)
-unknown <- hal_fishery %>% 
-  filter(fishery=="Unknown") %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = gear), width = 0.7) +
-  scale_fill_manual(values = pal2) + 
-  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Unknown Fishery by Gear Type") +
-  coord_cartesian(ylim=c(0, 1700)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)); unknown
-
-pal3 <- c("Hand Troll"        = "#91D5DE",
-          "Longline"           = "#2E8289",
-          "Mechanical jigs"    = "#B4674E",
-          "Power gurdy troll"  = "#EAAE37",
-          "Dinglebar troll"    = "#682C37",
-          "Pot"                = "#606060")
-
-direct <- hal_fishery %>% 
-  filter(fishery=="Halibut Directed") %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = gear), width = 0.7) +
-  scale_fill_manual(values = pal3) + 
-  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type") +
-  coord_cartesian(ylim=c(0, 8000)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 8000, 500)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)); direct
-
-direct_noLL <- hal_fishery %>% 
-  filter(fishery=="Halibut Directed", gear != "Longline") %>% 
-  ggplot(aes(x=Year, y=ha.mt)) +
-  geom_col(aes(fill = gear), width = 0.7) +
-  scale_fill_manual(values = pal3) + 
-  ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type w/o LL") +
-  coord_cartesian(ylim=c(0, 100)) +
-  scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 10)) +
-  scale_x_continuous(breaks=seq(1975, 2025, 5)) +
-  theme(legend.title = element_blank(),
-        legend.position = c(.95, .95),                #Position the legend within the plot====         
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6)); direct_noLL
+# ## I am trying to sort out what is bycatch and what are directed trips because here's
+# ## the thing, there are dual target trips in sablefish, DSR, and p.cod fisheries.
+# ## Some of the harvest on the misc permits is def bycatch
+# 
+# ## In the state sablefish fisheries, fishers with halibut IFQ in regulatory area 
+# ## 2C and a CFEC halibut permit card MUST retain all halibut over 32 inches in 
+# ## length, up to the amount of their IFQ.
+# 
+# ## Halibut incidentally taken during an open commercial halibut season by power 
+# ## and hand troll gear operated for salmon consistent with applicable state laws 
+# ## and regulations are legally taken and possessed (5 AAC 28.133[c]). Commercial 
+# ## halibut may be retained only by Individual Fishing Quota (IFQ) permit holders 
+# ## during the open season for halibut. Trollers making an IFQ halibut landing of 
+# ## 500 lb or less of IFQ weight as determined pursuant to 50 CFR 679.40(h) are exempted
+# ## from the 3-hour prior notice of landing if landed concurrently with a legal landing of salmon
+# ## harvested using hand troll or power troll gear (50 CFR 679.5[l][1][iv][A]).
+# 
+# ## Assigning fishery types based on fishery codes and I have only included the codes
+# ## in the data (n=38, including " ").
+# 
+# hal_directed <- c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
+# yelloweye <- c("Y06A")
+# sablefish <- c("C61B","C09B","C06B","C61C","C61A","C50B" )
+# lingcod <- c("I25B","I05B")
+# salmon <- c("S05B","S15B","S03A","S01A","S04D")
+# misc <- c("M06B","M61B","M99B","L99B","M05B","S04D","M26B","P09B","D09B","G34A", "M07B","M06G")
+# unknown <- c("","9998","9999")
+# 
+# #Website for historical CFEC fishery codes: https://www.cfec.state.ak.us/misc/FshyDesH.htm
+# #"M06B", "M61B" & "M06G" = longline (potential pacific cod trips)
+# #"M05B" = hand troll
+# #"M26B" = mechanical jig 
+# #"P09B" = shrimp pot
+# #"D09B" = Dungeness
+# #"G34A" = Herring gill net
+# #"M07B" = trawl
+# #"M99B" = Experimental/Special Permit 1975-2021
+# #"L99B" = herring spawn on kelp (1974-1980)
+# #Unknown:
+# #"9998" = this is an interim value that is supposed  be replace with a valid value within 72 hrs
+# #"9999"
+# 
+# pal <- c("Halibut Directed"        = "#91D5DE",
+#          "Yelloweye Incidental"    = "#2E8289",
+#          "Sablefish Incidental"    = "#B4674E",
+#          "Lingcod Incidental"      = "#EAAE37",
+#          "Salmon Incidental"       = "#682C37",
+#          "Misc Incidental"         = "#606060",
+#          "Unknown"                 = "#606090")
+# 
+# hal_fishery <- hal_fishery %>% 
+#   mutate(fishery = ifelse(fishery.code %in% yelloweye, "Yelloweye Incidental",
+#                           #there is one yelloweye incidental from 2025, the permit holder was allowed to retain and sell the halibut
+#                           #even tho there are not halibut bycatch allowances for the DSR fishery because the halibut was tagged
+#                           ifelse(fishery.code %in% hal_directed, "Halibut Directed",
+#                                  ifelse(fishery.code %in% sablefish, "Sablefish Incidental",
+#                                         ifelse(fishery.code %in% lingcod, "Lingcod Incidental",
+#                                                ifelse(fishery.code %in% salmon, "Salmon Incidental",
+#                                                       ifelse(fishery.code %in% misc, "Misc Incidental","Unknown"))))))) %>% 
+#   mutate(fishery = factor(fishery, levels = names(pal)))
+# 
+# check <- hal_fishery %>% 
+#   filter(fishery.code %in% c("9998","9999",""))
+# 
+# unique(check$gear)
+# 
+# sector_fig <- hal_fishery %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = fishery), width = 0.7) +
+#   scale_fill_manual(values = pal) + 
+#   ylab("Catch (mt)\n") + xlab("Year\n") +
+#   coord_cartesian(ylim=c(0, 7000)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 7000, 500)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)) ; sector_fig
+# 
+# incidental <- hal_fishery %>% 
+#   filter(!fishery=="Halibut Directed") %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = fishery), width = 0.7) +
+#   scale_fill_manual(values = pal) + 
+#   ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("'Incidental' Fisheries")+
+#   coord_cartesian(ylim=c(0, 1700)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)) ; incidental
+# 
+# non_other_incidental <- hal_fishery %>% 
+#   filter(!fishery %in% c("Halibut Directed","Unknown")) %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = fishery), width = 0.7) +
+#   scale_fill_manual(values = pal) + 
+#   ylab("Catch (mt)\n") + xlab("Year\n") + ggtitle("Non-Unknown Incidental Fisheries")+
+#   coord_cartesian(ylim=c(0, 100)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 5)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)) ; non_other_incidental
+# 
+# pal2 <- c("#91D5DE", "#2E8289", "#B4674E",  "#EAAE37", "#682C37", "#606060", "#606")
+# 
+# #unknown means the fishery code was missing (all data from cfec) or the code 9999/9998 was used (all data after 2007)
+# unknown <- hal_fishery %>% 
+#   filter(fishery=="Unknown") %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = gear), width = 0.7) +
+#   scale_fill_manual(values = pal2) + 
+#   ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Unknown Fishery by Gear Type") +
+#   coord_cartesian(ylim=c(0, 1700)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 1700, 100)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)); unknown
+# 
+# pal3 <- c("Hand Troll"        = "#91D5DE",
+#           "Longline"           = "#2E8289",
+#           "Mechanical jigs"    = "#B4674E",
+#           "Power gurdy troll"  = "#EAAE37",
+#           "Dinglebar troll"    = "#682C37",
+#           "Pot"                = "#606060")
+# 
+# direct <- hal_fishery %>% 
+#   filter(fishery=="Halibut Directed") %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = gear), width = 0.7) +
+#   scale_fill_manual(values = pal3) + 
+#   ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type") +
+#   coord_cartesian(ylim=c(0, 8000)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 8000, 500)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)); direct
+# 
+# direct_noLL <- hal_fishery %>% 
+#   filter(fishery=="Halibut Directed", gear != "Longline") %>% 
+#   ggplot(aes(x=Year, y=ha.mt)) +
+#   geom_col(aes(fill = gear), width = 0.7) +
+#   scale_fill_manual(values = pal3) + 
+#   ylab("Catch (t)\n") + xlab("Year\n") + ggtitle("Halibut Directed Fishery by Gear Type w/o LL") +
+#   coord_cartesian(ylim=c(0, 100)) +
+#   scale_y_continuous(label=scales::comma, breaks = seq(0, 100, 10)) +
+#   scale_x_continuous(breaks=seq(1975, 2025, 5)) +
+#   theme(legend.title = element_blank(),
+#         legend.position = c(.95, .95),                #Position the legend within the plot====         
+#         legend.justification = c("right", "top"),
+#         legend.box.just = "right",
+#         legend.margin = margin(6, 6, 6, 6)); direct_noLL
 
 
 ################################################################################
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
 ################################################################################
-Halibut.harv.1975 <- (hal_fishery %>%
-  ## Filter here to keep directed halibut trips and trips where the gear is longline
-  ## keeping LL trips would include the dual target trips
-  filter(fishery.code %in% c("B06B", "B61B", "B05B", "B99B", "B26B",
-                               "B25B", "B61Z", "B06Z", "B09B", "B91B")) %>%
+Halibut.harv.1975 <- hal_fishery %>%
   group_by(Year, Mgt.Area) %>%
-  summarise(HA.lbs = sum(ha.lbs, na.rm = TRUE),HA.mt  = sum(ha.mt,  na.rm = TRUE),.groups = "drop")) 
+  summarise(
+    HA.lbs = sum(ha.lbs, na.rm = TRUE),
+    HA.mt  = sum(ha.mt, na.rm = TRUE)) %>% 
+  ungroup()
 
+
+str(hal_fishery)
+str(Halibut.harv.1975)
 
 lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
 
