@@ -53,11 +53,11 @@ options(scipen = 999)
 ## Catch Data 1975-2023 - R output - code from Rhea Ehresmann using lbs from the
 ## CFEC gross earning subject area in OceanAK:
 ## https://oceanak.adfg.alaska.gov/analytics/saw.dll?Answers&path=%2Fshared%2FCommercial%20Fisheries%2FRegion%20I%2FGroundFish%2FUser%20Reports%2FYelloweye%20Reports%20for%20Phil%2FCFEC%20Gross%20Earnings#resultsTab197eba52b18
-## I have updated this spreadsheet through 2023 but we will only be using the data
+## This is updated through 2020 but we will only be using the data
 ## before 2006 as the fish ticket data (below) is more accurate.We have a lot more 
 ## flexibility with the fish ticket data and filters. The CFEC gross earnings 
-## doesn’t change if fish tickets are edited the following year, so the CFEC data aren’t updated 
-## even if the fish tickets are updated. 
+## doesn’t change if fish tickets are edited the following year, so the CFEC data 
+## aren’t updated even if the fish tickets are updated. 
 ## This does not need to be updated in the future but in case someone does want to
 ## The data is stored: Data_processing/Data/Harvests/CFEC Gross Earnings Data
 ## The code is stored: Data_processing/Code/ye_hal_summary.R
@@ -83,6 +83,12 @@ lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## excluded inside waters and included only halibut trips (B permits). I changed filters to match
 ## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish
 ## ticket data 2007 - present". 
+## Filters in OCeanAK:
+## Species == 200
+## Mgt Area == CSEO, EYKT, NSEO, SSEO, NSEI, SSEI
+## Harvest code is NOT equal to 41, 42 or 43
+## DOL > 2007
+## Disp is NOT equal to 98 (discarded at sea)
 ## I made an archive folder for old outputs. I think these can eventually be deleted,
 ## but I am a data hoarder and it's nice to rerun with old outputs to recreate outputs.
 ## Data pulled: 7.8.25
@@ -328,6 +334,11 @@ ggplot(hal_fishery,aes(Year,ha.mt,col=source)) +
 #Combine 1975-2006 to 2007-present ADF&G fish ticket data
 ################################################################################
 Halibut.harv.1975 <- hal_fishery %>%
+  #adding filter for B permits and longline gear but this will filter out years 1976 and 1975
+  #because fishery codes weren't used yet
+  filter(fishery.code %in% c("B06B","B61B","B05B","B99B","B26B","B25B","B61Z","B06Z","B09B","B91B")
+         & gear=="Longline"|
+           Year %in% c("1975","1976") & gear=="Longline") %>% 
   group_by(Year, Mgt.Area) %>%
   summarise(
     HA.lbs = sum(ha.lbs, na.rm = TRUE),
