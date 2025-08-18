@@ -20,7 +20,7 @@
 ## IPHC management area 3A). For years prior to 1929 this meant applying the 
 ## proportional relationship between the EYKT and the entire 3A regulatory area.
 ## 
-## This is the most latest version of the code updated last 9/23/24 - LSC
+## This is the most latest version of the code updated last 8/18/25 - LSC
 ################################################################################
 
 # set up ----
@@ -83,7 +83,7 @@ lapply(HA.Harv[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## excluded inside waters and included only halibut trips (B permits). I changed filters to match
 ## Ha.Harv output. I saved this OceanAK report as "Halibut harvest SEO in fish
 ## ticket data 2007 - present". 
-## Filters in OCeanAK:
+## Filters in OceanAK:
 ## Species == 200
 ## Mgt Area == CSEO, EYKT, NSEO, SSEO, NSEI, SSEI
 ## Harvest code is NOT equal to 41, 42 or 43
@@ -148,6 +148,7 @@ unique(HA.29_75$Year) #1929-1975
 
 ## Halibut by IPHC area from web source data
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
+unique(HA.IPHCweb$Year) #1888-2020
 
 ################################################################################
 ### HALIBUT HAREVEST ADFG FISH TICKET DATA EXPLORATION ###
@@ -345,10 +346,6 @@ Halibut.harv.1975 <- hal_fishery %>%
     HA.mt  = sum(ha.mt, na.rm = TRUE)) %>% 
   ungroup()
 
-
-str(hal_fishery)
-str(Halibut.harv.1975)
-
 lapply(Halibut.harv.1975[c("Year", "Mgt.Area")], unique)
 
 #SAVE this data for use in estimating historical bycatch
@@ -401,8 +398,6 @@ HA.req_2C_3A <- HA.req %>%
   mutate(Halibut_mt = Halibut_lbs * 0.00045359 * 1000,
     IO = IPHC.Region.2..1929.1975) %>%
   select(Year, IPHC.regarea = IPHC.Regulatory.Area, IO, Halibut_lbs, Halibut_mt)
-
-write.csv(HA.req_2C_3A)
 
 Hal.SPM<-data.frame()
 
@@ -473,15 +468,13 @@ data_check_plot <- Hal.SPM %>%
     x = "Year", 
     color = "Data Source");data_check_plot
 
-summary <- Hal.SPM %>%
-  summarise(across(prop3A.EYKT:prop2C.SEIreq, list(min = min, max = max))); summary
 
 ## For hindcasting proportions lets use pre-full retention
 ## Full retention was required for all DSR captured in groundfish and halibut 
 ## fisheries in federal waters starting in 2005 Full retention of all DSR 
 ## captured in groundfish and halibut fisheries in state waters started in 2009.
 
-Pre2010<-Hal.SPM[Hal.SPM$Year < 2010,]
+Pre2010<-Hal.SPM[Hal.SPM$Year < 2011,]
 
 Prop.EYKT_3A<-mean(Pre2010$prop3A.EYKT) #average proportion of Area 3A harvest that came from EYKT
 var.EYKT_3A<-var(Pre2010$prop3A.EYKT)
@@ -597,8 +590,9 @@ max(Halibut_harvest_forSPM$Year)
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
 ## Data check stuff here
-## LSC - I want to come back and investigate this more. The proportion for SEI is
-## greater than 1, which doesn't seem correct.
+## We want to make sure that the IPHC data request and outside water harvest from 
+## the fish ticket data matches and that the data request and the website data match 
+## up in order to confirm we can use SEO proportions to hindcast
 
 HA.IPHCweb %>% 
   select(Year = Year,
@@ -611,9 +605,14 @@ IPHC_3A<-HA.req_2C_3A %>% filter(IPHC.regarea == "3A")
 plot(old.HA$a2C.mt ~ old.HA$Year, type="l")
 lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-I"]+IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-O"] ~
         IPHC_2C$Year[IPHC_2C$IO=="SE-I"],type="l",col="orange")
+
 plot(old.HA$a3A.mt ~ old.HA$Year, type="l")
 lines(IPHC_3A$Halibut_mt[IPHC_3A$IO=="Yakutat"]+IPHC_3A$Halibut_mt[IPHC_3A$IO=="Kodiak"] ~
         IPHC_3A$Year[IPHC_3A$IO=="Yakutat"],type="l",col="orange")
+
+#2025 - it looks like there are some mismatched between the IPHC data from HA.req and
+#the IPHC web update for both 2C and 3A
+
 
 overlap.HA<-old.HA %>% filter(Year > 1976)
 
@@ -637,7 +636,7 @@ for (y in years) {  #y<-years[1]
 
 plot(overlap.HA$prop.2C.SEO ~ overlap.HA$Year, ylim=c(0,1), type="l")
 lines(overlap.HA$prop.3A.EYKT ~ overlap.HA$Year, col="blue")
-lines(overlap.HA$prop.2C.SEI ~ overlap.HA$Year, col="red")
+lines(overlap.HA$prop.2C.SEI ~ overlap.HA$Year, col="red") #the SEI harvest seems REALLY HIGH 
 
 plot(overlap.HA$a2C.mt ~ overlap.HA$Year, type="l", ylim=c(0,6000))
 lines(overlap.HA$SEO2C ~ overlap.HA$Year, type="l", col="blue")
