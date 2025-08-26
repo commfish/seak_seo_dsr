@@ -6,73 +6,91 @@
 ## Phil Joy
 ##
 ## Background stuff on these calculations in Discards.Rproj in Yelloweye/Unreported Discards
-##  Last updates 8/18/25 - LSC
+## Last updates 8/18/25 - LSC
 #################################################################################
-{library(dplyr)
+
+# set up ----
+{library(tidyverse)
 library(boot)
-library(ggplot2)
 library(RColorBrewer)
 library(matrixStats)
+  library(extrafont)
   }
 
 source("r_helper/Port_bio_function.R")
 
-YEAR <- 2024
+###  set plotting theme to use TNR  ###
+#font_import() #remove # to run this but only do this one time - it takes a while
+loadfonts(device="win")
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+theme_set(theme_bw(base_size=18,base_family='Times New Roman')
+          +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()))
 
-#*******************************************************************************
+YEAR<-2024
+
+options(scipen = 999)
+
+#################################################################################
 ### NEED TO DO!!!!!!!! 7-12-23
+### LSC NEED TO CHECK WITH PHIL OR SPENCER ON THESE 
 # 1) Add in hook saturation correction factor for both cpue and bycatch 
 # 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it
 # 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
 #    Station locations move by 3nm year to year, so may be in and out of actual habitat
-#*******************************************************************************
+#################################################################################
 
-#get processed IPHC survey data built in IPHC_Survey_CPUE_index.R
-# Survey<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR,".csv"))
-# 
-# oldSurv<-read.csv(paste0("Data_processing/Data/IPHC_survey_1998-",YEAR-1,".csv"))
+################################################################################
+### IMPORT DATA ###
+################################################################################
 
-#this comes from Rhea's version of the index where she cleaned up the code a bit.
+## IPHC Fishery Harvest Data ###################################################
+## This output is from Halibut harvest reconstruction 2025.R 
+## Load halibut harvests by subdistrict to calculate expected bycatch values
+
+SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
+
+#note from phil - need to ask what does this mean?
+#notes: Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
+#function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
+
+## ADF&G Fish Ticket Data ############################################################
+## This output is from Halibut harvest reconstruction 2025.R 
+HA.Harv<-read.csv("Data_processing/Data/SE_Halibut_removals_1975-2025.csv", header=T) #fish ticket data
+
+## IPHC Survey Data #############################################################
+## get processed IPHC survey data built in IPHC_Survey_CPUE_index.R (Rhea's version)
+## LSC get the most updated output from spencer
 Survey <- read.csv("Data_processing/Data/IPHC_survey_1998-2024_rke.csv")
 
-# yr<-2023
-# smp<-sample_n(oldSurv %>% filter(Year == yr),1)
-# smp<-oldSurv %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
-# smp2<-Survey %>% filter(Year == yr, Station == smp$Station, Stlkey == smp$Stlkey)
-
 str(Survey); head(Survey,10)
-# str(HA.Harv)
-#================================================================================
-# Look at some depth stuff... 
-hist(Survey$BeginDepth..fm., breaks=10)
-hist(Survey$EndDepth..fm., breaks=10)
-hist(Survey$AvgDepth.fm, breaks=10)
 
-plot(Survey$YE.obs ~ Survey$AvgDepth.fm)
-plot(Survey$O32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
-plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
+## Commercial Port Sampling Data ################################################
+## Load the port samples that were downloaded from OceanAK
+## Need Yelloweye weights to get wcpue estimates
 
-#==============================================================================================
-## Load the port samples that were downloaded from oceansAK; 
-# Need Yelloweye weights to get wcpue estimates
-{  Port<-port.bio(2024)
+Port<-port.bio(2025)
   
   unique(Port$Sample.Type)
   Port.rand<-Port[Port$Sample.Type=="Random",]
   Port.direct<-Port[Port$Project=="Commercial Longline Trip",]
   Port.hal<-Port[Port$Project=="Commercial Halibut Longline",]; nrow(Port.hal)
   
-  Survey$mean.YE.kg<-NA
-  Survey$var.YE.kg<-NA
-  Survey$N.YE.kg<-NA
+################################################################################
+### SET UP BIODATA
+################################################################################
+## Get best data for average weights and add columns to survey data. Because many 
+## years have inadequate sample sizes we will use the most recent year's prior 
+## to a given year for the average.
   
-  ## Get best data for average weights and add columns to survey data.  Because many 
-  ## years have inadequate sample sizes we will use the most recent year's prior 
-  ## to a given year for the average.  This code does that... 
+#Adding columns...
+Survey$mean.YE.kg<-NA
+Survey$var.YE.kg<-NA
+Survey$N.YE.kg<-NA
   
-  Years<-sort(unique(Survey$Year))
-  GFMA<-unique(Survey$SEdist)
-  unique(Port.rand$Groundfish.Management.Area.Code)
+
+Years<-sort(unique(Survey$Year)) #1998-2023 - LSC check this with the newest output
+GFMA<-unique(Survey$SEdist) # LSC - do we need to filter out inside waters?
+unique(Port.rand$Groundfish.Management.Area.Code)
   
   for (i in Years){    #i<-Years[1]
     for (j in GFMA){   #j<-GFMA[1]
@@ -125,53 +143,52 @@ plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
       }
     }
   }
-}
 colnames(Survey)
 
-ggplot(data = Survey %>% filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x = Year)) +
-  geom_line(aes(y = mean.YE.kg, col = SEdist), linewidth = 1) +
+# Biodata Exploratory Plots ####################################################
+ggplot(data = Survey %>% 
+         filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
+       aes(x = Year)) +
+  geom_line(aes(y = mean.YE.kg, col = SEdist),
+            linewidth = 1) +
   geom_ribbon(aes(ymin = mean.YE.kg - (sqrt(var.YE.kg)), 
                   ymax = mean.YE.kg + (sqrt(var.YE.kg)), 
                   fill = SEdist),  alpha = 0.2) +
   xlab("\nYear") +
   ylab("Average weight of port sampled yelloweye (kg)") 
 
-ggplot(data = Survey %>% filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x = as.factor(Year))) +
-  geom_boxplot(aes(y = O32.Pacific.halibut.weight, fill = SEdist, col=SEdist), size = 1) 
+ggplot(data = Survey %>% 
+         filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
+       aes(x = as.factor(Year))) +
+  geom_boxplot(aes(y = O32.Pacific.halibut.weight, fill = SEdist, col=SEdist), size = 1) +
+  xlab("\nYear") +
+  ylab("Pacific Halibut (> 32 cm) Weight (lbs)") #check units - is this kg or lbs in the data
 
-ggplot(data = Survey %>% filter(Year > 2015,
-                                SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), aes(x=O32.Pacific.halibut.weight)) + 
+ggplot(data = Survey %>% 
+         filter(Year > 2015,
+                SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
+       aes(x=O32.Pacific.halibut.weight)) + 
   geom_density(aes(fill = as.factor(Year), col=as.factor(Year)),alpha = 0.3) + 
   #geom_histogram(aes(fill = as.factor(Year), col=as.factor(Year), y=..density..),alpha = 0.3) +
   facet_wrap(~SEdist) +
-  ylim(0,0.005)#+
-#  geom_vline(aes(xintercept = mean(O32.Pacific.halibut.weight, na.rm=T), col=as.factor(Year)))
-#=============================================================================
-# Load halibut harvests by subdistrict to calculate expected bycatch values;
+  xlab("\nPacific Halibut (> 32 cm) Weight (lbs)") +
+  ylab("Density") +
+  ylim(0,0.0033)#+
+#  geom_vline(aes(xintercept = mean(O32.Pacific.halibut.weight, na.rm=T), col=as.factor(Year))) 
 
-#This output is from Halibut harvest reconstruction.R (no underscores!)
-SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
-
-#notes: Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
-#function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
-
-#get halibut harvest from fishticket data...
+################################################################################
+### SET UP FISH TICKET DATA
+################################################################################
 
 Halibut<-function(){
-#This output is from Halibut harvest reconstruction.R (no underscores!)
-  # HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
-  HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-2024.csv"), header=T) #fish ticket data
-  LL<-HA.Harv #[HA.Harv$gear.description == "Longline",]
+  LL<-HA.Harv
   head(LL)
   colnames(LL)
   
-  LL<-HA.Harv
-  #LL<-rename(LL, SEdist = groundfish.mgt.area.district)
   LL<-dplyr::rename(LL, SEdist = Mgt.Area)
-  #LL<-rename(LL, Year = year.landed)
   Hali<-LL; head(LL)
   
-  plot(LL$Year,LL$round_lbs_hali)
+  plot(LL$Year,LL$HA.lbs)
   plot(LL$Year,LL$HA.mt)
   Hcheck<-data.frame()
   Yrs<-unique(LL$Year)
@@ -188,15 +205,25 @@ Hali<-Halibut()
 str(Hali)
 ggplot(Hali %>% filter(SEdist %in% c("EYKT","NSEO","CSEO","SSEO")), aes(x=Year, y = HA.mt)) + 
   geom_line(aes(col=SEdist))
-#=============================================================================
-# 
+
+################################################################################
+### SURVEY DEPTH DATA EXPLORATION
+################################################################################
+hist(Survey$BeginDepth..fm., breaks=10)
+hist(Survey$EndDepth..fm., breaks=10)
+hist(Survey$AvgDepth.fm, breaks=10)
+
+plot(Survey$YE.obs ~ Survey$AvgDepth.fm)
+plot(Survey$O32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
+plot(Survey$U32.Pacific.halibut.count ~ Survey$AvgDepth.fm)
+
 #to gauge relationship between depth and wcpue estimates calculate for different depth 
 # bins and compare... 
 unique(Survey$depth_bin)
 with(Survey, table(depth_bin))
 hist(Survey$depth_bin)
 
-#*** IFQ started in 1995; prior to that it's Derby style ***
+# IFQ started in 1995; prior to that it's Derby style
 
 IPHC.wcpue<-data.frame()
 Subs<-unique(Survey$SEdist)

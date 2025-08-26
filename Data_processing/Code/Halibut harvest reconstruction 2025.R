@@ -469,10 +469,12 @@ data_check_plot <- Hal.SPM %>%
 
 ## For hindcasting proportions lets use pre-full retention
 ## Full retention was required for all DSR captured in groundfish and halibut 
-## fisheries in federal waters starting in 2005 Full retention of all DSR 
-## captured in groundfish and halibut fisheries in state waters started in 2009.
+## fisheries in federal waters starting in 2005. Full retention was required of 
+## all DSR captured in state waters of Southeast in 2000, and in 2009,
+## was restricted to groundfish and halibut fisheries only to reduce the at-sea 
+## discard of DSR.
 
-Pre2010<-Hal.SPM[Hal.SPM$Year < 2011,]
+Pre2010<-Hal.SPM[Hal.SPM$Year < 2010,]
 
 Prop.EYKT_3A<-mean(Pre2010$prop3A.EYKT) #average proportion of Area 3A harvest that came from EYKT
 var.EYKT_3A<-var(Pre2010$prop3A.EYKT)
