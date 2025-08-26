@@ -25,13 +25,11 @@
 
 # set up ----
 
-{library(plyr)
-library(dplyr)
-library(boot)
-library(ggplot2)
+{library(boot)
 library(scales)
 library(tidyverse)
-  library(extrafont)}
+library(extrafont)
+  }
 
 ###  set plotting theme to use TNR  ###
 #font_import() #remove # to run this but only do this one time - it takes a while
