@@ -6,7 +6,7 @@
 ## Phil Joy
 ##
 ## Background stuff on these calculations in Discards.Rproj in Yelloweye/Unreported Discards
-## Last updates 8/18/25 - LSC
+## Last updates 6/23/26 - LSC
 #################################################################################
 
 # set up ----
@@ -26,13 +26,13 @@ windowsFonts(Times=windowsFont("TT Times New Roman"))
 theme_set(theme_bw(base_size=18,base_family='Times New Roman')
           +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()))
 
-YEAR<-2024
+YEAR<-2026
 
 options(scipen = 999)
 
 #################################################################################
 ### NEED TO DO!!!!!!!! 7-12-23
-### LSC NEED TO CHECK WITH PHIL OR SPENCER ON THESE 
+### FLAG!!! This to do list was left by Phil - not sure how we want to proceed
 # 1) Add in hook saturation correction factor for both cpue and bycatch 
 # 2) filter out stations that were not effective!!! "Eff" column... Yes = good, no = toss it
 # 3) filter stations that fit in the "designated yelloweye habitat" that we use for the ROV surveys
@@ -44,22 +44,22 @@ options(scipen = 999)
 ################################################################################
 
 ## IPHC Fishery Harvest Data ###################################################
-## This output is from Halibut harvest reconstruction 2025.R 
+## This output is from Halibut harvest reconstruction 2026.R 
 ## Load halibut harvests by subdistrict to calculate expected bycatch values
 
 SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1,".csv"), header=T)
 
-#note from phil - need to ask what does this mean?
+#note from phil
 #notes: Make sure Halibut data is formatted the same for wcpue and bycatch estimation 
 #function below: H.catch<-Hali[Hali$SEdist == s & Hali$Year == y,]
 
 ## ADF&G Fish Ticket Data ############################################################
 ## This output is from Halibut harvest reconstruction 2025.R 
-HA.Harv<-read.csv("Data_processing/Data/SE_Halibut_removals_1975-2025.csv", header=T) #fish ticket data
+HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
 
 ## IPHC Survey Data #############################################################
 ## get processed IPHC survey data built in IPHC_Survey_CPUE_index.R (Rhea's version)
-## LSC get the most updated output from spencer
+## FLAG!!! LSC get the most updated output from spencer
 Survey <- read.csv("Data_processing/Data/IPHC_survey_1998-2024_rke.csv")
 
 str(Survey); head(Survey,10)
@@ -68,7 +68,7 @@ str(Survey); head(Survey,10)
 ## Load the port samples that were downloaded from OceanAK
 ## Need Yelloweye weights to get wcpue estimates
 
-Port<-port.bio(2025)
+Port<-port.bio(2026)
   
   unique(Port$Sample.Type)
   Port.rand<-Port[Port$Sample.Type=="Random",]

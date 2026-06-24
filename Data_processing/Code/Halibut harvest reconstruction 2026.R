@@ -124,11 +124,11 @@ lapply(HA.Harv.update[c("Year", "Mgt.Area", "fishery.code", "gear")], unique)
 ## update sometime in the fall.
 
 
-## Halibut harvest from IPHC for 1982 - 2025
+## Halibut harvest from IPHC for 1982 - 2025 (TSD-026)
 ## Data pulled 6.22.26 - so that it includes up to 2025
 HA.newreq<-read.csv("Data_processing/Data/Harvests/Halibut_Harvest_IPHC_1982_2025.csv") %>% 
   filter(Year>2021)
-unique(HA.newreq$Year) #1982 - 2025
+unique(HA.newreq$Year) #2022 - 2025
 
 ## Halibut harvest from IPHC for 1982 - 2021; Randy Peterson originally put in this request
 ## We need this request because it has stat area information in it
@@ -145,8 +145,13 @@ HA.29_75<-read.csv("Data_processing/Data/Harvests/IPHC_Halibut_harv_1929-1975.cs
 unique(HA.29_75$Year) #1929-1975
 
 ## Commercial landings by IPHC Regulatory Area (TSD-007)
-## FLAG!!! I don't believe this needs to be updated beyond 2020 - but double check
+## Note: 2025 data is preliminary
 HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888.csv", skip=1, header=T)
+
+##FLAG!!! Tried yp update this data but the original data request has more columns and i am
+# not sure what the units are. I don't think this is critical for the reconstruction
+# this data is being used for the data
+# HA.IPHCweb<-read.csv("Data_processing/Data/Harvests/Halibut_harvests_IPHCareas_1888_2025.csv")
 unique(HA.IPHCweb$Year) #1888-2020
 
 ################################################################################
@@ -633,45 +638,45 @@ lines(IPHC_3A$Halibut_mt[IPHC_3A$IO=="Yakutat"]+IPHC_3A$Halibut_mt[IPHC_3A$IO=="
 #Overall looks pretty good! There are some mismatches though
 
 
-# overlap.HA<-old.HA %>% filter(Year > 1976)
-# 
-# years<-unique(overlap.HA$Year) 
-# i<-1
-# for (y in years) {  #y<-years[1]
-#   subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
-#   overlap.HA[i,"year.check"]<-y
-#   overlap.HA[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"]
-#   overlap.HA[i,"SEO2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |
-#                                            subha$Mgt.Area == "CSEO" |
-#                                            subha$Mgt.Area == "SSEO"])
-#   overlap.HA[i,"SEI2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEI" |
-#                                            subha$Mgt.Area == "SSEI"], na.rm=T)
-#   overlap.HA[i,"prop.3A.EYKT"]<-overlap.HA[i,"EYKT"]/overlap.HA[i,"a3A.mt"]
-#   overlap.HA[i,"prop.2C.SEO"]<-overlap.HA[i,"SEO2C"]/overlap.HA[i,"a2C.mt"]
-#   overlap.HA[i,"prop.2C.SEI"]<-overlap.HA[i,"SEI2C"]/overlap.HA[i,"a2C.mt"]
-#   overlap.HA[i,"2c.ItoO.ratio"]<-overlap.HA[i,"SEO2C"]/(overlap.HA[i,"SEO2C"]+overlap.HA[i,"SEI2C"])
-#   i<-i+1
-# }
-# plot(overlap.HA$prop.2C.SEO ~ overlap.HA$Year, ylim=c(0,1), type="l")
-# lines(overlap.HA$prop.3A.EYKT ~ overlap.HA$Year, col="blue")
-# lines(overlap.HA$prop.2C.SEI ~ overlap.HA$Year, col="red") #the SEI harvest seems REALLY HIGH 
-# 
-# plot(overlap.HA$a2C.mt ~ overlap.HA$Year, type="l", ylim=c(0,6000))
-# lines(overlap.HA$SEO2C ~ overlap.HA$Year, type="l", col="blue")
-# lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-O"] ~ 
-#         IPHC_2C$Year[IPHC_2C$IO=="SE-O"], 
-#       type="l",col="darkcyan")
-# lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-I"] ~ 
-#         IPHC_2C$Year[IPHC_2C$IO=="SE-I"], 
-#       type="l",col="purple")
-# lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-I"]+IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-O"] ~
-#         IPHC_2C$Year[IPHC_2C$IO=="SE-I"],type="l",col="orange")
-# 
-# plot(overlap.HA$a3A.mt ~ overlap.HA$Year, type="l", ylim=c(0,20000))
-# lines(overlap.HA$EYKT ~ overlap.HA$Year, type="l", col="blue")
-# lines(IPHC_3A$Halibut_mt[IPHC_3A$IO=="Yakutat"] ~ 
-#         IPHC_3A$Year[IPHC_3A$IO=="Yakutat"], 
-#       type="l",col="darkcyan")
+overlap.HA<-old.HA %>% filter(Year > 1976)
+
+years<-unique(overlap.HA$Year)
+i<-1
+for (y in years) {  #y<-years[1]
+  subha<-Halibut.harv.1975[Halibut.harv.1975$Year == y,]
+  overlap.HA[i,"year.check"]<-y
+  overlap.HA[i,"EYKT"]<-subha$HA.mt[subha$Mgt.Area == "EYKT"]
+  overlap.HA[i,"SEO2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEO" |
+                                           subha$Mgt.Area == "CSEO" |
+                                           subha$Mgt.Area == "SSEO"])
+  overlap.HA[i,"SEI2C"]<-sum(subha$HA.mt[subha$Mgt.Area == "NSEI" |
+                                           subha$Mgt.Area == "SSEI"], na.rm=T)
+  overlap.HA[i,"prop.3A.EYKT"]<-overlap.HA[i,"EYKT"]/overlap.HA[i,"a3A.mt"]
+  overlap.HA[i,"prop.2C.SEO"]<-overlap.HA[i,"SEO2C"]/overlap.HA[i,"a2C.mt"]
+  overlap.HA[i,"prop.2C.SEI"]<-overlap.HA[i,"SEI2C"]/overlap.HA[i,"a2C.mt"]
+  overlap.HA[i,"2c.ItoO.ratio"]<-overlap.HA[i,"SEO2C"]/(overlap.HA[i,"SEO2C"]+overlap.HA[i,"SEI2C"])
+  i<-i+1
+}
+plot(overlap.HA$prop.2C.SEO ~ overlap.HA$Year, ylim=c(0,1), type="l")
+lines(overlap.HA$prop.3A.EYKT ~ overlap.HA$Year, col="blue")
+lines(overlap.HA$prop.2C.SEI ~ overlap.HA$Year, col="red") #the SEI harvest seems REALLY HIGH
+
+plot(overlap.HA$a2C.mt ~ overlap.HA$Year, type="l", ylim=c(0,6000))
+lines(overlap.HA$SEO2C ~ overlap.HA$Year, type="l", col="blue")
+lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-O"] ~
+        IPHC_2C$Year[IPHC_2C$IO=="SE-O"],
+      type="l",col="darkcyan")
+lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-I"] ~
+        IPHC_2C$Year[IPHC_2C$IO=="SE-I"],
+      type="l",col="purple")
+lines(IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-I"]+IPHC_2C$Halibut_mt[IPHC_2C$IO=="SE-O"] ~
+        IPHC_2C$Year[IPHC_2C$IO=="SE-I"],type="l",col="orange")
+
+plot(overlap.HA$a3A.mt ~ overlap.HA$Year, type="l", ylim=c(0,20000))
+lines(overlap.HA$EYKT ~ overlap.HA$Year, type="l", col="blue")
+lines(IPHC_3A$Halibut_mt[IPHC_3A$IO=="Yakutat"] ~
+        IPHC_3A$Year[IPHC_3A$IO=="Yakutat"],
+      type="l",col="darkcyan")
 
 
 ##Rewriting Phil's code in tidyverse
@@ -680,7 +685,7 @@ overlap.HA <- old.HA %>%
   filter(Year > 1976)
 
 #Summarize halibut harvest by year + management area logic
-harv_summary <- Halibut.harv.1975 %>%
+harv_summary <- Halibut.harv.1975 %>% 
   filter(Year %in% overlap.HA$Year) %>%
   group_by(Year) %>%
   summarise(EYKT = sum(HA.mt[Mgt.Area == "EYKT"], na.rm = TRUE),
@@ -689,20 +694,103 @@ harv_summary <- Halibut.harv.1975 %>%
   mutate(prop.2C.SEO = SEO2C, prop.2C.SEI = SEI2C)
 
 # compute ratios
-overlap.HA2 <- overlap.HA %>%
+overlap.HA <- overlap.HA %>%
   left_join(harv_summary, by = "Year") %>%
-  mutate(
-    prop.3A.EYKT = EYKT / a3A.mt,
-    prop.2C.SEO  = SEO2C / a2C.mt,
-    prop.2C.SEI  = SEI2C / a2C.mt,
-    `2c.ItoO.ratio` = SEO2C / (SEO2C + SEI2C))
-
-prop_df <- overlap.HA %>%
-  select(Year, prop.2C.SEO, prop.3A.EYKT, prop.2C.SEI) %>%
-  tidyr::pivot_longer(
-    cols = -Year,
-    names_to = "series",
-    values_to = "value"
-  )
+  mutate(prop.3A.EYKT = EYKT / a3A.mt,
+         prop.2C.SEO  = SEO2C / a2C.mt,
+         prop.2C.SEI  = SEI2C / a2C.mt,
+         `2c.ItoO.ratio` = SEO2C / (SEO2C + SEI2C))
 
 
+################################################################################
+# PLOT 1: PROPORTIONS
+################################################################################
+
+prop_plot <- overlap.HA %>%
+  select(Year,
+         `Area 2C SEO` = prop.2C.SEO,
+         `Area 3A EYKT` = prop.3A.EYKT,
+         `Area 2C SEI` = prop.2C.SEI) %>%
+  pivot_longer(-Year,
+               names_to = "Series",
+               values_to = "Proportion")
+
+ggplot(prop_plot, aes(Year, Proportion, color = Series)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = c("Area 2C SEO" = "black","Area 3A EYKT" = "blue","Area 2C SEI" = "red")) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "Harvest Proportions",
+       x = "Year",
+       y = "Proportion") +
+  theme_bw()
+
+################################################################################
+# PLOT 2: AREA 2C HARVEST COMPARISON
+################################################################################
+
+a2c_plot <- bind_rows(
+  overlap.HA %>%
+    transmute(Year,Series = "Area 2C Total",Harvest_mt = a2C.mt),
+  
+    overlap.HA %>%
+      transmute(Year,Series = "SEO2C",Harvest_mt = SEO2C),
+  
+    IPHC_2C %>%
+      filter(IO == "SE-O") %>%
+      transmute(Year,Series = "IPHC SE-O",Harvest_mt = Halibut_mt),
+  
+    IPHC_2C %>%
+    filter(IO == "SE-I") %>%
+      transmute(Year,Series = "IPHC SE-I",Harvest_mt = Halibut_mt),
+  
+    IPHC_2C %>%
+      select(Year, IO, Halibut_mt) %>%
+      pivot_wider(names_from = IO, values_from = Halibut_mt) %>%
+    transmute(Year, Series = "IPHC SE-I + SE-O",Harvest_mt = `SE-I` + `SE-O`))
+
+ggplot(a2c_plot,
+       aes(Year, Harvest_mt, color = Series)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(
+    values = c(
+      "Area 2C Total" = "black",
+      "SEO2C" = "blue",
+      "IPHC SE-O" = "darkcyan",
+      "IPHC SE-I" = "purple",
+      "IPHC SE-I + SE-O" = "orange"))+
+  coord_cartesian(ylim = c(0, 6000)) +
+  labs(
+    title = "Area 2C Harvest Comparison",
+    x = "Year",
+    y = "Harvest (mt)") +
+  theme_bw()
+
+################################################################################
+# PLOT 3: AREA 3A HARVEST COMPARISON
+################################################################################
+
+a3a_plot <- bind_rows(
+  
+  overlap.HA %>%
+    transmute(Year, Series = "Area 3A Total", Harvest_mt = a3A.mt),
+  
+  overlap.HA %>%
+    transmute(Year, Series = "EYKT", Harvest_mt = EYKT),
+  
+  IPHC_3A %>%
+    filter(IO == "Yakutat") %>%
+    transmute(Year, Series = "IPHC Yakutat", Harvest_mt = Halibut_mt))
+
+ggplot(a3a_plot,
+       aes(Year, Harvest_mt, color = Series)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(
+    values = c(
+      "Area 3A Total" = "black",
+      "EYKT" = "blue",
+      "IPHC Yakutat" = "darkcyan"))+
+  coord_cartesian(ylim = c(0, 20000)) +
+  labs(title = "Area 3A Harvest Comparison",
+    x = "Year",
+    y = "Harvest (mt)") +
+  theme_bw()
