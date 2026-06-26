@@ -17,7 +17,7 @@ library(matrixStats)
   library(extrafont)
   }
 
-source("r_helper/Port_bio_function.R")
+source("r_helper/Port_bio_function_2026.R")
 
 ###  set plotting theme to use TNR  ###
 #font_import() #remove # to run this but only do this one time - it takes a while
@@ -58,9 +58,9 @@ SEOHal<-read.csv(paste0("Data_processing/Data/SEO_Halibut_removals_1888-",YEAR-1
 HA.Harv<-read.csv(paste0("Data_processing/Data/SE_Halibut_removals_1975-",YEAR-1,".csv"), header=T) #fish ticket data
 
 ## IPHC Survey Data #############################################################
-## get processed IPHC survey data built in IPHC_Survey_CPUE_index.R (Rhea's version)
-## FLAG!!! LSC get the most updated output from Aaron
-Survey <- read.csv("Data_processing/Data/IPHC_survey_1998-2024_rke.csv")
+## get processed IPHC survey data built in IPHC_Survey_CPUE_index.R 
+## Data pulled 6/23/26 from Aaron Lambert
+Survey <- read.csv("Data_processing/Data/IPHC_survey_1998_2025_awl.csv")
 
 str(Survey); head(Survey,10)
 
@@ -90,8 +90,11 @@ Survey$N.YE.kg<-NA
   
 
 Years<-sort(unique(Survey$Year)) 
-GFMA<-unique(Survey$SEdist) #FLAG!!! - do we need to filter out inside waters?
+GFMA<-unique(Survey$SEdist) 
 unique(Port.rand$Groundfish.Management.Area.Code)
+unique(Port.rand$GFMU) 
+
+#FLAG!!! - Changed 75 to 300 to match the change that Rhea and I did in 2024
   
   for (i in Years){    #i<-Years[1]
     for (j in GFMA){   #j<-GFMA[1]
@@ -146,7 +149,7 @@ unique(Port.rand$Groundfish.Management.Area.Code)
   }
 colnames(Survey)
 
-# Biodata Exploratory Plots ####################################################
+# Exploratory Plots ####################################################
 ggplot(data = Survey %>% 
          filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
        aes(x = Year)) +
@@ -161,15 +164,14 @@ ggplot(data = Survey %>%
 ggplot(data = Survey %>% 
          filter(SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
        aes(x = as.factor(Year))) +
-  geom_boxplot(aes(y = O32.Pacific.halibut.weight, fill = SEdist, col=SEdist), size = 1) +
+  geom_boxplot(aes(y = O32.Pacific.halibut.weight..net.lb., fill = SEdist, col=SEdist), size = 1) +
   xlab("\nYear") +
   ylab("Pacific Halibut (> 32 cm) Catch (lbs)") +
   theme(axis.text.x = element_text(angle = 45,hjust = 1,vjust = 1))
 
 ggplot(data = Survey %>% 
-         filter(Year > 2015,
-                SEdist %in% c("NSEO","CSEO","SSEO","EYKT")), 
-       aes(x=O32.Pacific.halibut.weight)) + 
+         filter(Year > 2015, SEdist %in% c("NSEO","CSEO","SSEO","EYKT")),
+       aes(x=O32.Pacific.halibut.weight..net.lb.)) + 
   geom_density(aes(fill = as.factor(Year), col=as.factor(Year)),alpha = 0.3) + 
   #geom_histogram(aes(fill = as.factor(Year), col=as.factor(Year), y=..density..),alpha = 0.3) +
   facet_wrap(~SEdist) +
@@ -226,6 +228,7 @@ with(Survey, table(depth_bin))
 hist(Survey$depth_bin)
 
 # IFQ started in 1995; prior to that it's Derby style
+# This code is calculating the WCPUE - is this the same as its being done for the REMA model?
 
 IPHC.wcpue<-data.frame()
 Subs<-unique(Survey$SEdist)
@@ -239,6 +242,8 @@ s21<-Survey %>% filter(Year == 2021)
 str(s23)
 str(s22)
 str(s21)
+
+#FLAG!!! Are we calculating the WCPUE elsewhere in the stock assessment? Should we be using those numbers?
 
 j<-1
 for (y in Years) {  #
@@ -265,8 +270,8 @@ for (y in Years) {  #
         
         CPUEi[i]<-CPUE
         K<-C*Dat$mean.YE.kg[1]
-        WCPUE.32 <-K/mean(Stat.Dat$O32.Pacific.halibut.weight)
-        WCPUE.all<-K/mean(Stat.Dat$O32.Pacific.halibut.weight+Stat.Dat$U32.Pacific.halibut.weight)
+        WCPUE.32 <-K/mean(Stat.Dat$O32.Pacific.halibut.weight..net.lb.)
+        WCPUE.all<-K/mean(Stat.Dat$O32.Pacific.halibut.weight..net.lb.+Stat.Dat$U32.Pacific.halibut.weight)
         WCPUEi.32[i]<-WCPUE.32
         WCPUEi.all[i]<-WCPUE.all
         i<-i+1
@@ -349,6 +354,7 @@ for (y in Years) {  #
     } 
   }
 }
+##FLAG!!! - there are a lot of zeros in the IPHC.wcpue output
 
 # Does wcpue vary by depth?
 IPHC.wcpue[IPHC.wcpue$Year == 2020,]
@@ -422,6 +428,8 @@ ggplot(IPHC.wcpue,aes(depth_strat,WCPUE.mean, fill = length.cat))+geom_boxplot()
          legend=c(YE.depths), bty="n",
          col=cols,text.col=cols)
 }
+
+#Notes from Phil 2023 - 
 #I suppose we could do some fancy stats, but not really necessary.
 #if so, let's get depth profile of halibut fishery
 #**************************************************
@@ -496,8 +504,8 @@ YEHA.fxn<-function(Survey=Survey,Area="SEdist",Deep=max(Survey$AvgDepth.fm), Sha
           
           CPUEi[i]<-CPUE
           K<-C*Dat$mean.YE.kg[1]
-          WCPUE.32 <-K/mean(Stat.Dat$O32.Pacific.halibut.weight)
-          WCPUE.all<-K/mean(Stat.Dat$O32.Pacific.halibut.weight+Stat.Dat$U32.Pacific.halibut.weight)
+          WCPUE.32 <-K/mean(Stat.Dat$O32.Pacific.halibut.weight..net.lb.)
+          WCPUE.all<-K/mean(Stat.Dat$O32.Pacific.halibut.weight..net.lb.+Stat.Dat$U32.Pacific.halibut.weight)
           WCPUEi.32[i]<-WCPUE.32
           WCPUEi.all[i]<-WCPUE.all
           expBy.32<-WCPUE.32*sum(H.catch$HA.mt)
@@ -646,7 +654,8 @@ SEO.subs[SEO.subs$mngmt.area == "CSEO",]
 SEO.subs[SEO.subs$mngmt.area == "EYKT",]
 #================================================================================
 # Calculate expected bycatch for years before 1998; pre-survey years
-#inflate pre-1995 (Derby years) by 0.5 to account for further uncertainty...
+# FLAG!!! - see note below from Phil
+# inflate pre-1995 (Derby years) by 0.5 to account for further uncertainty...
 # that is not done here, but will be done in the DATALOAD for the model (easier to change there 
 # with model development...)
 

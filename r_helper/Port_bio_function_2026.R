@@ -37,6 +37,7 @@ port.bio<-function(YEAR=2026){
                                                                                                                                        case_when(Sex.Code == 1 ~ "Male",
                                                                                                                                                  Sex.Code == 2 ~ "Female")) %>% 
     mutate(GFMU = case_when(GFMU == "SSEOC"~"SSEO", TRUE~GFMU))
+  #This could be YE bycatch from a lingcod trip - lingcod is the only species that uses SSEOC management area
   
   Port$Sex<-as.factor(Port$Sex)	
   
