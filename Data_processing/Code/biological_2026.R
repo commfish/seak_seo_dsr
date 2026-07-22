@@ -46,18 +46,20 @@ unique(unknowns$Groundfish.Management.Area.Code)
 unique(unknowns$Groundfish.Stat.Area.Group)
 unique(unknowns$Groundfish.Stat.Area)
 
-#Let's only look at samples from the DSR management areas in SEO with known GFMU
+#Let's only look at longline samples from the DSR management areas in SEO with known GFMU
 Port <- Port %>% 
-  filter(GFMU %in% c("NSEO", "SSEO", "CSEO", "EYKT"))
+  filter(GFMU %in% c("NSEO", "SSEO", "CSEO", "EYKT", "SEO"),
+         !Project %in% c("Commercial Jig Trip","Atypical Longline Sample","Atypical Jig Sample"))
+
+unique(Port$Project)
 
 # How many samples do we have per sample type?
 Port.rand <- Port %>%
-  filter(Sample.Type == "Random", 
-         !Project == "Atypical Longline Sample")
+  filter(Sample.Type == "Random")
 
 unique(Port.rand$Year) #1981,1984-1985, 1987-2005, 2008-2026
 unique(Port.rand$Project) 
-nrow(Port.rand) #61,345
+nrow(Port.rand) #61,076
 
 Port.rand %>% 
   group_by(Year) %>% 
@@ -67,29 +69,22 @@ Port.direct <- Port %>%
   filter(Project == "Commercial Longline Trip")
 
 unique(Port.direct$Year) #1981, 1984-1985, 1987-2005, 2008-2019, 2025-2026
-nrow(Port.direct) #49,619
+nrow(Port.direct) #49,500
 
 Port.hal <- Port %>%
   filter(Project == "Commercial Halibut Longline")
-unique(Port.hal$Year) #2003-2026
-nrow(Port.hal) #11,952
+unique(Port.hal$Year) #2003, 2008-2012, 2014-2026
+nrow(Port.hal) #12,014
 
 
 agecomps<-Port[!is.na(Port$Sex) & !is.na(Port$Age),]
-nrow(agecomps)
+nrow(agecomps) #37,042
+unique(Port$Sample.Type)
 agecomps.rand<-Port.rand[!is.na(Port.rand$Sex) & !is.na(Port.rand$Age),]
-nrow(agecomps.rand)
+nrow(agecomps.rand) #36,725
 
 agecomps<-agecomps.rand
-#agecomps<-agecomps[agecomps$Project == "Halibut Longline" | agecomps$Project == "Commercial Longline Trip",]
 unique(agecomps$Groundfish.Management.Area.Code)
-unique(agecomps$GFMU)
-#This includes random samples in SEO
-agecomps<-agecomps[agecomps$GFMU == "NSEO" |
-			agecomps$GFMU == "SSEO" |
-			agecomps$GFMU == "CSEO" |
-			agecomps$GFMU == "EYKT",]
-nrow(agecomps)
 hist(agecomps$Age)
 
 ggplot(agecomps, aes(x=Age)) +
