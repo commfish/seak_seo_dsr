@@ -12,10 +12,18 @@ library(broom)
 library(mosaic)
 library(ggpubr)
 library(cowplot)
+library(extrafont)
 source("r_helper/Port_bio_function_2026.R")
 }
 
 #Biological data pulled on 6/23/25 - LSC
+
+###  set plotting theme to use TNR  ###
+#font_import() #remove # to run this but only do this one time - it takes a while
+loadfonts(device="win")
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+theme_set(theme_bw(base_size=18,base_family='Times New Roman')
+          +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()))
 
 ###############################################################################
 # Run Port Bio Function ----
@@ -244,7 +252,7 @@ unique(lendat$Sample.Type)
 
 
 for (i in gmus){  
-    i<-gmus[1]
+    # i<-gmus[1]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
