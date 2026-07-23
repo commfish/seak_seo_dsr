@@ -49,9 +49,11 @@ unique(unknowns$Groundfish.Stat.Area)
 #Let's only look at longline samples from the DSR management areas in SEO with known GFMU
 Port <- Port %>% 
   filter(GFMU %in% c("NSEO", "SSEO", "CSEO", "EYKT", "SEO"),
-         !Project %in% c("Commercial Jig Trip","Atypical Longline Sample","Atypical Jig Sample"))
+         Project %in% c("Commercial Longline Trip", "Commercial Halibut Longline"),
+         Sample.Type == "Random")
 
-unique(Port$Project)
+#Port.rand is redundant here since I filtered for Random samples above  - but leaving in
+#in case someone wants to examine ALL YE biodata (select, maturity, von B, etc etc)
 
 # How many samples do we have per sample type?
 Port.rand <- Port %>%
@@ -61,7 +63,7 @@ unique(Port.rand$Year) #1981,1984-1985, 1987-2005, 2008-2026
 unique(Port.rand$Project) 
 nrow(Port.rand) #61,076
 
-Port.rand %>% 
+Port.rand.summary <- Port.rand %>% 
   group_by(Year) %>% 
   summarise(n=n())
 
@@ -69,21 +71,16 @@ Port.direct <- Port %>%
   filter(Project == "Commercial Longline Trip")
 
 unique(Port.direct$Year) #1981, 1984-1985, 1987-2005, 2008-2019, 2025-2026
-nrow(Port.direct) #49,500
+nrow(Port.direct) #49,091
 
 Port.hal <- Port %>%
   filter(Project == "Commercial Halibut Longline")
 unique(Port.hal$Year) #2003, 2008-2012, 2014-2026
-nrow(Port.hal) #12,014
+nrow(Port.hal) #11,985
 
 
 agecomps<-Port[!is.na(Port$Sex) & !is.na(Port$Age),]
-nrow(agecomps) #37,042
-unique(Port$Sample.Type)
-agecomps.rand<-Port.rand[!is.na(Port.rand$Sex) & !is.na(Port.rand$Age),]
-nrow(agecomps.rand) #36,725
-
-agecomps<-agecomps.rand
+nrow(agecomps) #36,725
 unique(agecomps$Groundfish.Management.Area.Code)
 hist(agecomps$Age)
 
@@ -115,10 +112,10 @@ agecomps<-agecomps %>%
 
 unique(agecomps$Sex)
 EX<-agecomps[agecomps$Year == 2014 & agecomps$GFMU == "CSEO" & agecomps$Sex == "Female",]
-view(EX)
+#view(EX)
 plot(EX$Age ~ EX$Sex)
 plot(EX$proportion ~ EX$Age)
-view(EX[EX$proportion == 1,])
+#view(EX[EX$proportion == 1,])
 sum(EX$proportion)
 hist(EX$proportion)
 
@@ -138,9 +135,7 @@ sum(OUT$prop, na.rm=T)
 
 str(Port)
 lcomps<-Port[!is.na(Port$Sex) & !is.na(Port$Length.Millimeters),]
-nrow(lcomps)
-lcomps<-Port.rand[!is.na(Port.rand$Sex) & !is.na(Port.rand$Length.Millimeters),]
-nrow(lcomps)
+nrow(lcomps) #59,335
 
 lcomps<-lcomps %>% 
   #group_by(Year,Groundfish.Management.Area.Code, Sex) %>%
@@ -172,6 +167,11 @@ ggplot(lcomps, aes(x=length)) +
   geom_vline(xintercept=quantile(lcomps$length,0.9),col="blue", linetype=2) +
   facet_wrap(~GFMU, scales="free")
 
+unique(lcomps$Project)
+unique(lcomps$Groundfish.Management.Area.Code)
+#SEO is included in the length composition but not agecomps
+unique(lcomps$Sample.Type)
+
 #----------------------------------------------------------------
 #Make Length bins
 
@@ -202,6 +202,31 @@ unique(tst$length)
 unique(tst$Year)
 unique(tst$GFMU)
 
+# Make table 14.1 
+
+weight_summary <- Port %>%
+  filter(!is.na(Weight.Kilograms)) %>%
+  group_by(GFMU, Year) %>%
+  summarise(
+    n       = n(),
+    mean_wt = mean(Weight.Kilograms, na.rm = TRUE),
+    sd_wt   = sd(Weight.Kilograms, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  complete(GFMU, Year = full_seq(range(Port$Year, na.rm = TRUE), 1)) %>%
+  arrange(GFMU, Year) %>%
+  mutate(across(c(n, mean_wt, sd_wt), ~ ifelse(is.na(.), "-", as.character(round(as.numeric(.), 3))))) %>%
+  rename(
+    `Average Weight` = mean_wt,
+    `SD`              = sd_wt,
+    `#YE`             = n
+  ) %>%
+  select(GFMU, Year, `Average Weight`, SD, `#YE`)
+
+write.csv(weight_summary, 
+          paste0("Figures/Bio_plots_", YEAR, "/yelloweye_weight_summary_by_GFMU_Year.csv"),
+          row.names = FALSE)
+
 ###########################################################################
 plus_group<-100
 ###########################################################################
@@ -219,7 +244,7 @@ unique(lendat$Sample.Type)
 
 
 for (i in gmus){  
-  # i<-gmus[5]
+   # i<-gmus[1]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
@@ -247,7 +272,7 @@ for (i in gmus){
     
     #Length plots
     lendat %>% 
-      filter(GFMU == i & Year > 1983) %>% #change to 1980 for CSEO
+      filter(GFMU == i & Year > 1980) %>% #change to 1980 for CSEO
       ggplot(aes(length, Year, group = Year, fill = Year)) + 
       geom_density_ridges(aes(point_fill = Year, point_color = Year),
                           alpha = 0.3, scale=1.5, jittered_points = TRUE,
@@ -269,7 +294,7 @@ for (i in gmus){
     
     ##SAMPLE SIZE LABEL OPTION 
     lendat %>% 
-      filter(GFMU == i & Year > 1983) %>% #change to 1980 for CSEO
+      filter(GFMU == i & Year > 1980) %>% #change to 1980 for CSEO
       ggplot(aes(length, Year, group = Year, fill = Year)) + 
       geom_density_ridges(aes(point_fill = Year, point_color = Year),
                           alpha = 0.3, scale=2, #jittered_points = TRUE,
@@ -351,95 +376,5 @@ ggplot(data = agecomps,
 ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear.png",sep=""),
        dpi=900, height=5, width=7, units="in")
 
-#################### Age bubble plots ########################################
-# Code from Adam St. Saviour
-# Bubble plot of SF annual AGE distribution
-# Count the frequency of each AGE per YEAR
-age_distribution <- agecomps %>%
-  group_by(Year, Age) %>%
-  summarize(count = n())
-
-# bubble plot of AGE distribution
-bubble_plot <- ggplot(age_distribution, aes(x = Year, y = Age, size = count)) +
-  geom_point(alpha = 0.3, color = 'black') +
-  scale_size_continuous(range =  c(1, 20), breaks = c(50,100)) +  # Adjust the size range and Count breaks in legend
-  theme_minimal() +
-  labs(title = "Yelloweye Rockfish Age Distribution of Commercial Harvest in SEO",
-       x = "Year",
-       y = "Age",
-       size = "Count") +
-  theme(plot.title = element_text(hjust = 0.5)); bubble_plot
-
-ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear2.png",sep=""),
-       dpi=900, height=5, width=7, units="in")
-
-age_distribution_sex <- agecomps %>%
-  group_by(Year, Age, Sex) %>%
-  summarize(count = n())
-
-bubble_plot_bysex <- ggplot(age_distribution_sex, aes(x = Year, y = Age, size = count)) +
-  geom_point(alpha = 0.3, color = 'black') +
-  scale_size_continuous(range =  c(1, 20), breaks = c(20,40)) +  # Adjust the size range and Count breaks in legend
-  facet_grid(~Sex)+
-  theme_minimal() +
-  labs(title = "Yelloweye Rockfish Age Distribution of Commercial Harvest in SEO by Sex",
-       x = "Year",
-       y = "Age",
-       size = "Count") +
-  theme(plot.title = element_text(hjust = 0.5)); bubble_plot_bysex
-
-
-ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEO","_bubble_agecomp_byyear2_bysex.png",sep=""),
-       dpi=900, height=5, width=7, units="in")
-
-
-#Length plots - random samples from SEAK - including inside waters
-lendat %>% 
-  filter(Year > 1983) %>% 
-  ggplot(aes(length, Year, group = Year, fill = Year)) + 
-  geom_density_ridges(aes(point_fill = Year, point_color = Year),
-                      alpha = 0.3, scale=1.5, jittered_points = FALSE,
-                      rel_min_height = 0.01, point_size=0.5) +
-  xlim(300, 900) + 
-  xlab("Length (mm)") + 
-  ylab(NULL) +
-  theme(legend.position = "none") + 
-  theme(text=element_text(size=20),
-        axis.text.x = element_text(size=10,angle=45, hjust=1),
-        axis.text.y = element_text(size=12)) +
-  facet_wrap(~  Sex) + 
-  facet_grid( ~ Sex)+	
-  scale_x_continuous(limits=c(300,900),breaks = c(seq(from=300, to=900, by=50))) +	#, labels = axisx$labels) +
-  scale_y_continuous(limits=c(1984,YEAR+2),breaks = c(seq(from=1984, to=(YEAR), by=2)))#scales::pretty_breaks(n=15)) 
-
-ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEAK","_ridgejitter_lengthcomp_byyear.png",sep=""),
-       dpi=900, height=8, width=5, units="in")
-
-
-##SAMPLE SIZE LABEL OPTION 
-lendat %>% 
-  filter(Year > 1983) %>% 
-  ggplot(aes(length, Year, group = Year, fill = Year)) + 
-  geom_density_ridges(aes(point_fill = Year, point_color = Year),
-                      alpha = 0.3, scale=2, #jittered_points = TRUE,
-                      rel_min_height = 0.01) +
-  xlim(300, 800) + 
-  xlab("Length (mm)") + 
-  ylab(NULL) +
-  theme(legend.position = "none") + 
-  theme(text=element_text(size=20),
-        axis.text.x = element_text(size=10,angle=45, hjust=1),
-        axis.text.y = element_text(size=12)) +
-  facet_wrap(~  Sex) + 
-  facet_grid( ~ Sex)+	#+
-  geom_label(data = lendat %>% 
-               group_by(Year), 
-             aes(y = Year, x = 775, 
-                 label = n), colour="black", fill="white", nudge_y=0.5, size=3)+
-  scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
-  scale_y_continuous(breaks = c(seq(from=1984, to=YEAR, by=2)) )
-
-ggsave(paste0("Figures/Bio_plots_",YEAR,"/","SEAK","_ridgelabeled_lengthcomp_byyear.png",sep=""),
-       dpi=900, height=8, width=5, units="in")
 
 
