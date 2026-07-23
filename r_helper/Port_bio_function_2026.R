@@ -5,15 +5,26 @@
 
 port.bio<-function(YEAR=2026){
   
-  #Read in biodata from 1981 - 2010
-  Port1 <- read.csv("Data_processing/Data/SEAK_YE_port_sampling_bio_data_1981-2010.csv")
+  # #Read in biodata from 1981 - 2010
+  # Port1 <- read.csv("Data_processing/Data/SEAK_YE_port_sampling_bio_data_1981-2010.csv")
+  # 
+  # #Pull new data from Region 1/GroundFish/User Reports/Yelloweye Reports for Phil/port sampling bio data
+  # Port2 <- read.csv(paste0("Data_processing/Data/SEAK_YE_port_sampling_bio_data_2011-", YEAR, ".csv"),na.strings = c("", " ", "NA"))
+  # 
+  # #combine Files
+  # Port<-rbind(Port1,Port2) %>% 
+  #   filter(!Groundfish.Management.Area.Code=="WYAK")
   
-  #Pull new data from Region 1/GroundFish/User Reports/Yelloweye Reports for Phil/port sampling bio data
-  Port2 <- read.csv(paste0("Data_processing/Data/SEAK_YE_port_sampling_bio_data_2011-", YEAR, ".csv"),na.strings = c("", " ", "NA"))
+  #Using the old outputs used for the 2022 and 2024 SAFE reports. We have been QCing the biodata
+  #and don't want to use the newer outputs until the QAQC is completed - we have had bigger samples szes for earlier 
+  #years as missing fields are provided - like groundfish management area, project and sample type
+  Port1<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1980-1989.csv")
+  Port2<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_1990-1999.csv")
+  Port3<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2000-2009.csv")
+  Port4<-read.csv("Data_processing/Data/SEO_YE_port_sampling_bio_data_2010-2019.csv")
+  Port5<-read.csv(paste0("Data_processing/Data/SEO_YE_port_sampling_bio_data_2020-",YEAR,".csv",sep=""))
   
-  #combine Files
-  Port<-rbind(Port1,Port2) %>% 
-    filter(!Groundfish.Management.Area.Code=="WYAK")
+  Port<-rbind(Port1,Port2,Port3, Port4, Port5)
   
   #Data Checks -----------------------------------------------------------------
   unique(Port$Groundfish.Management.Area.Code)

@@ -61,7 +61,7 @@ Port.rand <- Port %>%
 
 unique(Port.rand$Year) #1981,1984-1985, 1987-2005, 2008-2026
 unique(Port.rand$Project) 
-nrow(Port.rand) #61,076
+nrow(Port.rand) #61,076 with new outputs, #49,457 with old ouputs
 
 Port.rand.summary <- Port.rand %>% 
   group_by(Year) %>% 
@@ -71,16 +71,16 @@ Port.direct <- Port %>%
   filter(Project == "Commercial Longline Trip")
 
 unique(Port.direct$Year) #1981, 1984-1985, 1987-2005, 2008-2019, 2025-2026
-nrow(Port.direct) #49,091
+nrow(Port.direct) #49,091 with new outputs, #37,522 with old ouputs
 
 Port.hal <- Port %>%
   filter(Project == "Commercial Halibut Longline")
 unique(Port.hal$Year) #2003, 2008-2012, 2014-2026
-nrow(Port.hal) #11,985
+nrow(Port.hal) #11,985 with new outputs, #11,935 with old ouputs
 
 
 agecomps<-Port[!is.na(Port$Sex) & !is.na(Port$Age),]
-nrow(agecomps) #36,725
+nrow(agecomps) #36,725 with new outputs, #32,287 with old ouputs
 unique(agecomps$Groundfish.Management.Area.Code)
 hist(agecomps$Age)
 
@@ -135,7 +135,7 @@ sum(OUT$prop, na.rm=T)
 
 str(Port)
 lcomps<-Port[!is.na(Port$Sex) & !is.na(Port$Length.Millimeters),]
-nrow(lcomps) #59,335
+nrow(lcomps) #59,335 with new outputs, #47,892 with old ouputs
 
 lcomps<-lcomps %>% 
   #group_by(Year,Groundfish.Management.Area.Code, Sex) %>%
@@ -224,7 +224,7 @@ weight_summary <- Port %>%
   select(GFMU, Year, `Average Weight`, SD, `#YE`)
 
 write.csv(weight_summary, 
-          paste0("Figures/Bio_plots_", YEAR, "/yelloweye_weight_summary_by_GFMU_Year.csv"),
+          paste0("Figures/Bio_plots_", YEAR, "/yelloweye_weight_summary_by_GFMU_Year_oldoutputs.csv"),
           row.names = FALSE)
 
 ###########################################################################
@@ -244,7 +244,7 @@ unique(lendat$Sample.Type)
 
 
 for (i in gmus){  
-   # i<-gmus[1]
+    i<-gmus[1]
   ## AGE BUBBLE PLOTS
   agecompdat <- agecomps %>% 
     filter(Sex %in% c("Female", "Male") &
@@ -287,7 +287,7 @@ for (i in gmus){
       facet_wrap(~ GFMU + Sex) + 
       facet_grid(GFMU ~ Sex)+	
       scale_x_continuous(limits=c(300,900),breaks = c(seq(from=300, to=900, by=50))) +	#, labels = axisx$labels) +
-      scale_y_continuous(limits=c(1984,YEAR+2),breaks = c(seq(from=1984, to=(YEAR), by=2)))#scales::pretty_breaks(n=15)) 
+      scale_y_continuous(limits=c(1980,YEAR+2),breaks = c(seq(from=1980, to=(YEAR), by=2)))#scales::pretty_breaks(n=15)) 
     
     ggsave(paste0("Figures/Bio_plots_",YEAR,"/",i,"_ridgejitter_lengthcomp_byyear.png",sep=""),
            dpi=900, height=8, width=5, units="in")
@@ -313,7 +313,7 @@ for (i in gmus){
                  aes(y = Year, x = 775, 
                      label = n), colour="black", fill="white", nudge_y=0.5, size=3)+
       scale_x_continuous(limits=c(300,800),breaks = c(seq(from=300, to=800, by=50))) +	#, labels = axisx$labels) +
-      scale_y_continuous(breaks = c(seq(from=1983, to=YEAR, by=2)) )
+      scale_y_continuous(breaks = c(seq(from=1980, to=YEAR, by=2)) )
     
     ggsave(paste0("Figures/Bio_plots_",YEAR,"/",i,"_ridgelabeled_lengthcomp_byyear.png",sep=""),
            dpi=900, height=8, width=5, units="in")
